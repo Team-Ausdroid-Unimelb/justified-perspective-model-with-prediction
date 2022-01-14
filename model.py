@@ -1,9 +1,9 @@
+import logging
 import os
 import copy
 
 
 # Class of the problem
-
 class Problem():
     initial_state = {}
     actions = {} 
@@ -13,14 +13,55 @@ class Problem():
     initial_state = {}
     goal_states = {}
 
-    def __init__(self, entities, variables, actions,domains,initial_state, goal_states):
-        self.entities = entities
-        self.actions = actions
-        self.variables = variables
-        self.domains = domains
-        self.initial_state = initial_state
-        self.goal_states = goal_states
+    # def __init__(self, entities, variables, actions,domains,initial_state, goal_states):
+    #     self.actions = actions
+    #     self.domains = domains
+    #     self.initial_state = initial_state
+    #     self.goal_states = goal_states
+    def __init__(self, domains,i_state,g_states,agent_index,obj_index,variables,actions):
+        
+        logging.debug("initialize entities")
+        self.entities = {}
+        for i in agent_index:
+            e_temp = Entity(i,E_TYPE.AGENT)
+            self.entities.update({i:e_temp})
+        for i in obj_index:
+            e_temp = Entity(i,E_TYPE.OBJECT)
+            self.entities.update({i:e_temp})        
+        logging.debug(self.entities)
+        
+        logging.debug("initialize variable")
+        self.variables = {}
+        for v_name,targets in variables.items():
+            for i in targets:
+                v_temp = Variable(f"{v_name}-{i}",v_name,i)
+                self.variables.update({f"{v_name}-{i}":v_temp})
+        logging.debug(self.variables)
+            
+        # grounding all actions or do not ground any actions?    
+        logging.debug("initialize actions")
+        logging.debug(actions )
+        for a_name, parts in actions.items():
+            
+            p = [ (i,eTypeConvert(t))for i,t in parts['parameters']]
+            a_temp = Action(a_name, p,parts['precondition'], parts['effect'])
+            self.actions.update({a_name:a_temp})
+        logging.debug(self.actions)
+        
+        logging.debug("initialize domains")
+        self.domains = {}
+        for d_name in domains.keys():
+            # print(d_name)
+            domain_temp = Domain(d_name,domains[d_name]['values'],d_name=='agent',dTypeConvert(domains[d_name]['basic_type']))
+            self.domains.update({d_name:domain_temp})
+        logging.debug(self.domains)
+        
+        self.goal_states = g_states
+        logging.debug(self.goal_states)
+        self.initial_state = i_state
+        logging.debug(self.initial_state)
     
+        
     def isGoal(self,state):
         for k,i in self.goal_states.items():
             if not state[k] == i:
@@ -29,9 +70,14 @@ class Problem():
     
     def getLegalActions(self,state):
         legal_actions = {}
+        
+        # get all type of actions
         for a_name, a in self.actions.items():
             print(f"param: {a.a_parameters}; all params: {self._generateParams(a.a_parameters)}")
+            
+            # generate all possible combination parameters for each type of action
             for params in self._generateParams(a.a_parameters):
+                
                 for i,v in params:
                     a_temp_name = a_name
                     a_temp_parameters = copy.deepcopy(a.a_parameters)
@@ -60,6 +106,8 @@ class Problem():
                     print(legal_actions)
         return legal_actions
     
+    
+    # generate all possible parameter combinations
     def _generateParams(self,params):
         param_list = []
         print(params)
@@ -80,7 +128,7 @@ class Problem():
         return param_list
                     
     # TODO adding action cost
-    def generatorSuccessor(self,state,action):
+    def generatorSuccessor(self,state,action,path):
         
         # TODO valid action
         # need to go nested on the brackets
@@ -123,7 +171,15 @@ from enum import Enum
 class E_TYPE(Enum):
     AGENT = 1
     OBJECT = 2
-   
+
+def eTypeConvert(str):
+    logging.debug(f"converting E_TYPE for {str}")
+    if str == "agent":
+        return E_TYPE.AGENT
+    elif str == "object":
+        return E_TYPE.OBJECT
+    else:
+        logging.error(f"E_TYPE not found for {str}")
 class Entity():
     e_name = None
     e_type = None
@@ -177,7 +233,16 @@ class Variable():
 class D_TYPE(Enum):
     ENUMERATE = 1
     INTEGER = 2 
-           
+
+def dTypeConvert(str):
+    logging.debug(f"converting D_TYPE for {str}")
+    if str == "enumerate":
+        return D_TYPE.ENUMERATE
+    elif str == "integer":
+        return D_TYPE.INTEGER
+    else:
+        logging.error(f"D_TYPE not found for {str}")
+
 class Domain():
     d_name = None
     d_values = None
