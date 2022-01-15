@@ -13,11 +13,6 @@ class Problem():
     initial_state = {}
     goal_states = {}
 
-    # def __init__(self, entities, variables, actions,domains,initial_state, goal_states):
-    #     self.actions = actions
-    #     self.domains = domains
-    #     self.initial_state = initial_state
-    #     self.goal_states = goal_states
     def __init__(self, domains,i_state,g_states,agent_index,obj_index,variables,actions):
         
         logging.debug("initialize entities")
@@ -63,9 +58,12 @@ class Problem():
     
         
     def isGoal(self,state):
-        for k,i in self.goal_states.items():
+        logging.debug(f"checking goal for state: {state}")
+        for k,i in self.goal_states["ontic_g"].items():
             if not state[k] == i:
                 return False
+            
+        # adding epistemic checker here
         return True
     
     def getLegalActions(self,state):
@@ -263,4 +261,6 @@ class Domain():
     
     def isAgent(self):
         return self.agency
+
+
     

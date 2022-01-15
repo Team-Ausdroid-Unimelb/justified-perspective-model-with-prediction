@@ -15,7 +15,7 @@
         (dir [ a , b ])
         (x [a,b,p])
         (y [a,b,p])
-        (g [])
+        (v [p])
     )
 
     (:init
@@ -27,12 +27,13 @@
         (= (y a) 3)
         (= (y b) 2)
         (= (y p) 1)
-        (= (g) 't')
+        (= (v p) 't')
         ;todo: put the initial state's facts and numeric values here
     )
 
     (:goal (and
-        (= (dir b) 's')
+        (= (dir b) 'se')
+        (= (:epistemic k [a,b] (= (v p) 't')) 1)
         ;todo: put the goal condition here
     ))
 
@@ -40,7 +41,8 @@
         (dir enumerate ['w','nw','n','ne','e','se','s','sw'])
         (x integer [0,4])
         (y integer [0,4])
-        (g enumerate ['t','f'])
+        (v enumerate ['t','f'])
+        ;(epistemic epistemic ['t','f','u']) true false unknown
     )
 
 
