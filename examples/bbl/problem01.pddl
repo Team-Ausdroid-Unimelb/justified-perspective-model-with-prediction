@@ -34,6 +34,7 @@
     (:goal (and
         (= (dir b) 'se')
         (= (:epistemic k [a,b] (= (v p) 't')) 1)
+        (= (:epistemic k [a] k [a,b] (= (v p) 't')) 1)
         ;todo: put the goal condition here
     ))
 

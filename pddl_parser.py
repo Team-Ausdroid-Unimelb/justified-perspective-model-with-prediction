@@ -176,7 +176,7 @@ def problemParser(file_path):
             # loading epismetic goals
             logging.debug("extract epistemic goal propositions")
             g_states.update({"epistemic_g":[]})   
-            epistemic_goal_list = re.findall('\(= \(:epistemic[0-9a-z_ \[\],]*\(.*\)\) [0-9a-z_ \"\']*\)',found[10:-1:])  
+            epistemic_goal_list = re.findall('\(= \(:epistemic[ 0-9a-z_\[\],]*\(= \([ 0-9a-z_]*\) [0-9a-z_\'\"]*\)\) [0-9a-z_\'\"]*\)',found[10:-1:])  
             logging.debug(epistemic_goal_list)
             for goal_str in epistemic_goal_list:
                 goal_str = goal_str[15:-1:]
@@ -184,6 +184,13 @@ def problemParser(file_path):
                 i,j = re.search('\)\) .*',goal_str).span()
                 value = goal_str[i+3:j:]
                 query = goal_str[:i+2:]
+                p,q = re.search('\(= \([0-9a-z _]*\) [0-9a-z _\'\"]*\)',query).span()
+                new_str = query[p+3:q-1]
+                query = query[:p]
+                m,n = re.search('\([0-9a-z _]*\)',new_str).span()
+                var = new_str[m+1:n-1].replace(" ","-")
+                value = new_str[n+1:]
+                query = f'{query}({var},{value})'
                 g_states["epistemic_g"].append((query,value))
             logging.debug(g_states)
         except AttributeError:
@@ -284,18 +291,29 @@ if __name__ == "__main__":
     
     import model
     problem = model.Problem(domains,i_state,g_states,agent_index,obj_index,variables,actions)
-    import search
     
-    print(search.BFS(problem))
+    # import search
     
-    print(domains)
-    print(i_state)
-    print(g_states)
-    print(agent_index)
-    print(obj_index)
-    print(variables)
-    print(actions)
+    # print(search.BFS(problem))
     
+    # print(problem.domains)
+    # print(problem.initial_state)
+    # print(problem.goal_states)
+    # print(problem.entities)
+    # print(problem.variables)
+    # print(problem.actions)
+    
+    import bbl
+    
+    bbl.checkVisibility(problem,problem.initial_state,'a','v-p')
+    
+    
+    eq_list = []
+    for eq_str,value in problem.goal_states["epistemic_g"]:
+        eq_list.append((model.generateEpistemicQuery(eq_str),value))
+    
+    print(eq_list)
+    # model.generateEpistemicQuery()
     # actions = prob
     # lem.getLegalActions(i_state)
     # print(actions)

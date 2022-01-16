@@ -1,6 +1,12 @@
 import logging
 import os
 import copy
+import re
+from typing import List
+
+from numpy.core.defchararray import _join_dispatcher
+from numpy.ma.core import common_fill_value
+import bbl
 
 
 # Class of the problem
@@ -187,10 +193,10 @@ class Entity():
         self.e_type = e_type
 
     def __str__(self): # show only in the print(object)
-        return f"<Entity: name: {self.e_name}; type: {self.e_type}>\n"
+        return f"<Entity: e_name: {self.e_name}; e_type: {self.e_type}>\n"
 
     def __repr__(self): # show when in a dictionary
-        return f"<Entity: name: {self.e_name}; type: {self.e_type}>\n"
+        return f"<Entity: e_name: {self.e_name}; e_type: {self.e_type}>\n"
 
 class Action():
     a_name = None
@@ -221,12 +227,16 @@ class Variable():
         self.v_parent = v_parent
         
     def __str__(self): # show only in the print(object)
-        return f"<Variable: name: {self.v_name}; domain: {self.v_domain_name}; parent: {self.v_parent}>\n"
+        return f"<Variable: v_name: {self.v_name}; v_domain: {self.v_domain_name}; v_parent: {self.v_parent}>\n"
 
     def __repr__(self): # show when in a dictionary
-        return f"<Variable: name: {self.v_name}; domain: {self.v_domain_name}; parent: {self.v_parent}>\n"
+        return f"<Variable: v_name: {self.v_name}; v_domain: {self.v_domain_name}; v_parent: {self.v_parent}>\n"
         
-        
+class T_TYPE(Enum):
+    TRUE = 1
+    UNKNOWN = 0
+    FALSE = -1
+    
         
 class D_TYPE(Enum):
     ENUMERATE = 1
@@ -262,5 +272,100 @@ class Domain():
     def isAgent(self):
         return self.agency
 
+def generateObservation(problem:Problem,state,agt_index):
+    new_state = {}
+    for var_index,value in state.items():
+        if bbl.checkVisibility(problem,state,agt_index,var_index)==T_TYPE.TRUE:
+            new_state.update({var_index:value})
+    return new_state
 
+def generatePerspective(problem:Problem, path:List, agt_index):
+    assert(path == [])
+    state, action = path[-1]
+    new_state = generateObservation(problem,state,agt_index)
+    memory = generateMemorization(problem, path[:-1],agt_index)
+
+    for var_index,value in state.items():
+        if var_index not in new_state.keys():
+            if memory == {}:
+                new_state.update({var_index:None})
+            else:
+                new_state.update({var_index:memory[var_index]})
+    return new_state
+
+def generateMemorization(problem:Problem,path:List,agt_index):
+    # if there is no state ahead, then return empty
+    # this can be altered to handle different initial BELIEF
+    if path == []:
+        return {}
+    new_state = {}
+    state,action=path[-1]
+    observation = generateObservation(problem,state,agt_index)
+    perspective = generatePerspective(problem,path[:-1],agt_index)
+    for var_index,value in perspective.items():
+        if not var_index in observation.keys():
+            new_state.update({var_index,value})
+    return new_state
     
+
+class Q_TYPE(Enum):
+    MUTUAL = 0
+    DISTRIBUTION = -1
+    COMMON = 1
+    
+class EQ_TYPE(Enum):
+    KNOWLEDGE = 1
+    SEEING = 0
+    BELIEF = 1
+    
+class EpistemicQuery:
+    q_type = None
+    q_content = None
+    eq_type = None
+    q_group = []
+    mapping = {
+        'k': (Q_TYPE.MUTUAL, EQ_TYPE.KNOWLEDGE),
+        'ek': (Q_TYPE.MUTUAL, EQ_TYPE.KNOWLEDGE),
+        'dk': (Q_TYPE.DISTRIBUTION ,EQ_TYPE.KNOWLEDGE),
+        'ck': (Q_TYPE.COMMON, EQ_TYPE.KNOWLEDGE),
+        's': (Q_TYPE.MUTUAL, EQ_TYPE.SEEING),
+        'es': (Q_TYPE.MUTUAL, EQ_TYPE.SEEING),
+        'ds': (Q_TYPE.DISTRIBUTION, EQ_TYPE.SEEING),
+        'cs': (Q_TYPE.COMMON, EQ_TYPE.SEEING),
+        'b': (Q_TYPE.MUTUAL, EQ_TYPE.BELIEF),
+        'eb': (Q_TYPE.MUTUAL, EQ_TYPE.BELIEF),
+        'db': (Q_TYPE.DISTRIBUTION, EQ_TYPE.BELIEF),
+        'cb': (Q_TYPE.COMMON, EQ_TYPE.BELIEF),
+    }
+    
+    def __init__(self,header,group_str,content):
+        self.q_type,self.eq_type = self.mapping[header]
+        self.q_group = group_str.split(",")
+        self.q_content = content
+        # import re
+        # if not len(re.findall()) == 0:
+        #     self.content = EpistemicQuery
+        
+        
+    def __str__(self): # show only in the print(object)
+        output = f"<epistemic: q_type: {self.q_type}; eq_type: {self.eq_type}; q_group: {self.q_group}; q_content: {self.q_content} >"
+        # if type(self.q_content) == str:
+        #     output += "\n\n"
+        return output
+
+    def __repr__(self): # show when in a dictionary
+        output = f"<epistemic: q_type: {self.q_type}; eq_type: {self.eq_type}; q_group: {self.q_group}; q_content: {self.q_content} >"
+        # if type(self.q_content) == str:
+        #     output += "\n\n"
+        return output
+    
+def generateEpistemicQuery(eq_str):
+    match = re.search("[edc]?[ksb] \[[0-9a-z_,]*\] ",eq_str)
+    if match == None:
+        return eq_str
+    else:
+        eq_list = eq_str.split(" ")
+        header = eq_list[0]
+        agents = eq_list[1][1:-1]
+        content = eq_str[len(header)+len(agents)+4:]
+        return EpistemicQuery(header,agents,generateEpistemicQuery(content))
