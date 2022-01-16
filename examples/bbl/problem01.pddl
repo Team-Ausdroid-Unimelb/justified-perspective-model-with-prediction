@@ -20,7 +20,7 @@
 
     (:init
         (= (dir a) 'sw')
-        (= (dir b) 'sw')
+        (= (dir b) 'ne')
         (= (x a) 3)
         (= (x b) 2)
         (= (x p) 1)
@@ -33,8 +33,8 @@
 
     (:goal (and
         (= (dir b) 'se')
-        (= (:epistemic k [a,b] (= (v p) 't')) 1)
-        (= (:epistemic k [a] k [a,b] (= (v p) 't')) 1)
+        (= (:epistemic k [b] (= (v p) 't')) 0)
+        ; (= (:epistemic k [a] k [a,b] (= (v p) 't')) 1)
         ;todo: put the goal condition here
     ))
 
@@ -43,7 +43,7 @@
         (x integer [0,4])
         (y integer [0,4])
         (v enumerate ['t','f'])
-        ;(epistemic epistemic ['t','f','u']) true false unknown
+        ;(epistemic epistemic ['1','0','2']) true false unknown
     )
 
 
