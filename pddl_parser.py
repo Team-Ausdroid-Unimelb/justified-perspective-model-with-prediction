@@ -308,12 +308,18 @@ if __name__ == "__main__":
     bbl.checkVisibility(problem,problem.initial_state,'a','v-p')
     
     
-    # eq_list = []
-    # for eq_str,value in problem.goal_states["epistemic_g"]:
-    #     eq_list.append((model.generateEpistemicQuery(eq_str),value))
     
+    
+    eq_list = []
+    for eq_str,value in problem.goal_states["epistemic_g"]:
+        eq_list.append((model.generateEpistemicQuery(eq_str),value))
+    
+    
+    for eq,value in eq_list:
+        print(eq)
+        print(model.checkingEQ(problem,eq,[({'dir-a': 'sw', 'dir-b': 'sw', 'x-a': 3, 'x-b': 2, 'x-p': 1, 'y-a': 3, 'y-b': 2, 'y-p': 1, 'v-p': 't'}),(problem.initial_state,"")],problem.initial_state))
     # print(eq_list)
-    print(model.checkingEQs(problem,problem.goal_states['epistemic_g'],[(problem.initial_state,"")]))
+    # print(model.checkingEQs(problem,problem.goal_states['epistemic_g'],[(problem.initial_state,"")]))
     # model.generateEpistemicQuery()
     # actions = prob
     # lem.getLegalActions(i_state)
