@@ -5,6 +5,7 @@ import re
 from typing import List
 
 from numpy.core.defchararray import _join_dispatcher
+from numpy.lib.function_base import extract
 from numpy.lib.shape_base import _put_along_axis_dispatcher
 from numpy.ma.core import common_fill_value
 import bbl
@@ -273,6 +274,87 @@ class Domain():
     def isAgent(self):
         return self.agency
 
+
+    
+
+class Q_TYPE(Enum):
+    MUTUAL = 0
+    DISTRIBUTION = -1
+    COMMON = 1
+    
+class EQ_TYPE(Enum):
+    KNOWLEDGE = 1
+    SEEING = 0
+    BELIEF = 2
+    
+class EpistemicQuery:
+    q_type = None
+    q_content = None
+    eq_type = None
+    q_group = []
+    mapping = {
+        'k': (Q_TYPE.MUTUAL, EQ_TYPE.KNOWLEDGE),
+        'ek': (Q_TYPE.MUTUAL, EQ_TYPE.KNOWLEDGE),
+        'dk': (Q_TYPE.DISTRIBUTION ,EQ_TYPE.KNOWLEDGE),
+        'ck': (Q_TYPE.COMMON, EQ_TYPE.KNOWLEDGE),
+        's': (Q_TYPE.MUTUAL, EQ_TYPE.SEEING),
+        'es': (Q_TYPE.MUTUAL, EQ_TYPE.SEEING),
+        'ds': (Q_TYPE.DISTRIBUTION, EQ_TYPE.SEEING),
+        'cs': (Q_TYPE.COMMON, EQ_TYPE.SEEING),
+        'b': (Q_TYPE.MUTUAL, EQ_TYPE.BELIEF),
+        'eb': (Q_TYPE.MUTUAL, EQ_TYPE.BELIEF),
+        'db': (Q_TYPE.DISTRIBUTION, EQ_TYPE.BELIEF),
+        'cb': (Q_TYPE.COMMON, EQ_TYPE.BELIEF),
+    }
+    
+    def __init__(self,input1,input2,input3,content=None):
+        
+        if content is None:
+            # convert from string, header, g_group, content
+            self.q_type,self.eq_type = self.mapping[input1]
+            self.q_group = input2.split(",")
+            self.q_content = input3
+        else:    
+            # initialize manually
+            self.q_type = input1
+            self.eq_type = input2
+            self.q_group = input3
+            self.q_content = content
+        
+        
+    def __str__(self): # show only in the print(object)
+        output = f"<epistemic: q_type: {self.q_type}; eq_type: {self.eq_type}; q_group: {self.q_group}; q_content: {self.q_content} >"
+        # if type(self.q_content) == str:
+        #     output += "\n\n"
+        return output
+
+    def __repr__(self): # show when in a dictionary
+        output = f"<epistemic: q_type: {self.q_type}; eq_type: {self.eq_type}; q_group: {self.q_group}; q_content: {self.q_content} >"
+        # if type(self.q_content) == str:
+        #     output += "\n\n"
+        return output
+    
+def generateEpistemicQuery(eq_str):
+    match = re.search("[edc]?[ksb] \[[0-9a-z_,]*\] ",eq_str)
+    if match == None:
+        return eq_str
+    else:
+        eq_list = eq_str.split(" ")
+        header = eq_list[0]
+        agents = eq_list[1][1:-1]
+        content = eq_str[len(header)+len(agents)+4:]
+        return EpistemicQuery(header,agents,generateEpistemicQuery(content))
+    
+
+def checkingEQs(problem:Problem,eq_str_list:List,path:List):
+    eq_pair_list = [(generateEpistemicQuery(eq_str),value) for eq_str,value in eq_str_list]
+    logging.debug(f"{eq_pair_list}")
+    for eq,value in eq_pair_list:
+        print(value)
+        if not checkingEQ(problem,eq,path,path[-1][0]) == value:
+            return False
+    return True
+
 def generateObservation(problem:Problem,state,agt_index):
     new_state = {}
     for var_index,value in state.items():
@@ -308,111 +390,75 @@ def generateMemorization(problem:Problem,path:List,agt_index):
         if not var_index in observation.keys():
             new_state.update({var_index,value})
     return new_state
-    
 
-class Q_TYPE(Enum):
-    MUTUAL = 0
-    DISTRIBUTION = -1
-    COMMON = 1
-    
-class EQ_TYPE(Enum):
-    KNOWLEDGE = 1
-    SEEING = 0
-    BELIEF = 2
-    
-class EpistemicQuery:
-    q_type = None
-    q_content = None
-    eq_type = None
-    q_group = []
-    mapping = {
-        'k': (Q_TYPE.MUTUAL, EQ_TYPE.KNOWLEDGE),
-        'ek': (Q_TYPE.MUTUAL, EQ_TYPE.KNOWLEDGE),
-        'dk': (Q_TYPE.DISTRIBUTION ,EQ_TYPE.KNOWLEDGE),
-        'ck': (Q_TYPE.COMMON, EQ_TYPE.KNOWLEDGE),
-        's': (Q_TYPE.MUTUAL, EQ_TYPE.SEEING),
-        'es': (Q_TYPE.MUTUAL, EQ_TYPE.SEEING),
-        'ds': (Q_TYPE.DISTRIBUTION, EQ_TYPE.SEEING),
-        'cs': (Q_TYPE.COMMON, EQ_TYPE.SEEING),
-        'b': (Q_TYPE.MUTUAL, EQ_TYPE.BELIEF),
-        'eb': (Q_TYPE.MUTUAL, EQ_TYPE.BELIEF),
-        'db': (Q_TYPE.DISTRIBUTION, EQ_TYPE.BELIEF),
-        'cb': (Q_TYPE.COMMON, EQ_TYPE.BELIEF),
-    }
-    
-    def __init__(self,header,group_str,content):
-        self.q_type,self.eq_type = self.mapping[header]
-        self.q_group = group_str.split(",")
-        self.q_content = content
-        # import re
-        # if not len(re.findall()) == 0:
-        #     self.content = EpistemicQuery
-        
-        
-    def __str__(self): # show only in the print(object)
-        output = f"<epistemic: q_type: {self.q_type}; eq_type: {self.eq_type}; q_group: {self.q_group}; q_content: {self.q_content} >"
-        # if type(self.q_content) == str:
-        #     output += "\n\n"
-        return output
 
-    def __repr__(self): # show when in a dictionary
-        output = f"<epistemic: q_type: {self.q_type}; eq_type: {self.eq_type}; q_group: {self.q_group}; q_content: {self.q_content} >"
-        # if type(self.q_content) == str:
-        #     output += "\n\n"
-        return output
-    
-def generateEpistemicQuery(eq_str):
-    match = re.search("[edc]?[ksb] \[[0-9a-z_,]*\] ",eq_str)
-    if match == None:
-        return eq_str
-    else:
-        eq_list = eq_str.split(" ")
-        header = eq_list[0]
-        agents = eq_list[1][1:-1]
-        content = eq_str[len(header)+len(agents)+4:]
-        return EpistemicQuery(header,agents,generateEpistemicQuery(content))
-    
-
-def checkingEQs(problem:Problem,eq_str_list:List,path:List):
-    eq_pair_list = [(generateEpistemicQuery(eq_str),value) for eq_str,value in eq_str_list]
-    logging.debug(f"{eq_pair_list}")
-    for eq,value in eq_pair_list:
-        print(value)
-        if not checkingEQ(problem,eq,path) == value:
-            return False
-    return True
-
-def checkingEQ(problem:Problem,eq:EpistemicQuery,path:List):
+def checkingEQ(problem:Problem,eq:EpistemicQuery,path:List,world):
+    var_list = bbl.extractVariables(problem,eq)
     logging.debug(f"checking eq {eq}, {eq.eq_type}")
     if eq.eq_type == EQ_TYPE.BELIEF:
-        print()
+        
+        # generate the world
+        new_observation = generateObservation(problem,world,eq.q_group[0])
+        new_world = generatePerspective(problem,path,eq.q_group[0])
+        logging.debug(f"{eq.q_group}'s perspective {new_world}")
+        # if len(eq.q_group)>1:
+        #     pass
+        # if type(eq.q_content) == str:
+        #     for var_name,value in var_list:
+        #         if not var_name in new_world.keys():
+        #             return checkingEQ(problem,eq,path[:-1],path[-1][0])
+        #         if not new_world[var_name] == value:
+        #             return 0
+        #     return bbl.evaluateS(problem,new_world,eq.q_content)
+        
     elif eq.eq_type == EQ_TYPE.SEEING:
         
         # generate the world
-        world = generateObservation(problem,path[-1][0],eq.q_group[0])
-        logging.debug(f"b's observation {world}")
+        new_world = generateObservation(problem,world,eq.q_group[0])
+        logging.debug(f"{eq.q_group}'s observation {new_world}")
         if len(eq.q_group) > 1:
             # merging observation
             pass
         if type(eq.q_content) == str:
-            return bbl.evaluateS(problem,world,eq.q_content)
+            return bbl.evaluateS(problem,new_world,eq.q_content)
+        else:
+            for var_name,value in var_list:
+                if not var_name in new_world.keys():
+                    return 2
+            result = checkingEQ(problem,eq.q_content,path,world)
+            if not result == 2:
+                return 1
+            else:
+                return 0
+            # return not checkingEQ(problem,eq.q_content,path,world) == 2
     elif eq.eq_type == EQ_TYPE.KNOWLEDGE:   
         logging.debug("checking knowledge")
         # generate the world
-        world = generateObservation(problem,path[-1][0],eq.q_group[0])
-        logging.debug(f"b's observation {world}")
+        new_world = generateObservation(problem,world,eq.q_group[0])
+        logging.debug(f"b's observation {new_world}")
         if len(eq.q_group) > 1:
             # merging observation
             pass
         logging.debug(type(eq.q_content))
         if type(eq.q_content) == str:
-            return bbl.evaluateK(problem,world,eq.q_content)
+            for var_name,value in var_list:
+                if not var_name in new_world.keys():
+                    return 0
+                if not new_world[var_name] == value:
+                    return 0
+            return bbl.evaluateS(problem,new_world,eq.q_content)
+        else:
+            # for var_name,value in var_list:
+                # if not var_name in new_world.keys():
+                #     return 2
+                # if not new_world[var_name] == value:
+                #     return 0
+            eqs = EpistemicQuery(eq.q_type,EQ_TYPE.SEEING,eq.q_group,copy.deepcopy(eq.q_content))
+            result = checkingEQ(problem,eq.q_content,path,world)*checkingEQ(problem,eqs,path,world)
+            if result >2:
+                return 2
+            else:
+                return result
     else:
         logging.error(f"not found eq_type in the query: {eq}")
         
-    
-    if type(eq.q_content) == str:
-        # checking the last level of the formula
-        pass
-    
-    return
