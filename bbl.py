@@ -6,6 +6,7 @@ import numpy as np
 import traceback
 import model
 import re
+import model
 
 # {'agent': <domain_name: agent; Basic type: None; values: []; isAgent?: True>
 # , 'dir': <domain_name: dir; Basic type: D_TYPE.ENUMERATE; values: ['w', 'nw', 'n', 'ne', 'e', 'se', 's', 'sw']; isAgent?: False>
@@ -51,35 +52,51 @@ dir_dict = {
     'nw':135,
 }
 
+# # customized evaluation function
+# def evaluateK(problem,world,statement):
+#     logging.debug(f"evalute knowledge: {statement} in the world: {world}, {type(statement)}, {len(statement)}")
+#     #default evaluation for variables
+#     print()
+#     if not re.search("\([0-9a-z _\-]*,[0-9a-z _\'\"]*\)",statement) == None:
+#         var_name = statement.split(",")[0][1:]
+#         value = statement.split(",")[1][:-1]
+#         if var_name in world.keys():
+#             return value == world[var_name]
+#         else:
+#             return False
+#     else:
+#         logging.warning("the evaluation of the knowledge equation has not defined")
+#         return False
+
+# extract variables from the query
+def extractVariables(problem,eq):
+    # expected output would be a list of (var_name,value)
+    if type(eq.q_content) == str:
+        # default is a single pair of var_name and value
+        if not re.search("\([0-9a-z _\-]*,[0-9a-z _\'\"]*\)",eq.q_content) == None:
+            var_name = eq.q_content.split(",")[0][1:]
+            value = eq.q_content.split(",")[1][:-1]
+            return [(var_name,value)]
+        else:
+            # customized function here
+            pass
+    else:
+        return extractVariables(problem,eq.q_content)
+        
 # customized evaluation function
-def evaluateK(problem,world,statement):
-    logging.debug(f"evalute knowledge: {statement} in the world: {world}, {type(statement)}, {len(statement)}")
+def evaluateS(problem,world,statement):
+    logging.debug(f"evalute seeing: {statement} in the world: {world}, {type(statement)}, {len(statement)}")
     #default evaluation for variables
-    print()
     if not re.search("\([0-9a-z _\-]*,[0-9a-z _\'\"]*\)",statement) == None:
         var_name = statement.split(",")[0][1:]
         value = statement.split(",")[1][:-1]
         if var_name in world.keys():
-            return value == world[var_name]
+            return 1
         else:
-            return False
-    else:
-        logging.warning("the evaluation of the knowledge equation has not defined")
-        return False
-
-# customized evaluation function
-def evaluateS(problem,world,statement):
-    
-    #default evaluation for variables
-    if type(statement) == Tuple and len(statement) == 2:
-        var_name,value = statement
-        if var_name in world.keys():
-            return True
-        else:
-            return False
+            return 0
     else:
         logging.warning("the evaluation of the seeing equation has not defined")
-        return False
+        return 0
 
 
 
@@ -105,7 +122,7 @@ def checkVisibility(problem,state,agt_index,var_index):
         
         # agent is able to see anything in the same location
         if tgt_x == agt_x and tgt_y == agt_y:
-            return True
+            return model.T_TYPE.TRUE
         
         # generate two vector
         v1 = np.array((tgt_y - agt_y,tgt_x - agt_x))
@@ -128,7 +145,7 @@ def checkVisibility(problem,state,agt_index,var_index):
         logging.warning(traceback.format_exc())
         logging.warning("variable not found when check visibility")
         # logging.error("error when checking visibility")
-        return T_TYPE.UNKNOWN
+        return model.T_TYPE.UNKNOWN
 
 
 
