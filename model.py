@@ -5,6 +5,7 @@ import re
 from typing import List
 
 from numpy.core.defchararray import _join_dispatcher
+from numpy.lib.shape_base import _put_along_axis_dispatcher
 from numpy.ma.core import common_fill_value
 import bbl
 
@@ -280,6 +281,7 @@ def generateObservation(problem:Problem,state,agt_index):
     return new_state
 
 def generatePerspective(problem:Problem, path:List, agt_index):
+    logging.debug("generatePerspective")
     assert(path == [])
     state, action = path[-1]
     new_state = generateObservation(problem,state,agt_index)
@@ -316,7 +318,7 @@ class Q_TYPE(Enum):
 class EQ_TYPE(Enum):
     KNOWLEDGE = 1
     SEEING = 0
-    BELIEF = 1
+    BELIEF = 2
     
 class EpistemicQuery:
     q_type = None
@@ -369,3 +371,48 @@ def generateEpistemicQuery(eq_str):
         agents = eq_list[1][1:-1]
         content = eq_str[len(header)+len(agents)+4:]
         return EpistemicQuery(header,agents,generateEpistemicQuery(content))
+    
+
+def checkingEQs(problem:Problem,eq_str_list:List,path:List):
+    eq_pair_list = [(generateEpistemicQuery(eq_str),value) for eq_str,value in eq_str_list]
+    logging.debug(f"{eq_pair_list}")
+    for eq,value in eq_pair_list:
+        print(value)
+        if not checkingEQ(problem,eq,path) == value:
+            return False
+    return True
+
+def checkingEQ(problem:Problem,eq:EpistemicQuery,path:List):
+    logging.debug(f"checking eq {eq}, {eq.eq_type}")
+    if eq.eq_type == EQ_TYPE.BELIEF:
+        print()
+    elif eq.eq_type == EQ_TYPE.SEEING:
+        
+        # generate the world
+        world = generateObservation(problem,path[-1][0],eq.q_group[0])
+        logging.debug(f"b's observation {world}")
+        if len(eq.q_group) > 1:
+            # merging observation
+            pass
+        if type(eq.q_content) == str:
+            return bbl.evaluateS(problem,world,eq.q_content)
+    elif eq.eq_type == EQ_TYPE.KNOWLEDGE:   
+        logging.debug("checking knowledge")
+        # generate the world
+        world = generateObservation(problem,path[-1][0],eq.q_group[0])
+        logging.debug(f"b's observation {world}")
+        if len(eq.q_group) > 1:
+            # merging observation
+            pass
+        logging.debug(type(eq.q_content))
+        if type(eq.q_content) == str:
+            return bbl.evaluateK(problem,world,eq.q_content)
+    else:
+        logging.error(f"not found eq_type in the query: {eq}")
+        
+    
+    if type(eq.q_content) == str:
+        # checking the last level of the formula
+        pass
+    
+    return
