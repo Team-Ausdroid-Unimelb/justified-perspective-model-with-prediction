@@ -182,7 +182,7 @@ def problemParser(file_path):
                 goal_str = goal_str[15:-1:]
                 print(goal_str)
                 i,j = re.search('\)\) .*',goal_str).span()
-                value = goal_str[i+3:j:]
+                value1 = int(goal_str[i+3:j:])
                 query = goal_str[:i+2:]
                 p,q = re.search('\(= \([0-9a-z _]*\) [0-9a-z _\'\"]*\)',query).span()
                 new_str = query[p+3:q-1]
@@ -191,7 +191,7 @@ def problemParser(file_path):
                 var = new_str[m+1:n-1].replace(" ","-")
                 value = new_str[n+1:]
                 query = f'{query}({var},{value})'
-                g_states["epistemic_g"].append((query,value))
+                g_states["epistemic_g"].append((query,value1))
             logging.debug(g_states)
         except AttributeError:
             logging.error("error when extract goal")
@@ -308,11 +308,12 @@ if __name__ == "__main__":
     bbl.checkVisibility(problem,problem.initial_state,'a','v-p')
     
     
-    eq_list = []
-    for eq_str,value in problem.goal_states["epistemic_g"]:
-        eq_list.append((model.generateEpistemicQuery(eq_str),value))
+    # eq_list = []
+    # for eq_str,value in problem.goal_states["epistemic_g"]:
+    #     eq_list.append((model.generateEpistemicQuery(eq_str),value))
     
-    print(eq_list)
+    # print(eq_list)
+    print(model.checkingEQs(problem,problem.goal_states['epistemic_g'],[(problem.initial_state,"")]))
     # model.generateEpistemicQuery()
     # actions = prob
     # lem.getLegalActions(i_state)
