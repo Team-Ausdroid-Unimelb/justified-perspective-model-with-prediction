@@ -3,6 +3,7 @@ import os
 import copy
 import re
 from typing import List
+import epistemic_model
 
 logger = logging.getLogger("pddl_model")
 # from numpy.core.defchararray import _join_dispatcher
@@ -75,13 +76,22 @@ class Problem():
         self.external = external
     
         
-    def isGoal(self,state):
-        logger.debug(f"checking goal for state: {state}")
+    def isGoal(self,state,path):
+        logger.debug(f"checking goal for state: {state} with path: {path}")
+        actions = [ a  for s,a in path]
+        actions = actions[1:]
+        logger.info(f'plan is: {actions}')
+        logger.debug(f'ontic_goal: {self.goal_states["ontic_g"]}')
         for k,i in self.goal_states["ontic_g"].items():
             if not state[k] == i:
                 return False
             
         # adding epistemic checker here
+        logger.debug(f'epistemic_goal: {self.goal_states["epistemic_g"]}')
+        for eq,value in self.goal_states["epistemic_g"]:
+            if not epistemic_model.checkingEQstr(self.external,eq,path,state,self.entities,self.variables) == value:
+                return False
+            
         return True
     
     def getLegalActions(self,state):
@@ -89,43 +99,47 @@ class Problem():
         
         # get all type of actions
         for a_name, a in self.actions.items():
-            print(f"param: {a.a_parameters}; all params: {self._generateParams(a.a_parameters)}")
+            logger.debug(f'action: {a} ')
+            
             
             # generate all possible combination parameters for each type of action
+            logger.debug(f'all params: {self._generateParams(a.a_parameters)}')
             for params in self._generateParams(a.a_parameters):
-                
+                logger.debug(f'works on params: {params}')
                 for i,v in params:
                     a_temp_name = a_name
                     a_temp_parameters = copy.deepcopy(a.a_parameters)
-                    print(f"a's PPPPP {a.a_parameters}")
-                    print(a)
-                    print((i,v))
                     a_temp_precondition = copy.deepcopy(a.a_precondition)
                     a_temp_effects = copy.deepcopy(a.a_effects)
                     a_temp_name = a_temp_name + "-" + v
                     for j in range(len(a_temp_parameters)):
                         v_name, v_effects = a_temp_parameters[j]
-                        v_name = v_name.replace(f'{i}',f'?{v}')
+                        v_name = v_name.replace(f'{i}',f'-{v}')
                         a_temp_parameters[j] = (v_name,v_effects)
                     for j in range(len(a_temp_precondition)):
                         v_name, v_effects = a_temp_precondition[j]
-                        v_name = v_name.replace(f'{i}',f'?{v}')
-                        v_effects = v_effects.replace(f'{i}',f'?{v}')
+                        v_name = v_name.replace(f'{i}',f'-{v}')
+                        v_effects = v_effects.replace(f'{i}',f'-{v}')
                         a_temp_precondition[j] = (v_name,v_effects)
                     for j in range(len(a_temp_effects)):
                         v_name, v_effects = a_temp_effects[j]
-                        v_name = v_name.replace(f'{i}',f'?{v}')
-                        v_effects = v_effects.replace(f'{i}',f'?{v}')
+                        v_name = v_name.replace(f'{i}',f'-{v}')
+                        v_effects = v_effects.replace(f'{i}',f'-{v}')
                         a_temp_effects[j] = (v_name,v_effects)
-                        
-                        
+                    logger.debug(f'precondition after matching parameters: {a_temp_precondition}')
+                    logger.debug(f'effect after matching parameters: {a_temp_effects}')
+                    
+                    
+                    logger.debug(f'legal action before precondition check: {legal_actions}') 
                     # TODO: adding precondition check
                     if self._checkPreconditions(state,a_temp_precondition):
                         legal_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_precondition,a_temp_effects)})
-                    print(legal_actions)
+                    logger.debug(f'legal action after precondition check: {legal_actions}') 
+        logger.debug(f'legal actions: {legal_actions}') 
         return legal_actions
     
     def _checkPreconditions(self,state,preconditions):
+        logger.debug(f'checking precondition: {preconditions}')
         for v,e in preconditions:
             try:
                 if not state[v] == e: return False
@@ -138,14 +152,14 @@ class Problem():
     # generate all possible parameter combinations
     def _generateParams(self,params):
         param_list = []
-        print(params)
+
         if params == []:
             return []
         else:
             i,v = params[0]
-            print((i,v))
+
             for k,l in self.entities.items():
-                print(l)
+
                 if l.e_type == v:
                     next_param = copy.deepcopy(params[1:])
                     rest = self._generateParams(next_param)
@@ -160,34 +174,59 @@ class Problem():
         
         # TODO valid action
         # need to go nested on the brackets
-        
+        logger.debug(f'generate successor for state: {state}')
+        logger.debug(f'generate successor with action: {action}')
         new_state = copy.deepcopy(state)
-        print(action)
-        for v_name,update in action.a_effects:
-            v_name = v_name.replace('?','-')
-            if '-' in update:
-                v2_name,value = update.split('-')
-                v2_name = v2_name.replace('?','-')
-                v2_value = state[v2_name]
-                domain_name = self.variables[v_name].v_domain_name
-                if self.domains[domain_name].d_type == D_TYPE.ENUMERATE:
-                    for index, item in enumerate(self.domains[domain_name].d_values):
-                        if item == v2_value:
-                            break
-                    new_state[v_name] = self.domains[domain_name].d_values[(index-int(value))%len(self.domains[domain_name].d_values)]
-            elif '+' in update:
-                v2_name,value = update.split('+')
-                v2_name = v2_name.replace('?','-')
-                v2_value = state[v2_name]
-                domain_name = self.variables[v_name].v_domain_name
-                if self.domains[domain_name].d_type == D_TYPE.ENUMERATE:
-                    for index, item in enumerate(self.domains[domain_name].d_values):
-                        if item == v2_value:
-                            break
-                    new_state[v_name] = self.domains[domain_name].d_values[(index+int(value))%len(self.domains[domain_name].d_values)]
-            elif '=' in update:
-                pass
         
+        for v_name,update in action.a_effects:
+            old_value = state[v_name]
+            # v_name = v_name.replace('?','-')
+            logger.debug(f'single effect update: {v_name}/{old_value}/{update}')
+            if '-' in update:
+                logger.debug(f'update -')
+                delta_value = int(update.split('-')[1])
+                logger.debug(f'delta value: {delta_value}')
+                domain_name = self.variables[v_name].v_domain_name
+                logger.debug(f'domain_name {domain_name}')
+                if self.domains[domain_name].d_type == D_TYPE.ENUMERATE:
+                    index = self.domains[domain_name].d_values.index(old_value)
+                    logger.debug(f'index: {index} in the domain: {self.domains[domain_name].d_values}')
+                    new_index = (index-delta_value) % len(self.domains[domain_name].d_values)
+                    logger.debug(f'new_index: {new_index} in the domain: {self.domains[domain_name].d_values}')
+                    new_value = self.domains[domain_name].d_values[new_index]
+                    logger.debug(f'new_value: {new_value} in the domain: {self.domains[domain_name].d_values}')
+                    new_state[v_name] = new_value
+            elif '+' in update:
+                delta_value = int(update.split('+')[-1])
+                domain_name = self.variables[v_name].v_domain_name
+                if self.domains[domain_name].d_type == D_TYPE.ENUMERATE:
+                    index = self.domains[domain_name].d_values.index(old_value)
+                    new_index = (index+delta_value) % len(self.domains[domain_name].d_values)
+                    new_state[v_name] = self.domains[domain_name].d_values[new_index]
+            # if '-' in update:
+            #     v2_name,value = update.split('-')
+            #     v2_name = v2_name.replace('?','-')
+            #     v2_value = state[v2_name]
+            #     domain_name = self.variables[v_name].v_domain_name
+            #     if self.domains[domain_name].d_type == D_TYPE.ENUMERATE:
+            #         for index, item in enumerate(self.domains[domain_name].d_values):
+            #             if item == v2_value:
+            #                 break
+            #         new_state[v_name] = self.domains[domain_name].d_values[(index-int(value))%len(self.domains[domain_name].d_values)]
+            # elif '+' in update:
+            #     v2_name,value = update.split('+')
+            #     v2_name = v2_name.replace('?','-')
+            #     v2_value = state[v2_name]
+            #     domain_name = self.variables[v_name].v_domain_name
+            #     if self.domains[domain_name].d_type == D_TYPE.ENUMERATE:
+            #         for index, item in enumerate(self.domains[domain_name].d_values):
+            #             if item == v2_value:
+            #                 break
+            #         new_state[v_name] = self.domains[domain_name].d_values[(index+int(value))%len(self.domains[domain_name].d_values)]
+            else:
+                new_state[v_name] = update
+
+        logger.debug(f'new state is : {new_state}')
         return new_state
         
         

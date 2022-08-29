@@ -26,7 +26,7 @@
     (:goal (and
         ; (= (:ontic (= (dir b) 'se'))
         (= (:epistemic b [a] (= (face c) 'head')) 1)
-        ; (= (:epistemic b [b] (= (face c) 'tail')) 1)
+        (= (:epistemic b [b] (= (face c) 'tail')) 1)
         ; (= (:epistemic b [b] b [a] (= (face c) 'head')) 1)
         ; (= (:epistemic b [b] (= (face c) 'head')) 1)
         ; (= (:epistemic k [b] k [a] (= (v p) 't')) 0)

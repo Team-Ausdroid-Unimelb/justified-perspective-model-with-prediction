@@ -9,6 +9,8 @@ import re
 import pddl_model
 import epistemic_model
 
+
+logger = logging.getLogger("coin")
 # import model
 
 # {'agent': <domain_name: agent; Basic type: None; values: []; isAgent?: True>
@@ -57,7 +59,7 @@ dir_dict = {
 
 # # customized evaluation function
 # def evaluateK(problem,world,statement):
-#     logging.debug(f"evalute knowledge: {statement} in the world: {world}, {type(statement)}, {len(statement)}")
+#     logger.debug(f"evalute knowledge: {statement} in the world: {world}, {type(statement)}, {len(statement)}")
 #     #default evaluation for variables
 #     print()
 #     if not re.search("\([0-9a-z _\-]*,[0-9a-z _\'\"]*\)",statement) == None:
@@ -68,11 +70,12 @@ dir_dict = {
 #         else:
 #             return False
 #     else:
-#         logging.warning("the evaluation of the knowledge equation has not defined")
+#         logger.warning("the evaluation of the knowledge equation has not defined")
 #         return False
 
 # extract variables from the query
-def extractVariables(problem,eq):
+def extractVariables(eq):
+    logger.debug(eq)
     # expected output would be a list of (var_name,value)
     if type(eq.q_content) == str:
         # default is a single pair of var_name and value
@@ -86,11 +89,11 @@ def extractVariables(problem,eq):
             # customized function here
             pass
     else:
-        return extractVariables(problem,eq.q_content)
+        return extractVariables(eq.q_content)
         
 # customized evaluation function
-def evaluateS(problem,world,statement):
-    logging.debug(f"evalute seeing: {statement} in the world: {world}, {type(statement)}, {len(statement)}")
+def evaluateS(world,statement):
+    logger.debug(f"evalute seeing: {statement} in the world: {world}, {type(statement)}, {len(statement)}")
     #default evaluation for variables
     if world == {}:
         return 2
@@ -104,21 +107,21 @@ def evaluateS(problem,world,statement):
         else:
             return 0
     else:
-        logging.warning("the evaluation of the seeing equation has not defined")
+        logger.warning("the evaluation of the seeing equation has not defined")
         return 0
 
 
 
-def checkVisibility(problem,state,agt_index,var_index):
+def checkVisibility(problem,state,agt_index,var_index,entities,variables):
     
-    logging.debug(f"checkVisibility(_,{state},{agt_index},{var_index})")
+    logger.debug(f"checkVisibility(_,{state},{agt_index},{var_index})")
     try:
-        tgt_index = problem.variables[var_index].v_parent
+        tgt_index = variables[var_index].v_parent
         # check if the agt_index can be found
-        assert(problem.entities[agt_index].e_type==pddl_model.E_TYPE.AGENT)
+        assert(entities[agt_index].e_type==pddl_model.E_TYPE.AGENT)
         
         # agents are able to see each other
-        if problem.entities[tgt_index].e_type==pddl_model.E_TYPE.AGENT:
+        if entities[tgt_index].e_type==pddl_model.E_TYPE.AGENT:
             return pddl_model.convertBooltoT_TYPE(True)
         else:
             
@@ -126,7 +129,7 @@ def checkVisibility(problem,state,agt_index,var_index):
             return  pddl_model.convertBooltoT_TYPE(state[f"peeking-{agt_index}"]=='t')
         
     #     # extract necessary common constants from given domain
-    #     # logging.debug(f"necessary common constants from given domain")
+    #     # logger.debug(f"necessary common constants from given domain")
     #     agt_angle = common_constants[f"angle-{agt_index}"]
         
     #     # agent is able to see anything in the same location
@@ -138,22 +141,22 @@ def checkVisibility(problem,state,agt_index,var_index):
     #     v1 = v1 / np.linalg.norm(v1)
     #     radians = math.radians(agt_dir)
     #     v2 = np.array((math.cos(radians),math.sin(radians)))
-    #     # logging.debug(f'v1 {v1}, v2 {v2}')
+    #     # logger.debug(f'v1 {v1}, v2 {v2}')
     #     cos_ = v1.dot(v2)
     #     d_radians = math.acos(cos_)
     #     d_degrees = math.degrees(d_radians)
-    #     # logging.debug(f'delta angle degree is {round(d_degrees,3)}')
+    #     # logger.debug(f'delta angle degree is {round(d_degrees,3)}')
         
     #     if d_degrees <= agt_angle/2.0 and d_degrees >= - agt_angle/2.0:
     #         inside = model.T_TYPE.TRUE
     #     else:
     #         inside =model.T_TYPE.FALSE
-    #     # logging.debug(f'visibility is {inside}')
+    #     # logger.debug(f'visibility is {inside}')
     #     return inside
     except KeyError:
-        logging.warning(traceback.format_exc())
-        logging.warning("variable not found when check visibility")
-        # logging.error("error when checking visibility")
+        logger.warning(traceback.format_exc())
+        logger.warning("variable not found when check visibility")
+        # logger.error("error when checking visibility")
         return pddl_model.T_TYPE.UNKNOWN
 
 

@@ -62,14 +62,14 @@ def loadParameter():
     logger.info("Parsing Options")
     parser = OptionParser(usageStr)
 
-    parser.add_option('-d', '--domain', help='domain', default='bbl')
-    parser.add_option('-w', '--workers', help='path to the files that list all the available servers', default='configs/workers.json')
-    parser.add_option('-o','--output', help='output directory for the running results, replays and logs (default: output)',default='output')
-    parser.add_option('-t','--title', help='title of the tournament options test, ones', default='test')
-    parser.add_option('--staffTeamOnly', action='store_true', help='only run among the staff teams', default=False)
-    parser.add_option('-i','--id', help='student id for run single assignment', default='000000')
-    parser.add_option('-s','--savefiles', action='store_true', help='keep the student repos', default=False)
-    parser.add_option('--tag', help='the tag for submission', default='submission')
+    parser.add_option('-d', '--domain_name', help='domain_name, which is the same as domain_name.py and folder under examples', default='coin')
+    parser.add_option('-p', '--problem', help='path to the problem file', default='')
+    parser.add_option('-o','--output', help='output directory for the running results (default: output)',default='output')
+    # parser.add_option('-t','--title', help='title of the tournament options test, ones', default='test')
+    # parser.add_option('--staffTeamOnly', action='store_true', help='only run among the staff teams', default=False)
+    # parser.add_option('-i','--id', help='student id for run single assignment', default='000000')
+    # parser.add_option('-s','--savefiles', action='store_true', help='keep the student repos', default=False)
+    # parser.add_option('--tag', help='the tag for submission', default='submission')
 
 
     options, otherjunk = parser.parse_args(sys.argv[1:] )
@@ -102,11 +102,20 @@ if __name__ == '__main__':
     
     
     # load pddl files
-    domains,i_state,g_states,agent_index,obj_index,variables,d_name,p_name= pddl_parser.problemParser("examples/coin/problem01.pddl")
-    actions,domain_name = pddl_parser.domainParser("examples/coin/domain.pddl")
+    domains,i_state,g_states,agent_index,obj_index,variables,d_name,p_name= pddl_parser.problemParser(options.problem)
+    actions,domain_name = pddl_parser.domainParser(f"./examples/{options.domain_name}/domain.pddl")
     
-    import examples.coin.coin as coin
-    problem = pddl_model.Problem(domains,i_state,g_states,agent_index,obj_index,variables,actions,coin)
+    external = None
+    try:
+        external = importlib.import_module(f"examples.{options.domain_name}.{options.domain_name}")
+    except (NameError, ImportError, IOError):
+        print('Error: Agent at "' + teams[i]['agent'] + '" could not be loaded!', file=sys.stderr)
+        traceback.print_exc()
+        pass
+    except:
+        pass
+
+    problem = pddl_model.Problem(domains,i_state,g_states,agent_index,obj_index,variables,actions,external)
     
     # print(problem)
     
@@ -128,25 +137,30 @@ if __name__ == '__main__':
     # import coin
     
     
-    eq_list = []
-    for eq_str,value in problem.goal_states["epistemic_g"]:
-        eq_list.append((epistemic_model.generateEpistemicQuery(eq_str),value))
+    # eq_list = []
+    # for eq_str,value in problem.goal_states["epistemic_g"]:
+    #     eq_list.append((epistemic_model.generateEpistemicQuery(eq_str),value))
     
     
-    for eq,value in eq_list:
-        # print(eq)
-        print(util.displayEQuery(eq))
-        # s_0 = {'dir-a': 'sw', 'dir-b': 'sw', 'x-a': 3, 'x-b': 2, 'x-p': 1, 'y-a': 3, 'y-b': 2, 'y-p': 1, 'v-p': 't'}
-        # s_1 = {'dir-a': 'sw', 'dir-b': 'n', 'x-a': 3, 'x-b': 2, 'x-p': 1, 'y-a': 3, 'y-b': 2, 'y-p': 1, 'v-p': 't'}
-        # print(model.checkingEQ(problem,eq,[({'dir-a': 'sw', 'dir-b': 'sw', 'x-a': 3, 'x-b': 2, 'x-p': 1, 'y-a': 3, 'y-b': 2, 'y-p': 1, 'v-p': 't'},""),(problem.initial_state,"a1")],problem.initial_state))
-        # print(model.checkingEQ(problem,eq,[(s_0,"")],s_0))
+    # for eq,value in eq_list:
+    #     # print(eq)
+    #     print(util.displayEQuery(eq))
+    #     # s_0 = {'dir-a': 'sw', 'dir-b': 'sw', 'x-a': 3, 'x-b': 2, 'x-p': 1, 'y-a': 3, 'y-b': 2, 'y-p': 1, 'v-p': 't'}
+    #     # s_1 = {'dir-a': 'sw', 'dir-b': 'n', 'x-a': 3, 'x-b': 2, 'x-p': 1, 'y-a': 3, 'y-b': 2, 'y-p': 1, 'v-p': 't'}
+    #     # print(model.checkingEQ(problem,eq,[({'dir-a': 'sw', 'dir-b': 'sw', 'x-a': 3, 'x-b': 2, 'x-p': 1, 'y-a': 3, 'y-b': 2, 'y-p': 1, 'v-p': 't'},""),(problem.initial_state,"a1")],problem.initial_state))
+    #     # print(model.checkingEQ(problem,eq,[(s_0,"")],s_0))
         
-        s_0 = {'peeking-a': 'f','peeking-b': 'f', 'face-c': 'head'}
-        s_1 = {'peeking-a': 't','peeking-b': 'f', 'face-c': 'head'}
-        s_2 = {'peeking-a': 'f','peeking-b': 'f', 'face-c': 'head'}
-        s_3 = {'peeking-a': 'f','peeking-b': 't', 'face-c': 'head'}
-        s_4 = {'peeking-a': 'f','peeking-b': 't', 'face-c': 'tail'}
-        s_5 = {'peeking-a': 'f','peeking-b': 'f', 'face-c': 'tail'}
+    #     s_0 = {'peeking-a': 'f','peeking-b': 'f', 'face-c': 'head'}
+    #     s_1 = {'peeking-a': 't','peeking-b': 'f', 'face-c': 'head'}
+    #     s_2 = {'peeking-a': 'f','peeking-b': 't', 'face-c': 'head'}
+    #     s_3 = {'peeking-a': 'f','peeking-b': 'f', 'face-c': 'head'}
+    #     s_4 = {'peeking-a': 'f','peeking-b': 't', 'face-c': 'tail'}
+    #     # s_5 = {'peeking-a': 'f','peeking-b': 'f', 'face-c': 'tail'}
         
         
-        print(epistemic_model.checkingEQ(problem,eq,[(s_0,""),(s_1,""),(s_2,""),(s_3,""),(s_4,""),(s_5,"")],s_4))
+    #     print(epistemic_model.checkingEQ(problem.external,eq,[(s_0,""),(s_1,""),(s_2,""),(s_3,""),(s_4,"")],s_4,problem.entities,problem.variables))
+        
+        
+        
+        
+        

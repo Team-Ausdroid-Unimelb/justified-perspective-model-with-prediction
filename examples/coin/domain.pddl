@@ -21,7 +21,7 @@
 
     ;define actions here
     (:action peek
-        :parameters (?i - coin)
+        :parameters (?i - agent)
         :precondition (and (= (peeking ?i) 'f'))
         :effect (and 
             (= (peeking ?i) 't')
@@ -29,7 +29,7 @@
     )
 
     (:action back
-        :parameters (?i - coin)
+        :parameters (?i - agent)
         :precondition (and (= (peeking ?i) 't'))
         :effect (and 
             (= (peeking ?i) 'f')
@@ -37,10 +37,10 @@
     )
 
     (:action turn_coin
-        :parameters (?i - coin)
+        :parameters (?i - object)
         :precondition (and )
         :effect (and 
-            (= (face ?i) ((face ?i) - 1))
+            (= (face ?i) (-1)))
         )
     )
  

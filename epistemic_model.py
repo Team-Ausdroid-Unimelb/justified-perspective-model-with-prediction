@@ -70,7 +70,7 @@ class EpistemicQuery:
 def generateEpistemicQuery(eq_str):
     match = re.search("[edc]?[ksb] \[[0-9a-z_,]*\] ",eq_str)
     if match == None:
-        logging.debug(f"return eq string {eq_str}")
+        logger.debug(f"return eq string {eq_str}")
         return eq_str
     else:
         eq_list = eq_str.split(" ")
@@ -80,54 +80,55 @@ def generateEpistemicQuery(eq_str):
         return EpistemicQuery(header,agents,generateEpistemicQuery(content))
     
 
-def checkingEQs(problem:pddl_model.Problem,eq_str_list:typing.List,path:typing.List):
-    eq_pair_list = [(generateEpistemicQuery(eq_str),value) for eq_str,value in eq_str_list]
-    logging.debug(f"{eq_pair_list}")
-    for eq,value in eq_pair_list:
-        print(value)
-        if not checkingEQ(problem,eq,path,path[-1][0]) == value:
-            return False
-    return True
+# def checkingEQs(external,eq_str_list:typing.List,path:typing.List):
+#     eq_pair_list = [(generateEpistemicQuery(eq_str),value) for eq_str,value in eq_str_list]
+#     logger.debug(f"{eq_pair_list}")
+#     for eq,value in eq_pair_list:
+#         print(value)
+#         if not checkingEQ(external,eq,path,path[-1][0]) == value:
+#             return False
+#     return True
 
 # update this function if we change how the model works
-def getObservations(problem:pddl_model.Problem,state,agt_id_nest_lst,):
-    logging.debug(f"generating observation of agent {agt_id_nest_lst} from state: {state}")
+def getObservations(external,state,agt_id_nest_lst,entities,variables):
+    logger.debug(f"generating observation of agent {agt_id_nest_lst} from state: {state}")
     new_state = state.copy()
     temp_agt_nest_list = agt_id_nest_lst.copy()
     while not temp_agt_nest_list == []:
         temp_agent_list =  temp_agt_nest_list.pop()
-        new_state = getOneObservation(problem,new_state,temp_agent_list[0])
+        new_state = getOneObservation(external,new_state,temp_agent_list[0],entities,variables)
         # while not temp_agent_list ==[]:
         #     getOneObservation
+    logger.debug(f'observation of agent {agt_id_nest_lst} is {new_state}')
     return new_state
 
-def getOneObservation(problem:pddl_model.Problem,state,agt_id):
+def getOneObservation(external,state,agt_id,entities,variables):
     new_state = {}
     for var_index,value in state.items():
-        if problem.external.checkVisibility(problem,state,agt_id,var_index)==pddl_model.T_TYPE.TRUE:
-        # if bbl.checkVisibility(problem,state,agt_id,var_index)==T_TYPE.TRUE:
+        if external.checkVisibility(external,state,agt_id,var_index,entities,variables)==pddl_model.T_TYPE.TRUE:
+        # if bbl.checkVisibility(external,state,agt_id,var_index)==T_TYPE.TRUE:
         #     new_state.update({var_index: (value if not value == VALUE.UNSEEN else VALUE.SEEN)})
         # else:
         #     new_state.update({var_index:VALUE.UNSEEN})
             new_state.update({var_index: value})
     return new_state
 
-# def generatePerspective(problem:Problem, path:typing.List, agt_index):
-#     logging.debug("generatePerspective")
+# def generatePerspective(external:Problem, path:typing.List, agt_index):
+#     logger.debug("generatePerspective")
 #     if path == []:
 #         return {}
 #     # assert(path == [])
 #     state, action = path[-1]
-#     new_state = getObservations(problem,state,agt_index)
-#     memory = generateMemorization(problem, path[:-1],agt_index)
+#     new_state = getObservations(external,state,agt_index)
+#     memory = generateMemorization(external, path[:-1],agt_index)
 
-def identifyMemorizedValue(problem:pddl_model.Problem, path:typing.List, agt_id_nest_lst, ts_index,variable_index):
+def identifyMemorizedValue(external, path:typing.List, agt_id_nest_lst, ts_index,variable_index,entities,variables):
     ts_index_temp = ts_index
     if ts_index_temp <0: return None
     
     while ts_index_temp >=0:
         state,action = path[ts_index]
-        temp_observation = getObservations(problem,state,agt_id_nest_lst)
+        temp_observation = getObservations(external,state,agt_id_nest_lst,entities,variables)
         if temp_observation[variable_index] == None:
             ts_index_temp += -1
         else:
@@ -137,14 +138,14 @@ def identifyMemorizedValue(problem:pddl_model.Problem, path:typing.List, agt_id_
        
     while ts_index_temp < len(path):
         state,action = path[ts_index]
-        temp_observation = getObservations(problem,state,agt_id_nest_lst)
+        temp_observation = getObservations(external,state,agt_id_nest_lst,entities,variables)
         if temp_observation[variable_index] == None:
             ts_index_temp += 1
         else:
             return temp_observation[variable_index]        
     return None
 
-def identifyLastSeenTimestamp(problem:pddl_model.Problem, path:typing.List, agt_id_nest_lst,variable_index):
+def identifyLastSeenTimestamp(external, path:typing.List, agt_id_nest_lst,variable_index,entities,variables):
     ts_index_temp = len(path) -1
     
     # checking whether the variable has been seen by the agent list before
@@ -153,23 +154,28 @@ def identifyLastSeenTimestamp(problem:pddl_model.Problem, path:typing.List, agt_
         state,action = path[ts_index_temp]
 
         # checking with observation
-        if variable_index in getObservations(problem,state,agt_id_nest_lst) :
+        if variable_index in getObservations(external,state,agt_id_nest_lst,entities,variables) :
             return ts_index_temp
         else:
             ts_index_temp -= 1
     return -1
 
-def generatePerspective(problem:pddl_model.Problem, path:typing.List, agt_id_nest_lst):
-    logging.debug("generatePerspective")
+def generatePerspective(external, path:typing.List, agt_id_nest_lst,entities,variables):
+    logger.debug("generatePerspective")
     if path == []:
         return {}
     # assert(path == [])
     state, action = path[-1]
     new_state = {}
-    print(state)
+    logger.debug(f'current state: {state}')
+    logger.debug(f'path: {path}')
+    
     for v,e in state.items():
-        ts_index = identifyLastSeenTimestamp(problem, path, agt_id_nest_lst,v)
-        value = identifyMemorizedValue(problem, path, agt_id_nest_lst, ts_index,v)
+        logger.debug(f'\t find history value for {v},{e}')
+        ts_index = identifyLastSeenTimestamp(external, path, agt_id_nest_lst,v,entities,variables)
+        logger.debug(f'\t timestamp index: {ts_index}')
+        value = identifyMemorizedValue(external, path, agt_id_nest_lst, ts_index,v,entities,variables)
+        logger.debug(f'\t value is: {value}')
         new_state.update({v:value})
     return new_state 
 
@@ -182,7 +188,7 @@ def generatePerspective(problem:pddl_model.Problem, path:typing.List, agt_id_nes
 #                 new_state.update({var_index:memory[var_index]})
 #     return new_state
 
-# def generateMemorization(problem:Problem,path:typing.List,agt_index):
+# def generateMemorization(external:Problem,path:typing.List,agt_index):
 #     # if there is no state ahead, then return empty
 #     # this can be altered to handle different initial BELIEF
 #     if path == []:
@@ -190,112 +196,116 @@ def generatePerspective(problem:pddl_model.Problem, path:typing.List, agt_id_nes
 #     new_state = {}
 #     print(path)
 #     state,action=path[-1]
-#     observation = getObservations(problem,state,agt_index)
-#     perspective = generatePerspective(problem,path[:-1],agt_index)
+#     observation = getObservations(external,state,agt_index)
+#     perspective = generatePerspective(external,path[:-1],agt_index)
 #     for var_index,value in perspective.items():
 #         if not var_index in observation.keys():
 #             new_state.update({var_index,value})
 #     return new_state
 
+def checkingEQstr(external,eq_str,path:typing.List,state,entities,variables):
+    logger.debug(f'checking for eq string: {eq_str}')
+    eq = generateEpistemicQuery(eq_str)
+    return checkingEQ(external, eq, path, state, entities, variables)
 
-def checkingEQ(problem:pddl_model.Problem,eq:EpistemicQuery,path:typing.List,world):
-    var_list = problem.external.extractVariables(problem,eq)
-    logging.debug(f"checking eq {eq}, {eq.eq_type}")
+def checkingEQ(external,eq:EpistemicQuery,path:typing.List,state,entities,variables):
+    var_list = external.extractVariables(eq)
+    logger.debug(f"checking eq {eq}, {eq.eq_type}")
     if eq.eq_type == EQ_TYPE.BELIEF:
         
-        logging.debug(f"checking belief for {eq}")
-        # generate the world
-        new_observation = getObservations(problem,world,eq.q_group)
-        new_world = generatePerspective(problem,path,eq.q_group)
-        logging.debug(f"{eq.q_group}'s perspective {new_world}")
+        logger.debug(f"checking belief for {eq}")
+        # generate the state
+        # new_observation = getObservations(external,state,eq.q_group,entities,variables)
+        new_state = generatePerspective(external,path,eq.q_group,entities,variables)
+        logger.debug(f"{eq.q_group}'s perspective {new_state}")
         if len(eq.q_group)>1:
             pass
         eva = 2
-        logging.debug(f"checking belief for {eq.q_content}")
+        logger.debug(f"checking belief for {eq.q_content}")
         if type(eq.q_content) == str:
             for var_name,value in var_list:
 
-                if not var_name in new_world.keys():
-                    logging.debug(f"return 0 due to {var_name} {len(var_name)} not in { new_world.keys() }")
+                if not var_name in new_state.keys():
+                    logger.debug(f"return 0 due to {var_name} {len(var_name)} not in { new_state.keys() }")
                     return 0
-                if not new_world[var_name] == value:
-                    logging.debug(f"return 0 due to {value} not equal to {new_world[var_name]}")
+                if not new_state[var_name] == value:
+                    logger.debug(f"return 0 due to {value} not equal to {new_state[var_name]}")
                     return 0
-            eva = problem.external.evaluateS(problem,new_world,eq.q_content)
+            eva = external.evaluateS(new_state,eq.q_content)
         else:
-            eva = checkingEQ(problem,eq.q_content,path,new_world)
+            eva = checkingEQ(external,eq.q_content,path,new_state,entities,variables)
         
         return eva
         # if eva == 2:
-        #     return checkingEQ(problem,eq,path[:-1],path[-1][0])
+        #     return checkingEQ(external,eq,path[:-1],path[-1][0])
         # else:
         #     return eva
         # if type(eq.q_content) == str:
         #     # for var_name,value in var_list:
-        #     #     if not var_name in new_world.keys():
-        #     #         return checkingEQ(problem,eq,path[:-1],path[-1][0])
-        #     #     if not new_world[var_name] == value:
+        #     #     if not var_name in new_state.keys():
+        #     #         return checkingEQ(external,eq,path[:-1],path[-1][0])
+        #     #     if not new_state[var_name] == value:
         #     #         return 0
-        #     if bbl.evaluateS(problem,new_world,eq.q_content) == 2:
-        #         return checkingEQ(problem,eq,path[:-1],path[-1][0])
+        #     if bbl.evaluateS(new_state,eq.q_content) == 2:
+        #         return checkingEQ(external,eq,path[:-1],path[-1][0])
         #     else:
-        #         return bbl.evaluateS(problem,new_world,eq.q_content) == 2
+        #         return bbl.evaluateS(new_state,eq.q_content) == 2
         # else:
-        #     if bbl.evaluateS(problem,new_world,eq.q_content) == 2:
-        #         return checkingEQ(problem,eq,path[:-1],path[-1][0])
+        #     if bbl.evaluateS(new_state,eq.q_content) == 2:
+        #         return checkingEQ(external,eq,path[:-1],path[-1][0])
         #     else:
-        #         return bbl.evaluateS(problem,new_world,eq.q_content) == 2
+        #         return bbl.evaluateS(new_state,eq.q_content) == 2
         #     pass
     elif eq.eq_type == EQ_TYPE.SEEING:
         
-        logging.debug(f"checking seeing for {eq}")
-        # generate the world
-        new_world = getObservations(problem,world,eq.q_group)
-        logging.debug(f"{eq.q_group}'s observation {new_world}")
+        logger.debug(f"checking seeing for {eq}")
+        # generate the state
+        new_state = getObservations(external,state,eq.q_group,entities,variables)
+        logger.debug(f"{eq.q_group}'s observation {new_state}")
         if len(eq.q_group) > 1:
             # merging observation
             pass
         if type(eq.q_content) == str:
-            return problem.external.evaluateS(problem,new_world,eq.q_content)
+            return external.evaluateS(new_state,eq.q_content)
         else:
             for var_name,value in var_list:
-                if not var_name in new_world.keys():
+                if not var_name in new_state.keys():
                     return 2
-            result = checkingEQ(problem,eq.q_content,path,new_world)
+            result = checkingEQ(external,eq.q_content,path,new_state,entities,variables)
             if not result == 2:
                 return 1
             else:
                 return 0
-            # return not checkingEQ(problem,eq.q_content,path,world) == 2
+            # return not checkingEQ(external,eq.q_content,path,state) == 2
     elif eq.eq_type == EQ_TYPE.KNOWLEDGE:   
         
-        logging.debug(f"checking knowledge for {eq}")
-        # generate the world
-        new_world = getObservations(problem,world,eq.q_group)
-        logging.debug(f"b's observation {new_world}")
+        logger.debug(f"checking knowledge for {eq}")
+        # generate the state
+        new_state = getObservations(external,state,eq.q_group,entities,variables)
+        logger.debug(f"b's observation {new_state}")
         if len(eq.q_group) > 1:
             # merging observation
             pass
-        logging.debug(type(eq.q_content))
+        logger.debug(type(eq.q_content))
         if type(eq.q_content) == str:
             for var_name,value in var_list:
-                if not var_name in new_world.keys():
+                if not var_name in new_state.keys():
                     return 0
-                if not new_world[var_name] == value:
+                if not new_state[var_name] == value:
                     return 0
-            return problem.external.evaluateS(problem,new_world,eq.q_content)
+            return external.evaluateS(new_state,eq.q_content)
         else:
             # for var_name,value in var_list:
-                # if not var_name in new_world.keys():
+                # if not var_name in new_state.keys():
                 #     return 2
-                # if not new_world[var_name] == value:
+                # if not new_state[var_name] == value:
                 #     return 0
             eqs = EpistemicQuery(eq.q_type,EQ_TYPE.SEEING,eq.q_group,copy.deepcopy(eq.q_content))
-            result = checkingEQ(problem,eq.q_content,path,world)*checkingEQ(problem,eqs,path,world)
+            result = checkingEQ(external,eq.q_content,path,state,entities,variables)*checkingEQ(external,eqs,path,state,entities,variables)
             if result >2:
                 return 2
             else:
                 return result
     else:
-        logging.error(f"not found eq_type in the query: {eq}")
+        logger.error(f"not found eq_type in the query: {eq}")
         

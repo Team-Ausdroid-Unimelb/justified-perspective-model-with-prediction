@@ -157,13 +157,15 @@ def problemParser(file_path):
             # loading ontic goals
             logger.debug("extract ontic goal propositions")
             g_states.update({"ontic_g":{}})
-            ontic_goal_list = re.findall('\(= \([0-9a-z_ ]*\) [0-9a-z_\'\"]*\)',found[10:-1:])
-            logger.debug(ontic_goal_list)
+            # ontic_goal_list = re.findall('\(= \([0-9a-z_ ]*\) [0-9a-z_\'\"]*\)',found[10:-1:])
+            ontic_goal_list = re.findall('\(= \(:ontic[ 0-9a-z_\[\],]*\(= \([ 0-9a-z_]*\) [0-9a-z_\'\"]*\)\) [0-9a-z_\'\"]*\)',found[10:-1:])  
+
+            logger.debug(f'ontic goal list: {ontic_goal_list}')
             for goal_str in ontic_goal_list:
-                goal_str = goal_str[3:-1:]
+                goal_str = goal_str[12:-1:]
                 i,j = re.search("\(.*\)", goal_str).span()
                 var_str = goal_str[i+1:j-1:].replace(" ","-")
-                print(var_str)
+
                 value = goal_str[j+1::]
                 # value = re.search('".*"',init_str[j+1::]).group(0)
                 if "'" in value:
@@ -182,7 +184,7 @@ def problemParser(file_path):
             logger.debug(epistemic_goal_list)
             for goal_str in epistemic_goal_list:
                 goal_str = goal_str[15:-1:]
-                print(goal_str)
+
                 i,j = re.search('\)\) .*',goal_str).span()
                 value1 = int(goal_str[i+3:j:])
                 query = goal_str[:i+2:]
@@ -260,88 +262,57 @@ def domainParser(file_path):
             logger.error("error when extract domain name")
             exit()  
         
-        print(str)
         
         logger.debug("extract actions")
         try:
             action_list = str.split("(:action ")[1::]
-            print(action_list)
+
             for action_str in action_list:
                 parameters = []
-                precondition = []
+                preconditions = []
                 effects = []
                 action_str = action_str[:-1:]
                 action_name = action_str.split(" ")[0]
+                
+                # decode parameters
                 parameters_str = re.search(':parameters\(.*\):precondition',action_str).group()
+                logger.debug(f'parameters_str: {parameters_str}')
                 for p_str in parameters_str[12:-14:].split(","):
+                    logger.debug(f'single parameters_str: {p_str}')
                     p = p_str.split("-")
                     parameters.append((p[0],p[1]))
+                logger.debug(f'parameters: {parameters}')
+                
+                #decode precondition
+                preconditions_str = re.search(':precondition\(and.*\):effect', action_str).group()
+                logger.debug(f'preconditions_str: {preconditions_str}')  
+                for p_str in preconditions_str[18:-9:].split('(= '):
+                    if p_str == '':
+                        continue
+                    logger.debug(f'single precondition_str: {p_str}')
+                    p_list = p_str[1:].split(") ")
+                    # if len(p_list) == 1:
+                    #     p_list = p_list[0].split(" ")
+                    preconditions.append((p_list[0].replace(" ","").replace("(","").replace(")",""),p_list[1].replace(" ","").replace("(","").replace(")","").replace('"','').replace("'",'')))
+                logger.debug(f'preconditions: {preconditions}')
+                
+                #decode effects
                 effects_str = re.search(':effect\(and\(.*\)\)',action_str).group()
-                for e_str in effects_str[12:-2:].split("(= "):
-                    e_list = e_str[1:-1:].split(") (")
-                    if len(e_list) == 1:
-                        e_list = e_list[0].split(" ")
-                    effects.append((e_list[0].replace(" ","").replace("(","").replace(")",""),e_list[1].replace(" ","").replace("(","").replace(")","")))
-                actions.update({action_name: {"parameters":parameters,"precondition":precondition,"effect":effects}})
+                logger.debug(f'effects_str: {effects_str}')  
+                for e_str in effects_str[11:-2:].split("(= "):
+                    if e_str == '':
+                        continue
+                    logger.debug(f'single effect_str: {e_str}')
+                    e_list = e_str[1:].split(") ")
+                    # if len(e_list) == 1:
+                    #     e_list = e_list[0].split(" ")
+                    effects.append((e_list[0].replace(" ","").replace("(","").replace(")",""),e_list[1].replace(" ","").replace("(","").replace(")","").replace('"','').replace("'",'')))
+                logger.debug(f'effects: {effects}')
+                
+                actions.update({action_name: {"parameters":parameters,"precondition":preconditions,"effect":effects}})
             logger.debug(actions)
         except AttributeError:
             logger.error("error when extract actions")
             exit()          
         return actions,d_name
     
-if __name__ == "__main__":
-    domains,i_state,g_states,agent_index,obj_index,variables,d_name,p_name=problemParser("examples/coin/problem01.pddl")
-    actions,domain_name = domainParser("examples/coin/domain.pddl")
-    
-    import model
-    problem = model.Problem(domains,i_state,g_states,agent_index,obj_index,variables,actions)
-    
-    # import search
-    
-    # print(search.BFS(problem))
-    
-    # print(problem.domains)
-    # print(problem.initial_state)
-    # print(problem.goal_states)
-    # print(problem.entities)
-    # print(problem.variables)
-    # print(problem.actions)
-    
-    # import bbl
-    
-    # bbl.checkVisibility(problem,problem.initial_state,'a','v-p')
-    
-    import coin
-    
-    
-    eq_list = []
-    for eq_str,value in problem.goal_states["epistemic_g"]:
-        eq_list.append((model.generateEpistemicQuery(eq_str),value))
-    
-    
-    for eq,value in eq_list:
-        print(eq)
-        # s_0 = {'dir-a': 'sw', 'dir-b': 'sw', 'x-a': 3, 'x-b': 2, 'x-p': 1, 'y-a': 3, 'y-b': 2, 'y-p': 1, 'v-p': 't'}
-        # s_1 = {'dir-a': 'sw', 'dir-b': 'n', 'x-a': 3, 'x-b': 2, 'x-p': 1, 'y-a': 3, 'y-b': 2, 'y-p': 1, 'v-p': 't'}
-        # print(model.checkingEQ(problem,eq,[({'dir-a': 'sw', 'dir-b': 'sw', 'x-a': 3, 'x-b': 2, 'x-p': 1, 'y-a': 3, 'y-b': 2, 'y-p': 1, 'v-p': 't'},""),(problem.initial_state,"a1")],problem.initial_state))
-        # print(model.checkingEQ(problem,eq,[(s_0,"")],s_0))
-        
-        s_0 = {'peeking-a': 'f','peeking-b': 'f', 'face-c': 'head'}
-        s_1 = {'peeking-a': 't','peeking-b': 'f', 'face-c': 'head'}
-        s_2 = {'peeking-a': 'f','peeking-b': 'f', 'face-c': 'head'}
-        s_3 = {'peeking-a': 'f','peeking-b': 't', 'face-c': 'head'}
-        s_4 = {'peeking-a': 'f','peeking-b': 't', 'face-c': 'tail'}
-        s_5 = {'peeking-a': 'f','peeking-b': 'f', 'face-c': 'tail'}
-        
-        
-        print(model.checkingEQ(problem,eq,[(s_0,""),(s_1,""),(s_2,""),(s_3,""),(s_4,""),(s_5,"")],s_4))
-    # print(eq_list)
-    # print(model.checkingEQs(problem,problem.goal_states['epistemic_g'],[(problem.initial_state,"")]))
-    # model.generateEpistemicQuery()
-    # actions = prob
-    # lem.getLegalActions(i_state)
-    # print(actions)
-    
-    # print(problem.generatorSuccessor(i_state,actions['turn_clockwise-a']))
-    
-    # print(BFS(problem))
