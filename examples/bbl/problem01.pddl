@@ -38,6 +38,8 @@
         (= (:epistemic s [b] s [a] (= (v p) 't')) 2)
         (= (:epistemic k [b] s [a] (= (v p) 't')) 2)
         (= (:epistemic s [a] (= (v p) 't')) 1)
+        (= (:epistemic b [a] (= (v p) 't')) 1)
+        (= (:epistemic b [b] (= (v p) 't')) 1)
         ;todo: put the goal condition here
     ))
 

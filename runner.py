@@ -105,7 +105,7 @@ if __name__ == '__main__':
     domains,i_state,g_states,agent_index,obj_index,variables,d_name,p_name= pddl_parser.problemParser("examples/coin/problem01.pddl")
     actions,domain_name = pddl_parser.domainParser("examples/coin/domain.pddl")
     
-    import examples.coin as coin
+    import examples.coin.coin as coin
     problem = pddl_model.Problem(domains,i_state,g_states,agent_index,obj_index,variables,actions,coin)
     
     # print(problem)

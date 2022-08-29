@@ -1,5 +1,7 @@
 import logging
 
+logger = logging.getLogger("search")
+
 def BFS(problem):
     # Your code here:
     start_node = (problem.initial_state, [])

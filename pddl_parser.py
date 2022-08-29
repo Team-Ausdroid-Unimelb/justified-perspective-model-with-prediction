@@ -6,7 +6,9 @@ import re
 TIMEZONE = pytz.timezone('Australia/Melbourne')
 DATE_FORMAT = '%d-%m-%Y_%H-%M-%S'
 timestamp = datetime.datetime.now().astimezone(TIMEZONE).strftime(DATE_FORMAT)
-logging.basicConfig(filename=f'logs/{timestamp}.log', level=logging.DEBUG)
+# logging.basicConfig(filename=f'logs/{timestamp}.log', level=logging.DEBUG)
+
+logger = logging.getLogger("pddl_parser")
 
 
 def formatDocument(str):
@@ -14,7 +16,7 @@ def formatDocument(str):
     # * match 0 or more preceding RE
     # $ matchs end line
     str = re.sub(';.*$',"",str,flags=re.MULTILINE).lower()
-    logging.debug(repr(str))
+    logger.debug(repr(str))
     
     # removing useless space
     # ^ match any start of the newline in multiline mode
@@ -28,16 +30,16 @@ def formatDocument(str):
     str = re.sub(':parameters *',":parameters",str,flags=re.MULTILINE)
     str = re.sub(':precondition *',":precondition",str,flags=re.MULTILINE)
     str = re.sub(':effect *',":effect",str,flags=re.MULTILINE)
-    logging.debug(repr(str))
+    logger.debug(repr(str))
     
     # removing useless \n
     str = re.sub('\( *|(\n)*\((\n)*',"(",str,flags=re.MULTILINE)
     str = re.sub(' *\)|(\n)*\)(\n)*',")",str,flags=re.MULTILINE)
     str = re.sub('\)\n',")",str,flags=re.MULTILINE)
-    logging.debug(repr(str))
+    logger.debug(repr(str))
     
     str = re.sub('\n'," ",str,flags=re.MULTILINE)
-    logging.debug(repr(str)) 
+    logger.debug(repr(str)) 
     return str      
 
 def problemParser(file_path):
@@ -50,83 +52,83 @@ def problemParser(file_path):
     d_name = ""
     p_name = ""
     
-    logging.debug("reading problem file:")
+    logger.debug("reading problem file:")
     
     with open(file_path,"r") as f:
         file = f.read()
-        logging.debug(repr(file))
+        logger.debug(repr(file))
         
-        logging.debug("formating problem file")
+        logger.debug("formating problem file")
         str = formatDocument(file)
-        logging.debug(repr(str))
+        logger.debug(repr(str))
         
         if not str.startswith("(define"):
-            logging.error("the problem file does not start with '(define'")
+            logger.error("the problem file does not start with '(define'")
             exit()
         elif not str.endswith(")"):
-            logging.error("the problem file does not end with ')'")
+            logger.error("the problem file does not end with ')'")
             exit()
         str = str[7:-1:]
-        logging.debug(repr(str))
+        logger.debug(repr(str))
         # print(repr(str))
         
-        logging.debug("extract p_name")
+        logger.debug("extract p_name")
         try:
             found = re.search('\(problem [0-9a-z_]*\)',str).group(0)
             p_name = found[9:-1:]
-            logging.debug(p_name)
+            logger.debug(p_name)
         except AttributeError:
-            logging.error("error when extract problem name")
+            logger.error("error when extract problem name")
             exit()
             
-        logging.debug("extract d_name")
+        logger.debug("extract d_name")
         try:
             found = re.search('\(:domain [0-9a-z_]*\)',str).group(0)
             d_name = found[9:-1:]
-            logging.debug(d_name)
+            logger.debug(d_name)
         except AttributeError:
-            logging.error("error when extract domain name")
+            logger.error("error when extract domain name")
             exit()            
 
-        logging.debug("extract agents")
+        logger.debug("extract agents")
         try:
             found = re.search('\(:agents [0-9a-z_ ]*\)',str).group(0)
             agent_index = found[9:-1:].split(" ")
-            logging.debug(agent_index)
+            logger.debug(agent_index)
         except AttributeError:
-            logging.error("error when extract domain name")
+            logger.error("error when extract domain name")
             exit()
 
-        logging.debug("extract objects")
+        logger.debug("extract objects")
         try:
             found = re.search('\(:objects [0-9a-z_ ]*\)',str).group(0)
             obj_index = found[10:-1:].split(" ")
-            logging.debug(obj_index)
+            logger.debug(obj_index)
         except AttributeError:
-            logging.error("error when extract domain name")
+            logger.error("error when extract domain name")
             exit()
 
-        logging.debug("extract variables")
+        logger.debug("extract variables")
         try:
             found = re.search('\(:variables([(][0-9a-z_ \[\],]*[)])*\)',str).group(0)
-            logging.debug(found)
+            logger.debug(found)
             vars_list = re.findall('\([0-9a-z_ \[\],]*\)',found[10:-1:])
-            logging.debug(vars_list)
+            logger.debug(vars_list)
             for var_str in vars_list:
                 var_str = var_str[1:-1:].split(' ')
                 # print(var_str)
                 variables.update({var_str[0]:var_str[1][1:-1:].split(",")})
-            logging.debug(variables)
+            logger.debug(variables)
         except AttributeError:
-            logging.error("error when extract variables")
+            logger.error("error when extract variables")
             exit()
             
-        logging.debug("extract init")
+        logger.debug("extract init")
         try:
             found = re.search("\(:init(\(= \([0-9a-z_ ]*\) [0-9a-z_\'\"]*\))*\)",str).group(0)
-            logging.debug(found)
+            logger.debug(found)
             init_list = re.findall('\(= \([0-9a-z_ ]*\) [0-9a-z_\'\"]*\)',found[6:-1:])
-            logging.debug(init_list)
+            logger.debug(init_list)
             for init_str in init_list:
                 init_str = init_str[3:-1:]
                 i,j = re.search("\(.*\)", init_str).span()
@@ -141,22 +143,22 @@ def problemParser(file_path):
                     value =int(value)
                 i_state.update({var_str:value})
                 
-            logging.debug(i_state)
+            logger.debug(i_state)
         except AttributeError:
-            logging.error("error when extract init")
+            logger.error("error when extract init")
             exit()            
 
-        logging.debug("extract goal")
+        logger.debug("extract goal")
         try:
             
             found = re.search("\(:goal\(and(\(= \([:0-9a-z_ \[\],]*(\(.*\)\) |\) )[0-9a-z_ \"\']*\))*\)\)",str).group(0)
-            logging.debug(found)
+            logger.debug(found)
             
             # loading ontic goals
-            logging.debug("extract ontic goal propositions")
+            logger.debug("extract ontic goal propositions")
             g_states.update({"ontic_g":{}})
             ontic_goal_list = re.findall('\(= \([0-9a-z_ ]*\) [0-9a-z_\'\"]*\)',found[10:-1:])
-            logging.debug(ontic_goal_list)
+            logger.debug(ontic_goal_list)
             for goal_str in ontic_goal_list:
                 goal_str = goal_str[3:-1:]
                 i,j = re.search("\(.*\)", goal_str).span()
@@ -174,10 +176,10 @@ def problemParser(file_path):
                 g_states["ontic_g"].update({var_str:value})
             
             # loading epismetic goals
-            logging.debug("extract epistemic goal propositions")
+            logger.debug("extract epistemic goal propositions")
             g_states.update({"epistemic_g":[]})   
             epistemic_goal_list = re.findall('\(= \(:epistemic[ 0-9a-z_\[\],]*\(= \([ 0-9a-z_]*\) [0-9a-z_\'\"]*\)\) [0-9a-z_\'\"]*\)',found[10:-1:])  
-            logging.debug(epistemic_goal_list)
+            logger.debug(epistemic_goal_list)
             for goal_str in epistemic_goal_list:
                 goal_str = goal_str[15:-1:]
                 print(goal_str)
@@ -190,25 +192,25 @@ def problemParser(file_path):
                 m,n = re.search('\([0-9a-z _]*\)',new_str).span()
                 var = new_str[m+1:n-1].replace(" ","-")
                 value = new_str[n+1:]
-                query = f'{query}({var},{value})'
+                query = f"{query}('{var}',{value})"
                 g_states["epistemic_g"].append((query,value1))
-            logging.debug(g_states)
+            logger.debug(g_states)
         except AttributeError:
-            logging.error("error when extract goal")
+            logger.error("error when extract goal")
             exit()   
                         
-        logging.debug("extract domains")
+        logger.debug("extract domains")
         try:
-            logging.debug(f"{str}")
+            logger.debug(f"{str}")
             
             found = re.search('\(:domains(\([0-9a-z_ \[\],\'\"]*\))*\)',str).group(0)
-            logging.debug(found)
+            logger.debug(found)
             domains_list = re.findall('\([0-9a-z_ \[\],\'\"]*\)',found[9:-1:])
-            logging.debug(domains_list)
+            logger.debug(domains_list)
             for domain_str in domains_list:
                 domain_str = domain_str[1:-1:].split(' ')
                 if not domain_str[1] in ['enumerate','integer','string']:
-                    logging.error(f"domain {domain_str[0]}'s basic_type {domain_str[1]} does not exist")
+                    logger.error(f"domain {domain_str[0]}'s basic_type {domain_str[1]} does not exist")
                     assert(f"domain {domain_str[0]}'s basic_type {domain_str[1]} does not exist")
                 else:
                     if "'" in domain_str[2]:
@@ -218,9 +220,9 @@ def problemParser(file_path):
                     else:
                         value = [ int(i) for i in domain_str[2][1:-1:].split(",")]
                     domains.update({domain_str[0]:{"basic_type":domain_str[1],"values":value}})
-            logging.debug(domains)
+            logger.debug(domains)
         except AttributeError:
-            logging.error("error when extract domains")
+            logger.error("error when extract domains")
             exit()
             
         return domains,i_state,g_states,agent_index,obj_index,variables,d_name,p_name
@@ -230,37 +232,37 @@ def domainParser(file_path):
     d_name = ""
 
     
-    logging.debug("reading domain file:")
+    logger.debug("reading domain file:")
     
     with open(file_path,"r") as f:
         file = f.read()
-        logging.debug(repr(file))
+        logger.debug(repr(file))
         
-        logging.debug("formating domain file")
+        logger.debug("formating domain file")
         str = formatDocument(file)
-        logging.debug(repr(str))
+        logger.debug(repr(str))
         
         if not str.startswith("(define"):
-            logging.error("the domain file does not start with '(define'")
+            logger.error("the domain file does not start with '(define'")
             exit()
         elif not str.endswith(")"):
-            logging.error("the domain file does not end with ')'")
+            logger.error("the domain file does not end with ')'")
             exit()
         str = str[7:-1:]
-        logging.debug(repr(str))
+        logger.debug(repr(str))
         
-        logging.debug("extract d_name")
+        logger.debug("extract d_name")
         try:
             found = re.search('\(domain [0-9a-z_]*\)',str).group(0)
             d_name = found[8:-1:]
-            logging.debug(d_name)
+            logger.debug(d_name)
         except AttributeError:
-            logging.error("error when extract domain name")
+            logger.error("error when extract domain name")
             exit()  
         
         print(str)
         
-        logging.debug("extract actions")
+        logger.debug("extract actions")
         try:
             action_list = str.split("(:action ")[1::]
             print(action_list)
@@ -277,17 +279,19 @@ def domainParser(file_path):
                 effects_str = re.search(':effect\(and\(.*\)\)',action_str).group()
                 for e_str in effects_str[12:-2:].split("(= "):
                     e_list = e_str[1:-1:].split(") (")
+                    if len(e_list) == 1:
+                        e_list = e_list[0].split(" ")
                     effects.append((e_list[0].replace(" ","").replace("(","").replace(")",""),e_list[1].replace(" ","").replace("(","").replace(")","")))
                 actions.update({action_name: {"parameters":parameters,"precondition":precondition,"effect":effects}})
-            logging.debug(actions)
+            logger.debug(actions)
         except AttributeError:
-            logging.error("error when extract actions")
+            logger.error("error when extract actions")
             exit()          
         return actions,d_name
     
 if __name__ == "__main__":
-    domains,i_state,g_states,agent_index,obj_index,variables,d_name,p_name=problemParser("examples/bbl/problem01.pddl")
-    actions,domain_name = domainParser("examples/bbl/domain.pddl")
+    domains,i_state,g_states,agent_index,obj_index,variables,d_name,p_name=problemParser("examples/coin/problem01.pddl")
+    actions,domain_name = domainParser("examples/coin/domain.pddl")
     
     import model
     problem = model.Problem(domains,i_state,g_states,agent_index,obj_index,variables,actions)
@@ -303,11 +307,11 @@ if __name__ == "__main__":
     # print(problem.variables)
     # print(problem.actions)
     
-    import bbl
+    # import bbl
     
-    bbl.checkVisibility(problem,problem.initial_state,'a','v-p')
+    # bbl.checkVisibility(problem,problem.initial_state,'a','v-p')
     
-    
+    import coin
     
     
     eq_list = []
@@ -317,7 +321,20 @@ if __name__ == "__main__":
     
     for eq,value in eq_list:
         print(eq)
-        print(model.checkingEQ(problem,eq,[({'dir-a': 'sw', 'dir-b': 'sw', 'x-a': 3, 'x-b': 2, 'x-p': 1, 'y-a': 3, 'y-b': 2, 'y-p': 1, 'v-p': 't'}),(problem.initial_state,"")],problem.initial_state))
+        # s_0 = {'dir-a': 'sw', 'dir-b': 'sw', 'x-a': 3, 'x-b': 2, 'x-p': 1, 'y-a': 3, 'y-b': 2, 'y-p': 1, 'v-p': 't'}
+        # s_1 = {'dir-a': 'sw', 'dir-b': 'n', 'x-a': 3, 'x-b': 2, 'x-p': 1, 'y-a': 3, 'y-b': 2, 'y-p': 1, 'v-p': 't'}
+        # print(model.checkingEQ(problem,eq,[({'dir-a': 'sw', 'dir-b': 'sw', 'x-a': 3, 'x-b': 2, 'x-p': 1, 'y-a': 3, 'y-b': 2, 'y-p': 1, 'v-p': 't'},""),(problem.initial_state,"a1")],problem.initial_state))
+        # print(model.checkingEQ(problem,eq,[(s_0,"")],s_0))
+        
+        s_0 = {'peeking-a': 'f','peeking-b': 'f', 'face-c': 'head'}
+        s_1 = {'peeking-a': 't','peeking-b': 'f', 'face-c': 'head'}
+        s_2 = {'peeking-a': 'f','peeking-b': 'f', 'face-c': 'head'}
+        s_3 = {'peeking-a': 'f','peeking-b': 't', 'face-c': 'head'}
+        s_4 = {'peeking-a': 'f','peeking-b': 't', 'face-c': 'tail'}
+        s_5 = {'peeking-a': 'f','peeking-b': 'f', 'face-c': 'tail'}
+        
+        
+        print(model.checkingEQ(problem,eq,[(s_0,""),(s_1,""),(s_2,""),(s_3,""),(s_4,""),(s_5,"")],s_4))
     # print(eq_list)
     # print(model.checkingEQs(problem,problem.goal_states['epistemic_g'],[(problem.initial_state,"")]))
     # model.generateEpistemicQuery()
