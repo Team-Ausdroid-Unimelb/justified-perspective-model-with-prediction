@@ -3,6 +3,7 @@ import pddl_model
 import typing
 import re
 import logging
+import copy
 
 logger = logging.getLogger("epistemic_model")
 
@@ -127,9 +128,10 @@ def identifyMemorizedValue(external, path:typing.List, agt_id_nest_lst, ts_index
     if ts_index_temp <0: return None
     
     while ts_index_temp >=0:
-        state,action = path[ts_index]
+        state,action = path[ts_index_temp]
         temp_observation = getObservations(external,state,agt_id_nest_lst,entities,variables)
-        if temp_observation[variable_index] == None:
+        logger.debug(f'temp observation in identifyMemorization: {temp_observation}')
+        if not variable_index in temp_observation or temp_observation[variable_index] == None:
             ts_index_temp += -1
         else:
             return temp_observation[variable_index]
@@ -137,9 +139,9 @@ def identifyMemorizedValue(external, path:typing.List, agt_id_nest_lst, ts_index
     ts_index_temp = ts_index + 1
        
     while ts_index_temp < len(path):
-        state,action = path[ts_index]
+        state,action = path[ts_index_temp]
         temp_observation = getObservations(external,state,agt_id_nest_lst,entities,variables)
-        if temp_observation[variable_index] == None:
+        if not variable_index in temp_observation or temp_observation[variable_index] == None:
             ts_index_temp += 1
         else:
             return temp_observation[variable_index]        
@@ -149,7 +151,7 @@ def identifyLastSeenTimestamp(external, path:typing.List, agt_id_nest_lst,variab
     ts_index_temp = len(path) -1
     
     # checking whether the variable has been seen by the agent list before
-    while ts_index_temp >0:
+    while ts_index_temp >=0:
         
         state,action = path[ts_index_temp]
 
@@ -175,7 +177,7 @@ def generatePerspective(external, path:typing.List, agt_id_nest_lst,entities,var
         ts_index = identifyLastSeenTimestamp(external, path, agt_id_nest_lst,v,entities,variables)
         logger.debug(f'\t timestamp index: {ts_index}')
         value = identifyMemorizedValue(external, path, agt_id_nest_lst, ts_index,v,entities,variables)
-        logger.debug(f'\t value is: {value}')
+        logger.debug(f'\t {v}"s value is: {value}')
         new_state.update({v:value})
     return new_state 
 
@@ -211,51 +213,68 @@ def checkingEQstr(external,eq_str,path:typing.List,state,entities,variables):
 def checkingEQ(external,eq:EpistemicQuery,path:typing.List,state,entities,variables):
     var_list = external.extractVariables(eq)
     logger.debug(f"checking eq {eq}, {eq.eq_type}")
+    logger.debug(f'current state: {state}')
+
     if eq.eq_type == EQ_TYPE.BELIEF:
         
         logger.debug(f"checking belief for {eq}")
         # generate the state
         # new_observation = getObservations(external,state,eq.q_group,entities,variables)
-        new_state = generatePerspective(external,path,eq.q_group,entities,variables)
-        logger.debug(f"{eq.q_group}'s perspective {new_state}")
+        new_path = []
+        for i in range(len(path)):
+            logger.debug(f'generate perspective step {i}')
+            logger.debug(path)
+            state,action = path[i]
+            new_state = generatePerspective(external,path[:i+1],eq.q_group,entities,variables)
+            logger.debug(new_state)
+            new_path.append((new_state,action))
+        logger.debug(f"{eq.q_group}'s perspective (new path) {new_path}")
         if len(eq.q_group)>1:
             pass
+        
+        last_state,action = new_path[-1]
         eva = 2
         logger.debug(f"checking belief for {eq.q_content}")
         if type(eq.q_content) == str:
             for var_name,value in var_list:
 
-                if not var_name in new_state.keys():
-                    logger.debug(f"return 0 due to {var_name} {len(var_name)} not in { new_state.keys() }")
+                if not var_name in last_state.keys():
+                    logger.debug(f"return 0 due to {var_name} {len(var_name)} not in { last_state.keys() }")
                     return 0
-                if not new_state[var_name] == value:
-                    logger.debug(f"return 0 due to {value} not equal to {new_state[var_name]}")
+                if not last_state[var_name] == value:
+                    logger.debug(f"return 0 due to {value} not equal to {last_state[var_name]}")
                     return 0
-            eva = external.evaluateS(new_state,eq.q_content)
+            eva = external.evaluateS(last_state,eq.q_content)
         else:
-            eva = checkingEQ(external,eq.q_content,path,new_state,entities,variables)
+            eva = checkingEQ(external,eq.q_content,new_path,last_state,entities,variables)
         
         return eva
-        # if eva == 2:
-        #     return checkingEQ(external,eq,path[:-1],path[-1][0])
-        # else:
-        #     return eva
-        # if type(eq.q_content) == str:
-        #     # for var_name,value in var_list:
-        #     #     if not var_name in new_state.keys():
-        #     #         return checkingEQ(external,eq,path[:-1],path[-1][0])
-        #     #     if not new_state[var_name] == value:
-        #     #         return 0
-        #     if bbl.evaluateS(new_state,eq.q_content) == 2:
-        #         return checkingEQ(external,eq,path[:-1],path[-1][0])
-        #     else:
-        #         return bbl.evaluateS(new_state,eq.q_content) == 2
-        # else:
-        #     if bbl.evaluateS(new_state,eq.q_content) == 2:
-        #         return checkingEQ(external,eq,path[:-1],path[-1][0])
-        #     else:
-        #         return bbl.evaluateS(new_state,eq.q_content) == 2
-        #     pass
+    # if eq.eq_type == EQ_TYPE.BELIEF:
+        
+    #     logger.debug(f"checking belief for {eq}")
+    #     # generate the state
+    #     # new_observation = getObservations(external,state,eq.q_group,entities,variables)
+    #     new_state = generatePerspective(external,path,eq.q_group,entities,variables)
+    #     logger.debug(f"{eq.q_group}'s perspective {new_state}")
+    #     if len(eq.q_group)>1:
+    #         pass
+    #     eva = 2
+    #     logger.debug(f"checking belief for {eq.q_content}")
+    #     if type(eq.q_content) == str:
+    #         for var_name,value in var_list:
+
+    #             if not var_name in new_state.keys():
+    #                 logger.debug(f"return 0 due to {var_name} {len(var_name)} not in { new_state.keys() }")
+    #                 return 0
+    #             if not new_state[var_name] == value:
+    #                 logger.debug(f"return 0 due to {value} not equal to {new_state[var_name]}")
+    #                 return 0
+    #         eva = external.evaluateS(new_state,eq.q_content)
+    #     else:
+    #         eva = checkingEQ(external,eq.q_content,path,new_state,entities,variables)
+        
+    #     return eva
+
     elif eq.eq_type == EQ_TYPE.SEEING:
         
         logger.debug(f"checking seeing for {eq}")
