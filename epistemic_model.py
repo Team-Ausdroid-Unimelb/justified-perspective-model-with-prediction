@@ -214,6 +214,7 @@ def checkingEQ(external,eq:EpistemicQuery,path:typing.List,state,entities,variab
     var_list = external.extractVariables(eq)
     logger.debug(f"checking eq {eq}, {eq.eq_type}")
     logger.debug(f'current state: {state}')
+    logger.debug(f'var_list: {var_list}')
 
     if eq.eq_type == EQ_TYPE.BELIEF:
         

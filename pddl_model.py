@@ -62,6 +62,7 @@ class Problem():
         
         logger.debug("initialize domains")
         self.domains = {}
+        logger.debug(f'input domains: {domains}')
         for d_name in domains.keys():
             # print(d_name)
             domain_temp = Domain(d_name,domains[d_name]['values'],d_name=='agent',dTypeConvert(domains[d_name]['basic_type']))

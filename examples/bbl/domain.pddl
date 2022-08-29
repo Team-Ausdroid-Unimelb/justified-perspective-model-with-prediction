@@ -24,7 +24,7 @@
         :parameters (?i - agent)
         :precondition (and )
         :effect (and 
-            (= (dir ?i) ((dir ?i) + 1))
+            (= (dir ?i) ( + 1))
         )
     )
     
@@ -32,7 +32,7 @@
         :parameters (?i - agent)
         :precondition (and )
         :effect (and 
-            (= (dir ?i) ((dir ?i) - 1))
+            (= (dir ?i) ( - 1))
         )
     )
  

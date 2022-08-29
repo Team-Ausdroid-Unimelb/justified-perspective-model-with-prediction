@@ -162,12 +162,12 @@ def problemParser(file_path):
 
             logger.debug(f'ontic goal list: {ontic_goal_list}')
             for goal_str in ontic_goal_list:
-                goal_str = goal_str[12:-1:]
-                i,j = re.search("\(.*\)", goal_str).span()
-                var_str = goal_str[i+1:j-1:].replace(" ","-")
-
-                value = goal_str[j+1::]
-                # value = re.search('".*"',init_str[j+1::]).group(0)
+                goal_str = goal_str[15:-5:]
+                logger.debug(f'single goal_str {goal_str}')
+                
+                goal_list = goal_str.split(') ')
+                variable = goal_list[0].replace(' ','-')
+                value = goal_list[1]
                 if "'" in value:
                     value = value.replace("'","")
                 elif '"' in value:
@@ -175,7 +175,7 @@ def problemParser(file_path):
                 else:
                     value =int(value)
                 # print(value)
-                g_states["ontic_g"].update({var_str:value})
+                g_states["ontic_g"].update({variable:value})
             
             # loading epismetic goals
             logger.debug("extract epistemic goal propositions")
