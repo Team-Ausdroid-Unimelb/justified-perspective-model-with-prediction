@@ -87,6 +87,8 @@ def extractVariables(problem,eq):
 def evaluateS(problem,world,statement):
     logging.debug(f"evalute seeing: {statement} in the world: {world}, {type(statement)}, {len(statement)}")
     #default evaluation for variables
+    if world == {}:
+        return 2
     if not re.search("\([0-9a-z _\-]*,[0-9a-z _\'\"]*\)",statement) == None:
         var_name = statement.split(",")[0][1:]
         value = statement.split(",")[1][:-1]
@@ -102,14 +104,14 @@ def evaluateS(problem,world,statement):
 
 def checkVisibility(problem,state,agt_index,var_index):
     
-    logging.debug(f"checkVisibility(_,_,{agt_index},{var_index})")
+    # logging.debug(f"checkVisibility(_,_,{agt_index},{var_index})")
     try:
         tgt_index = problem.variables[var_index].v_parent
         # check if the agt_index can be found
         assert(problem.entities[agt_index].e_type==model.E_TYPE.AGENT)
         
         #extract necessary variables from state
-        logging.debug(f"loading variables from state")
+        # logging.debug(f"loading variables from state")
         tgt_x = state[f"x-{tgt_index}"]
         tgt_y = state[f"y-{tgt_index}"]
         agt_x = state[f"x-{agt_index}"]
@@ -117,7 +119,7 @@ def checkVisibility(problem,state,agt_index,var_index):
         agt_dir = dir_dict[state[f"dir-{agt_index}"]]
         
         # extract necessary common constants from given domain
-        logging.debug(f"necessary common constants from given domain")
+        # logging.debug(f"necessary common constants from given domain")
         agt_angle = common_constants[f"angle-{agt_index}"]
         
         # agent is able to see anything in the same location
@@ -129,19 +131,19 @@ def checkVisibility(problem,state,agt_index,var_index):
         v1 = v1 / np.linalg.norm(v1)
         radians = math.radians(agt_dir)
         v2 = np.array((math.cos(radians),math.sin(radians)))
-        logging.debug(f'v1 {v1}, v2 {v2}')
+        # logging.debug(f'v1 {v1}, v2 {v2}')
         cos_ = v1.dot(v2)
         d_radians = math.acos(cos_)
         d_degrees = math.degrees(d_radians)
-        logging.debug(f'delta angle degree is {round(d_degrees,3)}')
+        # logging.debug(f'delta angle degree is {round(d_degrees,3)}')
         
         if d_degrees <= agt_angle/2.0 and d_degrees >= - agt_angle/2.0:
             inside = model.T_TYPE.TRUE
         else:
             inside =model.T_TYPE.FALSE
-        logging.debug(f'visibility is {inside}')
+        # logging.debug(f'visibility is {inside}')
         return inside
-    except AttributeError:
+    except KeyError:
         logging.warning(traceback.format_exc())
         logging.warning("variable not found when check visibility")
         # logging.error("error when checking visibility")
