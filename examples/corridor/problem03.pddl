@@ -3,35 +3,39 @@
     (:domain bbl)
 
     (:agents
-        a b
+        a b c
     )
     (:objects 
-        p
+        r1 r2 r3 r4
     )
 
     (:variables
-        (dir [ a , b ])
-        (x [a,b,p])
-        (y [a,b,p])
-        (v [p])
+        (agent_at [a,b,c])
+        (secret_at [r1,r2,r3,r4])
+        (sensed)
+        (shared_at [r1,r2,r3,r4])
     )
 
     (:init
-        (= (dir a) 'sw')
-        (= (dir b) 'n')
-        (= (x a) 3)
-        (= (x b) 2)
-        (= (x p) 1)
-        (= (y a) 3)
-        (= (y b) 2)
-        (= (y p) 1)
-        (= (v p) 't')
+        (= (agent_at a) 'r1')
+        (= (agent_at b) 'r2')
+        (= (agent_at c) 'r3')
+        (= (secret_at r1) 0)
+        (= (secret_at r2) 1)
+        (= (secret_at r3) 0)
+        (= (secret_at r4) 0)
+        (= (sensed) 0)
+        (= (shared_at r1) 0)
+        (= (shared_at r2) 0)
+        (= (shared_at r3) 0)
+        (= (shared_at r4) 0)
         ;todo: put the initial state's facts and numeric values here
     )
 
     (:goal (and
-        (= (:ontic (= (dir b) 'se')) 1)
-        ; (= (:epistemic s [b] (= (v p) 't')) 0)
+        ; (= (:ontic (= (agent_at a) 2)) 1)
+        ; (= (:ontic (= (shared s) 2)) 1)
+        (= (:epistemic b [b] (= (shared s) 2)) 1)
         ; (= (:epistemic k [b] k [a] (= (v p) 't')) 0)
         ; (= (:epistemic s [b] s [a] (= (v p) 't')) 2)
         ; (= (:epistemic k [b] s [a] (= (v p) 't')) 2)
@@ -42,10 +46,9 @@
     ))
 
     (:domains
-        (dir enumerate ['w','nw','n','ne','e','se','s','sw'])
-        (x integer [0,4])
-        (y integer [0,4])
-        (v enumerate ['t','f'])
+        (agent_at enumerate ['r1','r2','r3','r4'])
+        (secret_at integer [1,4])
+        (sensed enumerate ['t','f'])
         ;(epistemic epistemic ['1','0','2']) true false unknown
     )
 

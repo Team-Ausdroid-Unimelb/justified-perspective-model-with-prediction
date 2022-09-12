@@ -278,6 +278,8 @@ def domainParser(file_path):
                 parameters_str = re.search(':parameters\(.*\):precondition',action_str).group()
                 logger.debug(f'parameters_str: {parameters_str}')
                 for p_str in parameters_str[12:-14:].split(","):
+                    if p_str == '':
+                        continue
                     logger.debug(f'single parameters_str: {p_str}')
                     p = p_str.split("-")
                     parameters.append((p[0],p[1]))

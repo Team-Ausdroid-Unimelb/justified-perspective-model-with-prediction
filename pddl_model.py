@@ -105,37 +105,46 @@ class Problem():
             
             # generate all possible combination parameters for each type of action
             logger.debug(f'all params: {self._generateParams(a.a_parameters)}')
-            for params in self._generateParams(a.a_parameters):
-                logger.debug(f'works on params: {params}')
-                for i,v in params:
-                    a_temp_name = a_name
-                    a_temp_parameters = copy.deepcopy(a.a_parameters)
-                    a_temp_precondition = copy.deepcopy(a.a_precondition)
-                    a_temp_effects = copy.deepcopy(a.a_effects)
-                    a_temp_name = a_temp_name + "-" + v
-                    for j in range(len(a_temp_parameters)):
-                        v_name, v_effects = a_temp_parameters[j]
-                        v_name = v_name.replace(f'{i}',f'-{v}')
-                        a_temp_parameters[j] = (v_name,v_effects)
-                    for j in range(len(a_temp_precondition)):
-                        v_name, v_effects = a_temp_precondition[j]
-                        v_name = v_name.replace(f'{i}',f'-{v}')
-                        v_effects = v_effects.replace(f'{i}',f'-{v}')
-                        a_temp_precondition[j] = (v_name,v_effects)
-                    for j in range(len(a_temp_effects)):
-                        v_name, v_effects = a_temp_effects[j]
-                        v_name = v_name.replace(f'{i}',f'-{v}')
-                        v_effects = v_effects.replace(f'{i}',f'-{v}')
-                        a_temp_effects[j] = (v_name,v_effects)
-                    logger.debug(f'precondition after matching parameters: {a_temp_precondition}')
-                    logger.debug(f'effect after matching parameters: {a_temp_effects}')
-                    
-                    
-                    logger.debug(f'legal action before precondition check: {legal_actions}') 
-                    # TODO: adding precondition check
-                    if self._checkPreconditions(state,a_temp_precondition):
-                        legal_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_precondition,a_temp_effects)})
-                    logger.debug(f'legal action after precondition check: {legal_actions}') 
+            if a.a_parameters == []:
+                a_temp_name = a_name
+                a_temp_parameters = copy.deepcopy(a.a_parameters)
+                a_temp_precondition = copy.deepcopy(a.a_precondition)
+                a_temp_effects = copy.deepcopy(a.a_effects)
+                if self._checkPreconditions(state,a_temp_precondition):
+                    legal_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_precondition,a_temp_effects)})
+                    logger.debug(f'legal action after single precondition check: {legal_actions}') 
+            else:
+                for params in self._generateParams(a.a_parameters):
+                    logger.debug(f'works on params: {params}')
+                    for i,v in params:
+                        a_temp_name = a_name
+                        a_temp_parameters = copy.deepcopy(a.a_parameters)
+                        a_temp_precondition = copy.deepcopy(a.a_precondition)
+                        a_temp_effects = copy.deepcopy(a.a_effects)
+                        a_temp_name = a_temp_name + "-" + v
+                        for j in range(len(a_temp_parameters)):
+                            v_name, v_effects = a_temp_parameters[j]
+                            v_name = v_name.replace(f'{i}',f'-{v}')
+                            a_temp_parameters[j] = (v_name,v_effects)
+                        for j in range(len(a_temp_precondition)):
+                            v_name, v_effects = a_temp_precondition[j]
+                            v_name = v_name.replace(f'{i}',f'-{v}')
+                            v_effects = v_effects.replace(f'{i}',f'-{v}')
+                            a_temp_precondition[j] = (v_name,v_effects)
+                        for j in range(len(a_temp_effects)):
+                            v_name, v_effects = a_temp_effects[j]
+                            v_name = v_name.replace(f'{i}',f'-{v}')
+                            v_effects = v_effects.replace(f'{i}',f'-{v}')
+                            a_temp_effects[j] = (v_name,v_effects)
+                        logger.debug(f'precondition after matching parameters: {a_temp_precondition}')
+                        logger.debug(f'effect after matching parameters: {a_temp_effects}')
+                        
+                        
+                        logger.debug(f'legal action before precondition check: {legal_actions}') 
+                        # TODO: adding precondition check
+                        if self._checkPreconditions(state,a_temp_precondition):
+                            legal_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_precondition,a_temp_effects)})
+                        logger.debug(f'legal action after precondition check: {legal_actions}') 
         logger.debug(f'legal actions: {legal_actions}') 
         return legal_actions
     
@@ -143,7 +152,10 @@ class Problem():
         logger.debug(f'checking precondition: {preconditions}')
         for v,e in preconditions:
             try:
-                if not state[v] == e: return False
+                if e in state:
+                    if not state[v] == state[e]: return False
+                else:
+                    if not state[v] == e: return False
             except:
                 logger.error("Error when checking precondition: {}\n with state: {}")
                 
@@ -183,7 +195,9 @@ class Problem():
             old_value = state[v_name]
             # v_name = v_name.replace('?','-')
             logger.debug(f'single effect update: {v_name}/{old_value}/{update}')
-            if '-' in update:
+            if update in state:
+                new_state[v_name] = state[update]
+            elif '-' in update:
                 logger.debug(f'update -')
                 delta_value = int(update.split('-')[1])
                 logger.debug(f'delta value: {delta_value}')
@@ -197,6 +211,13 @@ class Problem():
                     new_value = self.domains[domain_name].d_values[new_index]
                     logger.debug(f'new_value: {new_value} in the domain: {self.domains[domain_name].d_values}')
                     new_state[v_name] = new_value
+                elif self.domains[domain_name].d_type == D_TYPE.INTEGER:
+                    old_int = int(old_value)
+                    logger.debug(f'old_int: {old_int}')
+                    new_value = old_int - delta_value
+                    logger.debug(f'new_value: {new_value} in the domain: {self.domains[domain_name].d_values}')
+                    new_state[v_name] = new_value
+                    
             elif '+' in update:
                 delta_value = int(update.split('+')[-1])
                 domain_name = self.variables[v_name].v_domain_name
@@ -204,6 +225,12 @@ class Problem():
                     index = self.domains[domain_name].d_values.index(old_value)
                     new_index = (index+delta_value) % len(self.domains[domain_name].d_values)
                     new_state[v_name] = self.domains[domain_name].d_values[new_index]
+                elif self.domains[domain_name].d_type == D_TYPE.INTEGER:
+                    old_int = int(old_value)
+                    logger.debug(f'old_int: {old_int}')
+                    new_value = old_int + delta_value
+                    logger.debug(f'new_value: {new_value} in the domain: {self.domains[domain_name].d_values}')
+                    new_state[v_name] = new_value
             # if '-' in update:
             #     v2_name,value = update.split('-')
             #     v2_name = v2_name.replace('?','-')

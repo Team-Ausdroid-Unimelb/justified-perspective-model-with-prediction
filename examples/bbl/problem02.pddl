@@ -1,5 +1,3 @@
-
-
 ( define 
     (problem bbl_01) 
     (:domain bbl)
