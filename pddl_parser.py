@@ -285,39 +285,44 @@ def domainParser(file_path):
                     parameters.append((p[0],p[1]))
                 logger.debug(f'parameters: {parameters}')
                 
-                logger.debug("extract goal")
+                logger.debug("extract preconditions")
                 try:
                     
                     preconditions_str = re.search(':precondition\(and.*\):effect', action_str).group()
+                    preconditions_str = preconditions_str[17:-8:]
                     logger.debug(preconditions_str)
                     
                     # loading ontic precondition
                     logger.debug("extract ontic preconditions propositions")
-                    preconditions.update({"ontic_p":{}})
+                    preconditions.update({"ontic_p":[]})
+                    
                     # ontic_goal_list = re.findall('\(= \([0-9a-z_ ]*\) [0-9a-z_\'\"]*\)',found[10:-1:])
-                    ontic_preconditions_list = re.findall('\(= \(:ontic[ 0-9a-z_\[\],]*\(= \([ 0-9a-z_]*\) [0-9a-z_\'\"]*\)\) [0-9a-z_\'\"]*\)',found[10:-1:])  
+                    # (= (:ontic (= (agent_at-a) (secret_at ?s))) 1)
+                    ontic_preconditions_list = re.findall('\(= \(:ontic[ 0-9a-z_\[\],]*\(= \([ 0-9a-z_\-\?]*\) [\(\)\?0-9a-z_\'\" ]*\)\) [0-9a-z_\'\"]*\)',preconditions_str)  
 
                     logger.debug(f'ontic preconditions list: {ontic_preconditions_list}')
                     for pre_str in ontic_preconditions_list:
                         pre_str = pre_str[15:-5:]
-                        logger.debug(f'single precondition_str {goal_str}')
+                        logger.debug(f'single precondition_str {pre_str}')
                         
                         precondition_list = pre_str.split(') ')
-                        variable = precondition_list[0].replace(' ','-')
+                        variable = precondition_list[0].replace(' ?','?').replace(' ','-')
                         value = precondition_list[1]
                         if "'" in value:
                             value = value.replace("'","")
                         elif '"' in value:
                             value = value.replace('"',"")
+                        elif "(" in value:
+                            value = value.replace('(',"").replace(' ','').replace(')','')
                         else:
                             value =int(value)
                         # print(value)
-                        preconditions["ontic_p"].update({variable:value})
+                        preconditions["ontic_p"].append((variable,value))
                     
                     # loading epismetic goals
                     logger.debug("extract epistemic precondition propositions")
                     preconditions.update({"epistemic_p":[]})   
-                    epistemic_preconditions_list = re.findall('\(= \(:epistemic[ 0-9a-z_\[\],]*\(= \([ 0-9a-z_]*\) [0-9a-z_\'\"]*\)\) [0-9a-z_\'\"]*\)',found[10:-1:])  
+                    epistemic_preconditions_list = re.findall('\(= \(:epistemic[ 0-9a-z_\[\],]*\(= \([ 0-9a-z_]*\) [0-9a-z_\'\"]*\)\) [0-9a-z_\'\"]*\)',preconditions_str)  
                     logger.debug(epistemic_preconditions_list)
                     for pre_str in epistemic_preconditions_list:
                         pre_str = pre_str[15:-1:]

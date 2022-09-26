@@ -1,6 +1,7 @@
-( define 
-    (problem bbl_01) 
-    (:domain bbl)
+; depth 3 agent 3
+(define 
+    (problem corridor_01) 
+    (:domain corridor)
 
     (:agents
         a b c
@@ -14,6 +15,7 @@
         (secret_at [s])
         (sensed [s])
         (shared [s])
+        (secret [s])
     )
 
     (:init
@@ -26,14 +28,15 @@
         (= (shared s) 0)
 
         (= (sensed s) 'f')
+        (= (secret s) 't')
         ;todo: put the initial state's facts and numeric values here
     )
 
     (:goal (and
         ; (= (:ontic (= (agent_at a) 2)) 1)
         ; (= (:ontic (= (shared s) 2)) 1)
-        (= (:epistemic b [b] (= (sensed s) 't')) 0))
-        (= (:epistemic b [c] (= (sensed s) 't')) 1))
+        (= (:epistemic b [b] k [b] k [b] (= (secret s) 'f')) 1))
+        (= (:epistemic b [c] (= (secret s) 't')) 1))
         ; (= (:epistemic k [b] k [a] (= (v p) 't')) 0)
         ; (= (:epistemic s [b] s [a] (= (v p) 't')) 2)
         ; (= (:epistemic k [b] s [a] (= (v p) 't')) 2)

@@ -129,17 +129,17 @@ class Problem():
                         
                         # update parameters in the ontic precondition
                         for j in range(len(a_temp_precondition['ontic_p'])):
-                            v_name, v_effects = a_temp_precondition[j]
+                            v_name, v_effects = a_temp_precondition['ontic_p'][j]
                             v_name = v_name.replace(f'{i}',f'-{v}')
                             v_effects = v_effects.replace(f'{i}',f'-{v}')
-                            a_temp_precondition[j] = (v_name,v_effects)
+                            a_temp_precondition['ontic_p'][j] = (v_name,v_effects)
 
                         # update parameters in the epistemic precondition
                         for j in range(len(a_temp_precondition['epistemic_p'])):
-                            v_name, v_effects = a_temp_precondition[j]
+                            v_name, v_effects = a_temp_precondition['epistemic_p'][j]
                             v_name = v_name.replace(f'{i}',f'-{v}')
                             v_effects = v_effects.replace(f'{i}',f'-{v}')
-                            a_temp_precondition[j] = (v_name,v_effects)                            
+                            a_temp_precondition['epistemic_p'][j] = (v_name,v_effects)                            
                         
                         # update parameters in the effects
                         for j in range(len(a_temp_effects)):
