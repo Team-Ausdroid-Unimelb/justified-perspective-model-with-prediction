@@ -1,38 +1,37 @@
-( define 
+(define 
     (problem bbl_01) 
     (:domain bbl)
 
     (:agents
-        a b c
+        a b c d
     )
     (:objects 
-        s
+        a_s b_s c_s d_s
     )
 
     (:variables
-        (agent_at [a,b,c])
-        (secret_at [s])
-        (sensed [s])
-        (shared [s])
+        (agent_at [a,b,c,d])
+        (shared [a_s,b_s,c_s,d_s])
+        (knows [a,b,c,d] [a_s,b_s,c_s,d_s])
     )
 
     (:init
         (= (agent_at a) 1)
-        (= (agent_at b) 2)
-        (= (agent_at c) 3)
-        (= (secret_at s) 2)
-        ; the valid room is 1-4 only, zero means not done it yet
-        
-        (= (shared s) 0)
+        (= (agent_at b) 1)
+        (= (agent_at c) 1)
+        (= (agent_at d) 1)
 
-        (= (sensed s) 'f')
-        ;todo: put the initial state's facts and numeric values here
+
+        (= (shared a_s) 0)
+        (= (shared b_s) 0)
+        (= (shared c_s) 0)
+        (= (shared d_s) 0)        
     )
 
     (:goal (and
         ; (= (:ontic (= (agent_at a) 2)) 1)
-        ; (= (:ontic (= (shared s) 2)) 1)
-        (= (:epistemic b [b] (= (sensed s) 't')) 1)
+        (= (:ontic (= (shared a) 2)) 1)
+        ; (= (:epistemic s [b] (= (v p) 't')) 0)
         ; (= (:epistemic k [b] k [a] (= (v p) 't')) 0)
         ; (= (:epistemic s [b] s [a] (= (v p) 't')) 2)
         ; (= (:epistemic k [b] s [a] (= (v p) 't')) 2)
@@ -43,11 +42,8 @@
     ))
 
     (:domains
-        (agent_at integer [1,4])
-        (secret_at integer [1,4])
-        (shared integer [0,4])
-        (sensed enumerate ['t','f'])
-        ; the following line is the default
+        (agent_at integer [1,2])
+        (shared integer [0,2])
         ;(epistemic epistemic ['1','0','2']) true false unknown
     )
 

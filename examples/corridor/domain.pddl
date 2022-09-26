@@ -1,5 +1,4 @@
 ;Header and description
-
 (define 
     (domain corridor)
 

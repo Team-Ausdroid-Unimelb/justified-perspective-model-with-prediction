@@ -20,7 +20,7 @@
         (= (agent_at b) 2)
         (= (agent_at c) 3)
         (= (secret_at s) 2)
-        (= (sensed s) 0)
+        (= (sensed s) 'f')
         (= (shared s) 0)
         ;todo: put the initial state's facts and numeric values here
     )

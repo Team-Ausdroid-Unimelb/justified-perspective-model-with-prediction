@@ -167,10 +167,11 @@ def generatePerspective(external, path:typing.List, agt_id_nest_lst,entities,var
     if path == []:
         return {}
     # assert(path == [])
+    logger.debug(f'path: {path}')
     state, action = path[-1]
     new_state = {}
     logger.debug(f'current state: {state}')
-    logger.debug(f'path: {path}')
+    
     
     for v,e in state.items():
         logger.debug(f'\t find history value for {v},{e}')
@@ -223,7 +224,7 @@ def checkingEQ(external,eq:EpistemicQuery,path:typing.List,state,entities,variab
         # new_observation = getObservations(external,state,eq.q_group,entities,variables)
         new_path = []
         for i in range(len(path)):
-            logger.debug(f'generate perspective step {i}')
+            logger.debug(f'generate perspective from timestamp {i}')
             logger.debug(path)
             state,action = path[i]
             new_state = generatePerspective(external,path[:i+1],eq.q_group,entities,variables)

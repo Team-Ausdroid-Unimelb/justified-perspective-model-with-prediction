@@ -228,7 +228,7 @@ def problemParser(file_path):
             exit()
             
         return domains,i_state,g_states,agent_index,obj_index,variables,d_name,p_name
-    
+
 def domainParser(file_path):
     actions = {}
     d_name = ""
@@ -318,3 +318,4 @@ def domainParser(file_path):
             exit()          
         return actions,d_name
     
+    def _conditionParser(all_str):

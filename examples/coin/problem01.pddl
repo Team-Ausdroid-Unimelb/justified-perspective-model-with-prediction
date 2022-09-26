@@ -1,5 +1,3 @@
-
-
 ( define 
     (problem coin_01) 
     (:domain coin)

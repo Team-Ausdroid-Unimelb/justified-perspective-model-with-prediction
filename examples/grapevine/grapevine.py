@@ -59,13 +59,15 @@ def checkVisibility(external,state,agt_index,var_index,entities,variables):
     
     # logger.debug(f"checkVisibility(_,_,{agt_index},{var_index})")
     try:
+        logger.debug(f'checking seeing for agent {agt_index} on {var_index}')
         tgt_index = variables[var_index].v_parent
 
-        # if the target index is object, which mean it is the secret
-        # then the location is same as the location that (shared-s)
-        if entities[tgt_index].e_type == pddl_model.E_TYPE.OBJECT:
+        # if the variable contains shared or secret, then it means checking secret location
+        # which mean checking location of shared
+        # otherwise it checking agent's current location
+        if 'shared' in var_index or 'secret' in var_index:
 
-            tgt_loc = int(state['shared-s'])
+            tgt_loc = int(state[f'shared-{tgt_index}'])
 
             if tgt_loc == 0:
                 # if the sercret has not been shared
@@ -90,7 +92,7 @@ def checkVisibility(external,state,agt_index,var_index,entities,variables):
 
 
         # seeing relation for corridor is in the same room or adjuscent room
-        if abs(tgt_loc-agt_loc) <=1:
+        if False:
             return pddl_model.T_TYPE.TRUE
         else:
             return pddl_model.T_TYPE.FALSE
