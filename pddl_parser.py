@@ -96,7 +96,7 @@ def problemParser(file_path):
             agent_index = found[9:-1:].split(" ")
             logger.debug(agent_index)
         except AttributeError:
-            logger.error("error when extract domain name")
+            logger.error("error when extract agents")
             exit()
 
         logger.debug("extract objects")
@@ -105,7 +105,7 @@ def problemParser(file_path):
             obj_index = found[10:-1:].split(" ")
             logger.debug(obj_index)
         except AttributeError:
-            logger.error("error when extract domain name")
+            logger.error("error when extract objects")
             exit()
 
         logger.debug("extract variables")
@@ -228,7 +228,7 @@ def problemParser(file_path):
             exit()
             
         return domains,i_state,g_states,agent_index,obj_index,variables,d_name,p_name
-
+    
 def domainParser(file_path):
     actions = {}
     d_name = ""
@@ -269,7 +269,7 @@ def domainParser(file_path):
 
             for action_str in action_list:
                 parameters = []
-                preconditions = []
+                preconditions = {}
                 effects = []
                 action_str = action_str[:-1:]
                 action_name = action_str.split(" ")[0]
@@ -285,18 +285,73 @@ def domainParser(file_path):
                     parameters.append((p[0],p[1]))
                 logger.debug(f'parameters: {parameters}')
                 
+                logger.debug("extract goal")
+                try:
+                    
+                    preconditions_str = re.search(':precondition\(and.*\):effect', action_str).group()
+                    logger.debug(preconditions_str)
+                    
+                    # loading ontic precondition
+                    logger.debug("extract ontic preconditions propositions")
+                    preconditions.update({"ontic_p":{}})
+                    # ontic_goal_list = re.findall('\(= \([0-9a-z_ ]*\) [0-9a-z_\'\"]*\)',found[10:-1:])
+                    ontic_preconditions_list = re.findall('\(= \(:ontic[ 0-9a-z_\[\],]*\(= \([ 0-9a-z_]*\) [0-9a-z_\'\"]*\)\) [0-9a-z_\'\"]*\)',found[10:-1:])  
+
+                    logger.debug(f'ontic preconditions list: {ontic_preconditions_list}')
+                    for pre_str in ontic_preconditions_list:
+                        pre_str = pre_str[15:-5:]
+                        logger.debug(f'single precondition_str {goal_str}')
+                        
+                        precondition_list = pre_str.split(') ')
+                        variable = precondition_list[0].replace(' ','-')
+                        value = precondition_list[1]
+                        if "'" in value:
+                            value = value.replace("'","")
+                        elif '"' in value:
+                            value = value.replace('"',"")
+                        else:
+                            value =int(value)
+                        # print(value)
+                        preconditions["ontic_p"].update({variable:value})
+                    
+                    # loading epismetic goals
+                    logger.debug("extract epistemic precondition propositions")
+                    preconditions.update({"epistemic_p":[]})   
+                    epistemic_preconditions_list = re.findall('\(= \(:epistemic[ 0-9a-z_\[\],]*\(= \([ 0-9a-z_]*\) [0-9a-z_\'\"]*\)\) [0-9a-z_\'\"]*\)',found[10:-1:])  
+                    logger.debug(epistemic_preconditions_list)
+                    for pre_str in epistemic_preconditions_list:
+                        pre_str = pre_str[15:-1:]
+
+                        i,j = re.search('\)\) .*',pre_str).span()
+                        value1 = int(pre_str[i+3:j:])
+                        query = pre_str[:i+2:]
+                        p,q = re.search('\(= \([0-9a-z _]*\) [0-9a-z _\'\"]*\)',query).span()
+                        new_str = query[p+3:q-1]
+                        query = query[:p]
+                        m,n = re.search('\([0-9a-z _]*\)',new_str).span()
+                        var = new_str[m+1:n-1].replace(" ","-")
+                        value = new_str[n+1:]
+                        query = f"{query}('{var}',{value})"
+                        preconditions["epistemic_p"].append((query,value1))
+                    logger.debug(preconditions)
+                except AttributeError:
+                    logger.error("error when extract precondition")
+                    exit()   
+                
+                
+                
                 #decode precondition
-                preconditions_str = re.search(':precondition\(and.*\):effect', action_str).group()
-                logger.debug(f'preconditions_str: {preconditions_str}')  
-                for p_str in preconditions_str[18:-9:].split('(= '):
-                    if p_str == '':
-                        continue
-                    logger.debug(f'single precondition_str: {p_str}')
-                    p_list = p_str[1:].split(") ")
-                    # if len(p_list) == 1:
-                    #     p_list = p_list[0].split(" ")
-                    preconditions.append((p_list[0].replace(" ","").replace("(","").replace(")",""),p_list[1].replace(" ","").replace("(","").replace(")","").replace('"','').replace("'",'')))
-                logger.debug(f'preconditions: {preconditions}')
+                # preconditions_str = re.search(':precondition\(and.*\):effect', action_str).group()
+                # logger.debug(f'preconditions_str: {preconditions_str}')  
+                # for p_str in preconditions_str[18:-9:].split('(= '):
+                #     if p_str == '':
+                #         continue
+                #     logger.debug(f'single precondition_str: {p_str}')
+                #     p_list = p_str[1:].split(") ")
+                #     # if len(p_list) == 1:
+                #     #     p_list = p_list[0].split(" ")
+                #     preconditions.append((p_list[0].replace(" ","").replace("(","").replace(")",""),p_list[1].replace(" ","").replace("(","").replace(")","").replace('"','').replace("'",'')))
+                # logger.debug(f'preconditions: {preconditions}')
                 
                 #decode effects
                 effects_str = re.search(':effect\(and\(.*\)\)',action_str).group()
@@ -318,4 +373,3 @@ def domainParser(file_path):
             exit()          
         return actions,d_name
     
-    def _conditionParser(all_str):
