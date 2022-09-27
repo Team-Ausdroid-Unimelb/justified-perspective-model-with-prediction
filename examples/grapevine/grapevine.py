@@ -59,25 +59,33 @@ def checkVisibility(external,state,agt_index,var_index,entities,variables):
     
     # logger.debug(f"checkVisibility(_,_,{agt_index},{var_index})")
     try:
-        logger.debug(f'checking seeing for agent {agt_index} on {var_index}')
+        # logger.debug(f'checking seeing for agent {agt_index} on {var_index}')
         tgt_index = variables[var_index].v_parent
-
+        
+        # check if the agt_index can be found
+        assert(entities[agt_index].e_type==pddl_model.E_TYPE.AGENT)
+        
         # if the variable contains shared or secret, then it means checking secret location
-        # which mean checking location of shared
+        # which mean checking location of shared (agent's own secret can be shared by others)
         # otherwise it checking agent's current location
         if 'shared' in var_index or 'secret' in var_index:
+            tgt_loc = state[f'shared-{tgt_index}']
+            if type(tgt_loc) == str:
+                tgt_loc = int(state[f'shared-{tgt_index}'])
 
-            tgt_loc = int(state[f'shared-{tgt_index}'])
-
+            # agent should know their own secret before sharing
+            if tgt_index == agt_index:
+                return pddl_model.T_TYPE.TRUE
+            
+            # if the secret has not been shared
             if tgt_loc == 0:
-                # if the sercret has not been shared
+                
                 return pddl_model.T_TYPE.FALSE
         else:
             # the target is an agent, it has its own location
             tgt_loc = int(state[f'agent_at-{tgt_index}'])
 
-        # check if the agt_index can be found
-        assert(entities[agt_index].e_type==pddl_model.E_TYPE.AGENT)
+
 
         agt_loc = int(state[f'agent_at-{agt_index}'])
 
@@ -85,7 +93,7 @@ def checkVisibility(external,state,agt_index,var_index,entities,variables):
         # extract necessary common constants from given domain
         # logger.debug(f"necessary common constants from given domain")
 
-        logger.debug(f'checking seeing with agent location: {agt_loc} and target location: {tgt_loc}')
+        # logger.debug(f'checking seeing with agent location: {agt_loc} and target location: {tgt_loc}')
         # agent is able to see anything in the same location
         if tgt_loc == agt_loc:
             return pddl_model.T_TYPE.TRUE

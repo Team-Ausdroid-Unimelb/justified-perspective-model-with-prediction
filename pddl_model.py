@@ -95,7 +95,7 @@ class Problem():
             
         return True
     
-    def getLegalActions(self,state):
+    def getLegalActions(self,state,path):
         legal_actions = {}
         
         # get all type of actions
@@ -105,6 +105,7 @@ class Problem():
             
             # generate all possible combination parameters for each type of action
             logger.debug(f'all params: {self._generateParams(a.a_parameters)}')
+
             if a.a_parameters == []:
                 a_temp_name = a_name
                 a_temp_parameters = copy.deepcopy(a.a_parameters)
@@ -115,12 +116,16 @@ class Problem():
                     logger.debug(f'legal action after single precondition check: {legal_actions}') 
             else:
                 for params in self._generateParams(a.a_parameters):
+                    a_temp_name = a_name
+                    a_temp_parameters = copy.deepcopy(a.a_parameters)
+                    a_temp_precondition = copy.deepcopy(a.a_precondition)
+                    a_temp_effects = copy.deepcopy(a.a_effects)
                     logger.debug(f'works on params: {params}')
                     for i,v in params:
-                        a_temp_name = a_name
-                        a_temp_parameters = copy.deepcopy(a.a_parameters)
-                        a_temp_precondition = copy.deepcopy(a.a_precondition)
-                        a_temp_effects = copy.deepcopy(a.a_effects)
+                        # a_temp_name = a_name
+                        # a_temp_parameters = copy.deepcopy(a.a_parameters)
+                        # a_temp_precondition = copy.deepcopy(a.a_precondition)
+                        # a_temp_effects = copy.deepcopy(a.a_effects)
                         a_temp_name = a_temp_name + "-" + v
                         for j in range(len(a_temp_parameters)):
                             v_name, v_effects = a_temp_parameters[j]
@@ -131,14 +136,16 @@ class Problem():
                         for j in range(len(a_temp_precondition['ontic_p'])):
                             v_name, v_effects = a_temp_precondition['ontic_p'][j]
                             v_name = v_name.replace(f'{i}',f'-{v}')
-                            v_effects = v_effects.replace(f'{i}',f'-{v}')
+                            if type(v_effects) == str:
+                                v_effects = v_effects.replace(f'{i}',f'-{v}')
                             a_temp_precondition['ontic_p'][j] = (v_name,v_effects)
 
                         # update parameters in the epistemic precondition
                         for j in range(len(a_temp_precondition['epistemic_p'])):
                             v_name, v_effects = a_temp_precondition['epistemic_p'][j]
-                            v_name = v_name.replace(f'{i}',f'-{v}')
-                            v_effects = v_effects.replace(f'{i}',f'-{v}')
+                            v_name = v_name.replace(f'{i}',f'-{v}').replace('[-','[').replace(',-',',')
+                            # precondition effect of epistemic is only going to be int
+                            # v_effects = v_effects.replace(f'{i}',f'-{v}')
                             a_temp_precondition['epistemic_p'][j] = (v_name,v_effects)                            
                         
                         # update parameters in the effects
@@ -147,19 +154,19 @@ class Problem():
                             v_name = v_name.replace(f'{i}',f'-{v}')
                             v_effects = v_effects.replace(f'{i}',f'-{v}')
                             a_temp_effects[j] = (v_name,v_effects)
-                        logger.debug(f'precondition after matching parameters: {a_temp_precondition}')
-                        logger.debug(f'effect after matching parameters: {a_temp_effects}')
-                        
-                        
-                        logger.debug(f'legal action before precondition check: {legal_actions}') 
-                        # TODO: adding precondition check
-                        if self._checkPreconditions(state,a_temp_precondition):
-                            legal_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_precondition,a_temp_effects)})
-                        logger.debug(f'legal action after precondition check: {legal_actions}') 
+                    logger.debug(f'precondition after matching parameters: {a_temp_precondition}')
+                    logger.debug(f'effect after matching parameters: {a_temp_effects}')
+                    
+                    
+                    logger.debug(f'legal action before precondition check: {legal_actions}') 
+                    # TODO: adding precondition check
+                    if self._checkPreconditions(state,a_temp_precondition,path):
+                        legal_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_precondition,a_temp_effects)})
+                    logger.debug(f'legal action after precondition check: {legal_actions}') 
         logger.debug(f'legal actions: {legal_actions}') 
         return legal_actions
     
-    def _checkPreconditions(self,state,preconditions):
+    def _checkPreconditions(self,state,preconditions,path):
         logger.debug(f'checking precondition: {preconditions}')
         
         # checking ontic preconditions
@@ -175,15 +182,8 @@ class Problem():
                 return False
             
         # checking epistemic preconditions
-        for v,e in preconditions['epistemic_p']:
-            try:
-                if e in state:
-                    if not state[v] == state[e]: return False
-                else:
-                    if not state[v] == e: return False
-            except:
-                logger.error("Error when checking precondition: {}\n with state: {}")
-                
+        for eq,value in preconditions["epistemic_p"]:
+            if not epistemic_model.checkingEQstr(self.external,eq,path,state,self.entities,self.variables) == value:
                 return False
     
         return True

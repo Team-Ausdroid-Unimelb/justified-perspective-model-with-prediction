@@ -322,19 +322,23 @@ def domainParser(file_path):
                     # loading epismetic goals
                     logger.debug("extract epistemic precondition propositions")
                     preconditions.update({"epistemic_p":[]})   
-                    epistemic_preconditions_list = re.findall('\(= \(:epistemic[ 0-9a-z_\[\],]*\(= \([ 0-9a-z_]*\) [0-9a-z_\'\"]*\)\) [0-9a-z_\'\"]*\)',preconditions_str)  
+                    epistemic_preconditions_list = re.findall('\(= \(:epistemic[\? 0-9a-z_\[\],]*\(= \([ 0-9a-z_\? ]*\) [0-9a-z_\'\"\]*\)\) [0-9a-z_\'\"]*\)',preconditions_str)  
                     logger.debug(epistemic_preconditions_list)
                     for pre_str in epistemic_preconditions_list:
                         pre_str = pre_str[15:-1:]
-
+                        logger.debug(f"pre str: {pre_str}")
                         i,j = re.search('\)\) .*',pre_str).span()
+                        logger.debug(f'i: {i}, j: {j}')
                         value1 = int(pre_str[i+3:j:])
+                        logger.debug(f'value for epistemic query: {value1}')
                         query = pre_str[:i+2:]
-                        p,q = re.search('\(= \([0-9a-z _]*\) [0-9a-z _\'\"]*\)',query).span()
+                        logger.debug(f'query str: {query}')
+                        p,q = re.search('\(= \([0-9a-z _\?]*\) [0-9a-z _\'\"]*\)',query).span()
                         new_str = query[p+3:q-1]
+                        logger.debug(f'value string in epistemic query: {new_str}')
                         query = query[:p]
-                        m,n = re.search('\([0-9a-z _]*\)',new_str).span()
-                        var = new_str[m+1:n-1].replace(" ","-")
+                        m,n = re.search('\([0-9a-z _\?]*\)',new_str).span()
+                        var = new_str[m+1:n-1].replace(" ?","?").replace(' ','-')
                         value = new_str[n+1:]
                         query = f"{query}('{var}',{value})"
                         preconditions["epistemic_p"].append((query,value1))

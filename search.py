@@ -7,13 +7,18 @@ def BFS(problem):
     start_node = (problem.initial_state, [(problem.initial_state,'None')])
     logger.debug(start_node)
     queue = [start_node]
+    expanded = 0
     # visited = {}
 
     while len(queue):
         current_node = queue.pop(0)
         state, path = current_node
-        if len(path) == 22: return "cannot find solution"
-        logger.debug(f'expanding state: {state}')
+        if len(path) == 6: return "cannot find solution"
+        expanded += 1
+        logger.debug(f'expanding state ({expanded}th): {state}')
+        logger.info(f'expanding {expanded}')
+        
+        
         # visited[str(state)]=1
         # Goal Check
         if problem.isGoal(state,path):
@@ -26,7 +31,7 @@ def BFS(problem):
 
         # Add successor nodes into queue (no loop check; randomly tie-break)
         logger.debug("finding legal actions:")
-        actions = problem.getLegalActions(state)
+        actions = problem.getLegalActions(state,path)
         logger.debug(actions)
         for action in actions.keys():
             succ_state = problem.generatorSuccessor(state, actions[action],path)

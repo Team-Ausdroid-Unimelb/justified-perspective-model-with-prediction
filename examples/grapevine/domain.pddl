@@ -2,59 +2,64 @@
 (define 
     (domain grapevine)
 
-    ;remove requirements that are not needed
-    ; (:requirements :strips)
 
-    ; (:types ;todo: enumerate types and their hierarchy here, e.g. car truck bus - vehicle
-    ; )
-
-    ; un-comment following line if constants are needed
-    ;(:constants )
-
-    ; (:predicates ;todo: define predicates here
-    ; )
-
-
-    ; (:functions ;todo: define numeric functions here
-    ; )
 
     ;define actions here
     (:action move_right
         :parameters (?a - agent)
-        :precondition (and )
+        :precondition (and 
+        ; to do
+            (= (:ontic (= (agent_at ?a) 1)) 1)
+        )
         :effect (and 
             (= (agent_at ?a) (+1))
-            (= (shared-a_s) 0)
-            (= (shared-b_s) 0)
-            (= (shared-c_s) 0)
-            (= (shared-d_s) 0)
+            (= (shared-a) 0)
+            (= (shared-b) 0)
+            (= (shared-c) 0)
+            (= (shared-d) 0)
         )
     )
     
     (:action move_left
         :parameters (?a - agent)
-        :precondition (and )
+        :precondition (and 
+            (= (:ontic (= (agent_at ?a) 2)) 1)
+        )
         :effect (and 
             (= (agent_at ?a) (-1))
-            (= (shared-a_s) 0)
-            (= (shared-b_s) 0)
-            (= (shared-c_s) 0)
-            (= (shared-d_s) 0)
+            (= (shared-a) 0)
+            (= (shared-b) 0)
+            (= (shared-c) 0)
+            (= (shared-d) 0)
         )
     )
 
     (:action sharing
-        :parameters (?a - agent, ?s - objects)
+        :parameters (?a - agent, ?s - agent)
         :precondition (and (= (:epistemic b [?a] (= (secret ?s) 't')) 1))
         :effect (and 
-            (= (shared-a_s) 0)
-            (= (shared-b_s) 0)
-            (= (shared-c_s) 0)
-            (= (shared-d_s) 0)
+            (= (shared-a) 0)
+            (= (shared-b) 0)
+            (= (shared-c) 0)
+            (= (shared-d) 0)
             (= (shared ?s) (agent_at ?a))
+            (= (secret ?s) 't')  
         )
     )
 
+
+    (:action sharing_lie
+        :parameters (?a - agent, ?s - agent)
+        :precondition (and (= (:epistemic b [?a] (= (secret ?s) 't')) 1))
+        :effect (and 
+            (= (shared-a) 0)
+            (= (shared-b) 0)
+            (= (shared-c) 0)
+            (= (shared-d) 0)
+            (= (shared ?s) (agent_at ?a))
+            (= (secret ?s) 'f')  
+        )
+    )
     ; (:action share_bs
     ;     :parameters (?a - agent)
     ;     :precondition (and (= (knows ?a b_s) 1))
