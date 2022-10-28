@@ -208,7 +208,7 @@ def generatePerspective(external, path:typing.List, agt_id_nest_lst,entities,var
 
 def checkingEQstr(external,eq_str,path:typing.List,state,entities,variables):
     logger.debug(f'checking for eq string: {eq_str}')
-    eq = generateEpistemicQuery(eq_str)
+    eq = generateEpistemicQuery(eq_str) 
     return checkingEQ(external, eq, path, state, entities, variables)
 
 def checkingEQ(external,eq:EpistemicQuery,path:typing.List,state,entities,variables):
@@ -233,7 +233,9 @@ def checkingEQ(external,eq:EpistemicQuery,path:typing.List,state,entities,variab
         logger.debug(f"{eq.q_group}'s perspective (new path) {new_path}")
         if len(eq.q_group)>1:
             pass
-        
+        logger.debug(f'perspectives:')
+        for state,action in new_path:
+            logger.debug(state)
         last_state,action = new_path[-1]
         eva = 2
         logger.debug(f"checking belief for {eq.q_content}")

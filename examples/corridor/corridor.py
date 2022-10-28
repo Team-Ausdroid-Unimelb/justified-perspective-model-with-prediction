@@ -106,7 +106,10 @@ def checkVisibility(external,state,agt_index,var_index,entities,variables):
         # logging.error("error when checking visibility")
         return pddl_model.T_TYPE.UNKNOWN
 
-
+# customise action filters
+# to filter out the irrelevant actions
+def filterActionNames(problem,action_dict):
+    return action_dict.keys()
 
 # if __name__ == "__main__":
     

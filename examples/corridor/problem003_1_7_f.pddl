@@ -11,7 +11,7 @@
     )
 
     (:variables
-        (agent_at [a,b,c])
+        (agent_at [a,b,c,d,e,f,g])
         (secret_at [s])
         (sensed [s])
         (shared [s])
@@ -22,6 +22,10 @@
         (= (agent_at a) 1)
         (= (agent_at b) 2)
         (= (agent_at c) 3)
+        (= (agent_at d) 2)
+        (= (agent_at e) 3)
+        (= (agent_at f) 2)
+        (= (agent_at g) 3)
         (= (secret_at s) 2)
         ; the valid room is 1-4 only, zero means not done it yet
         

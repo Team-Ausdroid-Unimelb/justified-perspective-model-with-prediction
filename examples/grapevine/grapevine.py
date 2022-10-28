@@ -35,7 +35,14 @@ def extractVariables(eq):
             pass
     else:
         return extractVariables(eq.q_content)
+
+def extractAgents(eq):
+    if not type(eq) == epistemic_model.EpistemicQuery:
+        return []
+    else:
         
+        return eq.q_group + extractVariables(eq.q_content)    
+
 # customized evaluation function
 def evaluateS(world,statement):
     logger.debug(f"evaluate seeing: {statement} in the world: {world}, {type(statement)}, {len(statement)}")
@@ -116,7 +123,31 @@ def checkVisibility(external,state,agt_index,var_index,entities,variables):
         # logging.error("error when checking visibility")
         return pddl_model.T_TYPE.UNKNOWN
 
-
+# customise action filters
+# to filter out the irrelevant actions
+def filterActionNames(problem,action_dict):
+    logger.debug(f'action names before filter: {action_dict.keys()}')   
+    action_name_list = []
+    relevant_variable_parent_index = []
+    relevant_agent_index = []
+    for eq_str,value in problem.goal_states["epistemic_g"]:
+        eq = epistemic_model.generateEpistemicQuery(eq_str)
+        relevant_agent_index += extractAgents(eq)
+        for variable_name,value in extractVariables(eq):
+            relevant_variable_parent_index.append(problem.variables[variable_name].v_parent)
+    logger.debug(f'relevant agent index: {relevant_variable_parent_index}') 
+    # relevant_agent_index += relevant_variable_parent_index
+    for name,action in action_dict.items():
+        if "sharing" in name:
+            if name.split("-")[2] in relevant_variable_parent_index:
+                action_name_list.append(name)
+        elif "move" in name:
+            if name.split("-")[1] in relevant_agent_index:
+                action_name_list.append(name) 
+        else:
+            action_name_list.append(name)
+    logger.debug(f'action names after filter: {action_name_list}')   
+    return action_name_list
 
 # if __name__ == "__main__":
     

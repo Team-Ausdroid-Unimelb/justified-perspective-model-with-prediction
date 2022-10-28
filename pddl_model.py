@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import logging
 import os
 import copy
@@ -29,6 +30,8 @@ class Problem():
     initial_state = {}
     goal_states = {}
     external = None
+    epistemic_calls = 0
+    epistemic_call_time = timedelta(0)
 
     def __init__(self, domains,i_state,g_states,agent_index,obj_index,variables,actions, external=None):
         
@@ -81,7 +84,7 @@ class Problem():
         logger.debug(f"checking goal for state: {state} with path: {path}")
         actions = [ a  for s,a in path]
         actions = actions[1:]
-        logger.info(f'plan is: {actions}')
+        logger.debug(f'plan is: {actions}')
         logger.debug(f'ontic_goal: {self.goal_states["ontic_g"]}')
         for k,i in self.goal_states["ontic_g"].items():
             if not state[k] == i:
@@ -90,9 +93,12 @@ class Problem():
         # adding epistemic checker here
         logger.debug(f'epistemic_goal: {self.goal_states["epistemic_g"]}')
         for eq,value in self.goal_states["epistemic_g"]:
+            self.epistemic_calls +=1
+            current_time = datetime.now()
             if not epistemic_model.checkingEQstr(self.external,eq,path,state,self.entities,self.variables) == value:
+                self.epistemic_call_time += datetime.now() - current_time
                 return False
-            
+            self.epistemic_call_time += datetime.now() - current_time
         return True
     
     def getLegalActions(self,state,path):
@@ -111,7 +117,7 @@ class Problem():
                 a_temp_parameters = copy.deepcopy(a.a_parameters)
                 a_temp_precondition = copy.deepcopy(a.a_precondition)
                 a_temp_effects = copy.deepcopy(a.a_effects)
-                if self._checkPreconditions(state,a_temp_precondition):
+                if self._checkPreconditions(state,a_temp_precondition,path):
                     legal_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_precondition,a_temp_effects)})
                     logger.debug(f'legal action after single precondition check: {legal_actions}') 
             else:
@@ -183,9 +189,12 @@ class Problem():
             
         # checking epistemic preconditions
         for eq,value in preconditions["epistemic_p"]:
+            self.epistemic_calls +=1
+            current_time = datetime.now()
             if not epistemic_model.checkingEQstr(self.external,eq,path,state,self.entities,self.variables) == value:
+                self.epistemic_call_time += datetime.now() - current_time
                 return False
-    
+            self.epistemic_call_time += datetime.now() - current_time
         return True
     
     # generate all possible parameter combinations

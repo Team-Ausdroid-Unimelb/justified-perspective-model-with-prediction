@@ -42,7 +42,7 @@ DATE_FORMAT = '%d-%m-%Y_%H-%M-%S'
 timestamp = datetime.datetime.now().astimezone(TIMEZONE).strftime(DATE_FORMAT)
 # Set up root logger, and add a file handler to root logger
 logging.basicConfig(filename = f'logs/{timestamp}.log',
-                    level = logging.DEBUG,
+                    level = logging.INFO,
                     format = '%(asctime)s:%(levelname)s:%(name)s:%(message)s')
 logger = logging.getLogger("runner")
 
@@ -62,7 +62,7 @@ def loadParameter():
     logger.info("Parsing Options")
     parser = OptionParser(usageStr)
 
-    parser.add_option('-d', '--domain_name', help='domain_name, which is the same as domain_name.py and folder under examples', default='coin')
+    parser.add_option('-d', '--domain', help='path to the domain file', default='')
     parser.add_option('-p', '--problem', help='path to the problem file', default='')
     parser.add_option('-o','--output', help='output directory for the running results (default: output)',default='output')
     # parser.add_option('-t','--title', help='title of the tournament options test, ones', default='test')
@@ -96,33 +96,39 @@ if __name__ == '__main__':
     """
     
 
-    start_time = datetime.datetime.now()
-    aus_now = start_time.astimezone(TIMEZONE)
+    start_time = datetime.datetime.now().astimezone(TIMEZONE)
     options = loadParameter()
     
     
     # load pddl files
+    logger.info(f'loading problem.pddl')
     domains,i_state,g_states,agent_index,obj_index,variables,d_name,p_name= pddl_parser.problemParser(options.problem)
+    logger.info(f'loading domain.pddl')
     actions,domain_name = pddl_parser.domainParser(f"./examples/{options.domain_name}/domain.pddl")
     
+    logger.info(f'loading external function')
     external = None
     try:
         external = importlib.import_module(f"examples.{options.domain_name}.{options.domain_name}")
     except (NameError, ImportError, IOError):
-        print('Error: Agent at "' + teams[i]['agent'] + '" could not be loaded!', file=sys.stderr)
         traceback.print_exc()
         pass
     except:
         pass
-
+    
+    logger.info(f'initialize problem')
     problem = pddl_model.Problem(domains,i_state,g_states,agent_index,obj_index,variables,actions,external)
     
     # print(problem)
     
     import search
+    logger.info(f'starting search')
     
-    print(search.BFS(problem))
-    
+    start_search_time = datetime.datetime.now().astimezone(TIMEZONE)
+    print(search.BFS(problem,external.filterActionNames))
+    end_search_time = datetime.datetime.now().astimezone(TIMEZONE)
+    logger.info(f'initialization time: {start_search_time - start_time }')
+    logger.info(f'search time: {end_search_time - start_search_time }')
     # print(problem.domains)
     # print(problem.initial_state)
     # print(problem.goal_states)

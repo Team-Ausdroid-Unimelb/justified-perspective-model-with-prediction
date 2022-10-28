@@ -141,8 +141,11 @@ if __name__ == '__main__':
     for eq_str,value in problem.goal_states["epistemic_g"]:
         eq_list.append((epistemic_model.generateEpistemicQuery(eq_str),value))
     
-    
-    for eq,value in eq_list:
+    eq_list1 = [eq_list[0],]
+    eq_list1 += [eq_list[1]]
+    eq_list1 += [eq_list[2]]
+    eq_list1 += [eq_list[3]]
+    for eq,value in eq_list1:
         # print(eq)
         print(util.displayEQuery(eq))
         # s_0 = {'dir-a': 'sw', 'dir-b': 'sw', 'x-a': 3, 'x-b': 2, 'x-p': 1, 'y-a': 3, 'y-b': 2, 'y-p': 1, 'v-p': 't'}
@@ -155,28 +158,38 @@ if __name__ == '__main__':
             'secret-a': 't', 'secret-b': 't', 'secret-c': 't', 'secret-d': 't'
         }
         s_1 = {
-            'agent_at-a': 2, 'agent_at-b': 1, 'agent_at-c': 1, 'agent_at-d': 1, 
-            'shared-a': 0, 'shared-b': 0, 'shared-c': 0, 'shared-d': 0, 
-            'secret-a': 't', 'secret-b': 't', 'secret-c': 't', 'secret-d': 't'
+            'agent_at-a': 1, 'agent_at-b': 1, 'agent_at-c': 1, 'agent_at-d': 1, 
+            'shared-a': 1, 'shared-b': 0, 'shared-c': 0, 'shared-d': 0, 
+            'secret-a': 'f', 'secret-b': 't', 'secret-c': 't', 'secret-d': 't'
         }
         s_2 = {
-            'agent_at-a': 2, 'agent_at-b': 1, 'agent_at-c': 1, 'agent_at-d': 1, 
-            'shared-a': 0, 'shared-b': 1, 'shared-c': 0, 'shared-d': 0, 
+            'agent_at-a': 1, 'agent_at-b': 2, 'agent_at-c': 1, 'agent_at-d': 1, 
+            'shared-a': 0, 'shared-b': 0, 'shared-c': 0, 'shared-d': 0, 
             'secret-a': 't', 'secret-b': 't', 'secret-c': 't', 'secret-d': 't'
         }
         s_3 = {
-            'agent_at-a': 2, 'agent_at-b': 1, 'agent_at-c': 2, 'agent_at-d': 1, 
-            'shared-a': 0, 'shared-b': 0, 'shared-c': 0, 'shared-d': 0, 
+            'agent_at-a': 1, 'agent_at-b': 2, 'agent_at-c': 1, 'agent_at-d': 1, 
+            'shared-a': 1, 'shared-b': 0, 'shared-c': 0, 'shared-d': 0, 
             'secret-a': 't', 'secret-b': 't', 'secret-c': 't', 'secret-d': 't'
         }
         s_4 = {
-            'agent_at-a': 2, 'agent_at-b': 1, 'agent_at-c': 2, 'agent_at-d': 1, 
-            'shared-a': 0, 'shared-b': 2, 'shared-c': 0, 'shared-d': 0, 
+            'agent_at-a': 2, 'agent_at-b': 2, 'agent_at-c': 1, 'agent_at-d': 1, 
+            'shared-a': 0, 'shared-b': 0, 'shared-c': 0, 'shared-d': 0, 
             'secret-a': 't', 'secret-b': 't', 'secret-c': 't', 'secret-d': 't'
         }
+        s_5 = {
+            'agent_at-a': 2, 'agent_at-b': 2, 'agent_at-c': 1, 'agent_at-d': 1, 
+            'shared-a': 2, 'shared-b': 0, 'shared-c': 0, 'shared-d': 0, 
+            'secret-a': 't', 'secret-b': 't', 'secret-c': 't', 'secret-d': 't'
+        }
+        path = [(s_0,"")]
+        path += [(s_1,"")]
+        path += [(s_2,"")]
+        path += [(s_3,"")]
+        path += [(s_4,"")]
+        path += [(s_5,"")]
         
-        
-        print(epistemic_model.checkingEQ(problem.external,eq,[(s_0,""),(s_1,""),(s_2,""),(s_3,""),(s_4,"")],s_4,problem.entities,problem.variables))
+        print(epistemic_model.checkingEQ(problem.external,eq,path,s_5,problem.entities,problem.variables))
         
         
         
