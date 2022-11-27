@@ -12,9 +12,9 @@
     )
 
     (:variables
-        (agent_at [a,b,c,d])
-        (shared [a,b,c,d])
-        (secret [a,b,c,d])
+        (agent_at [a,b,c,d,e,f,g,h])
+        (shared [a,b,c,d,e,f,g,h])
+        (secret [a,b,c,d,e,f,g,h])
     )
 
     (:init
@@ -33,7 +33,20 @@
         (= (secret a) 't')
         (= (secret b) 't')  
         (= (secret c) 't')  
-        (= (secret d) 't')          
+        (= (secret d) 't')         
+
+        (= (agent_at e) 1)
+        (= (agent_at f) 1)
+        (= (agent_at g) 1)
+        (= (agent_at h) 1)
+        (= (shared e) 0)
+        (= (shared f) 0)
+        (= (shared g) 0)
+        (= (shared h) 0)
+        (= (secret e) 't')
+        (= (secret f) 't')  
+        (= (secret g) 't')  
+        (= (secret h) 't')     
     )
 
     (:goal (and
