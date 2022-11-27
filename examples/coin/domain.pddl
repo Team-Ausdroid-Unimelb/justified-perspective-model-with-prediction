@@ -22,15 +22,22 @@
     ;define actions here
     (:action peek
         :parameters (?i - agent)
-        :precondition (and (= (peeking ?i) 'f'))
+        :precondition (and 
+            ;(= (peeking ?i) 'f')
+            (= (:ontic (= (peeking ?i) 'f')) 1)
+        )
         :effect (and 
             (= (peeking ?i) 't')
+            
         )
     )
 
-    (:action back
+    (:action return
         :parameters (?i - agent)
-        :precondition (and (= (peeking ?i) 't'))
+        :precondition (and 
+            ; (= (peeking ?i) 't')
+            (= (:ontic (= (peeking ?i) 't')) 1)
+        )
         :effect (and 
             (= (peeking ?i) 'f')
         )
