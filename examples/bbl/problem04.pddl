@@ -20,7 +20,7 @@
 
     (:init
         (= (dir a) 'sw')
-        (= (dir b) 'ne')
+        (= (dir b) 'n')
         (= (x a) 3)
         (= (x b) 2)
         (= (x p) 1)
@@ -33,9 +33,11 @@
 
     (:goal (and
         ; (= (:ontic (= (dir b) 'se')) 1)
-        (= (:epistemic b [b] (= (v p) 't')) 1)
+        ; (= (:epistemic b [b] (= (v p) 't')) 1)
         ; (= (:epistemic k [b] k [a] (= (v p) 't')) 0)
-        (= (:epistemic b [b] b [a] (= (v p) 't')) 1)
+        (= (:epistemic b [a] (= (v p) 't')) 1)
+        (= (:epistemic b [b] (= (v p) 't')) 1)
+        
         ; (= (:epistemic k [b] s [a] (= (v p) 't')) 2)
         ; (= (:epistemic s [a] (= (v p) 't')) 1)
         ; (= (:epistemic b [a] (= (v p) 't')) 1)

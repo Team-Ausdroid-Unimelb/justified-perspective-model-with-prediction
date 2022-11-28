@@ -77,16 +77,22 @@ def evaluateS(world,statement):
     logger.debug(f"evaluate seeing: {statement} in the world: {world}, {type(statement)}, {len(statement)}")
     #default evaluation for variables
     if world == {}:
+        logger.debug(f"unknown due to the world is empty")
         return 2
     if not re.search("\([0-9a-z _\-\'\"]*,[0-9a-z _\'\"]*\)",statement) == None:
         var_name = statement.split(",")[0][1:].replace("'",'').replace('"','')
         value = statement.split(",")[1][:-1].replace("'",'').replace('"','')
+        
+        logger.debug(f"var_name is {var_name} in the world {world}")
         if var_name in world:
+            logger.debug(f"True")
             return 1
         else:
+            logger.debug(f"False")
             return 0
     else:
         logger.warning("the evaluation of the seeing equation has not defined")
+        logger.debug(f"Undefined, return 0. unknown due to the world is empty")
         return 0
 
 
@@ -133,17 +139,24 @@ def checkVisibility(external,state,agt_index,var_index,entities,variables):
         # logger.debug(f'visibility is {inside}')
         return inside
     except KeyError:
-        logger.warning(traceback.format_exc())
-        logger.warning("variable not found when check visibility")
+        # logger.warning(traceback.format_exc())
+        # logger.warning(f"variable {agt_index} not found when check visibility in state {state}")
         # logging.error("error when checking visibility")
+        logger.debug(traceback.format_exc())
+        logger.debug(f"variable {agt_index} not found when check visibility in state {state}")
         return pddl_model.T_TYPE.UNKNOWN
     except TypeError:
-        logger.warning(traceback.format_exc())
-        logger.warning("variable is None d when check visibility")
+        # logger.warning(traceback.format_exc())
+        # logger.warning("variable is None d when check visibility in state {state}")
+        logger.debug(traceback.format_exc())
+        logger.debug(f"variable {agt_index} not found when check visibility in state {state}")
         # logging.error("error when checking visibility")
         return pddl_model.T_TYPE.UNKNOWN
 
-
+# customise action filters
+# to filter out the irrelevant actions
+def filterActionNames(problem,action_dict):
+    return action_dict.keys()
 
 # if __name__ == "__main__":
     

@@ -1,3 +1,5 @@
+
+
 ( define 
     (problem bbl_01) 
     (:domain bbl)
@@ -31,9 +33,9 @@
 
     (:goal (and
         ; (= (:ontic (= (dir b) 'se')) 1)
-        (= (:epistemic s [b] (= (v p) 't')) 1)
+        ; (= (:epistemic b [b] (= (v p) 't')) 1)
         ; (= (:epistemic k [b] k [a] (= (v p) 't')) 0)
-        ; (= (:epistemic s [b] s [a] (= (v p) 't')) 2)
+        (= (:epistemic b [b] b [a] b [b] (= (v p) 't')) 1)
         ; (= (:epistemic k [b] s [a] (= (v p) 't')) 2)
         ; (= (:epistemic s [a] (= (v p) 't')) 1)
         ; (= (:epistemic b [a] (= (v p) 't')) 1)
@@ -54,3 +56,4 @@
     ;un-comment the following line if metric is needed
     ;(:metric minimize (???))
 )
+
