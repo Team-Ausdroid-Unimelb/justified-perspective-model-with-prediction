@@ -62,8 +62,9 @@ def loadParameter():
     logger.info("Parsing Options")
     parser = OptionParser(usageStr)
 
-    parser.add_option('-d', '--domain_name', help='domain_name, which is the same as domain_name.py and folder under examples', default='coin')
+    parser.add_option('-d', '--domain', help='path to the domain file', default='')
     parser.add_option('-p', '--problem', help='path to the problem file', default='')
+    parser.add_option('-e', '--external', help='path to the external function file', default='')
     parser.add_option('-o','--output', help='output directory for the running results (default: output)',default='output')
     # parser.add_option('-t','--title', help='title of the tournament options test, ones', default='test')
     # parser.add_option('--staffTeamOnly', action='store_true', help='only run among the staff teams', default=False)
@@ -96,33 +97,40 @@ if __name__ == '__main__':
     """
     
 
-    start_time = datetime.datetime.now()
-    aus_now = start_time.astimezone(TIMEZONE)
+    start_time = datetime.datetime.now().astimezone(TIMEZONE)
     options = loadParameter()
     
     
     # load pddl files
+    logger.info(f'loading problem.pddl')
     domains,i_state,g_states,agent_index,obj_index,variables,d_name,p_name= pddl_parser.problemParser(options.problem)
-    actions,domain_name = pddl_parser.domainParser(f"./examples/{options.domain_name}/domain.pddl")
+    logger.info(f'loading domain.pddl')
+    actions,domain_name = pddl_parser.domainParser(f"{options.domain}")
     
+    logger.info(f'loading external function')
     external = None
+    external_class = options.external.replace('.py','').replace('\\','.').replace('/','.').replace('..','')
     try:
-        external = importlib.import_module(f"examples.{options.domain_name}.{options.domain_name}")
+        external = importlib.import_module(external_class)
     except (NameError, ImportError, IOError):
-        print('Error: Agent at "' + teams[i]['agent'] + '" could not be loaded!', file=sys.stderr)
         traceback.print_exc()
         pass
     except:
         pass
-
+    
+    logger.info(f'initialize problem')
     problem = pddl_model.Problem(domains,i_state,g_states,agent_index,obj_index,variables,actions,external)
     
     # print(problem)
     
     import search
+    logger.info(f'starting search')
     
-    # print(search.BFS(problem))
-    
+    start_search_time = datetime.datetime.now().astimezone(TIMEZONE)
+    print(search.BFS(problem,external.filterActionNames))
+    end_search_time = datetime.datetime.now().astimezone(TIMEZONE)
+    logger.info(f'initialization time: {start_search_time - start_time }')
+    logger.info(f'search time: {end_search_time - start_search_time }')
     # print(problem.domains)
     # print(problem.initial_state)
     # print(problem.goal_states)
@@ -137,59 +145,28 @@ if __name__ == '__main__':
     # import coin
     
     
-    eq_list = []
-    for eq_str,value in problem.goal_states["epistemic_g"]:
-        eq_list.append((epistemic_model.generateEpistemicQuery(eq_str),value))
+    # eq_list = []
+    # for eq_str,value in problem.goal_states["epistemic_g"]:
+    #     eq_list.append((epistemic_model.generateEpistemicQuery(eq_str),value))
     
-    eq_list1 = [eq_list[0],]
-    eq_list1 += [eq_list[1]]
-    eq_list1 += [eq_list[2]]
-    eq_list1 += [eq_list[3]]
-    for eq,value in eq_list1:
-        # print(eq)
-        print(util.displayEQuery(eq))
-        # s_0 = {'dir-a': 'sw', 'dir-b': 'sw', 'x-a': 3, 'x-b': 2, 'x-p': 1, 'y-a': 3, 'y-b': 2, 'y-p': 1, 'v-p': 't'}
-        # s_1 = {'dir-a': 'sw', 'dir-b': 'n', 'x-a': 3, 'x-b': 2, 'x-p': 1, 'y-a': 3, 'y-b': 2, 'y-p': 1, 'v-p': 't'}
-        # print(model.checkingEQ(problem,eq,[({'dir-a': 'sw', 'dir-b': 'sw', 'x-a': 3, 'x-b': 2, 'x-p': 1, 'y-a': 3, 'y-b': 2, 'y-p': 1, 'v-p': 't'},""),(problem.initial_state,"a1")],problem.initial_state))
-        # print(model.checkingEQ(problem,eq,[(s_0,"")],s_0))
-        s_0 = {
-            'agent_at-a': 1, 'agent_at-b': 1, 'agent_at-c': 1, 'agent_at-d': 1, 
-            'shared-a': 0, 'shared-b': 0, 'shared-c': 0, 'shared-d': 0, 
-            'secret-a': 't', 'secret-b': 't', 'secret-c': 't', 'secret-d': 't'
-        }
-        s_1 = {
-            'agent_at-a': 1, 'agent_at-b': 1, 'agent_at-c': 1, 'agent_at-d': 1, 
-            'shared-a': 1, 'shared-b': 0, 'shared-c': 0, 'shared-d': 0, 
-            'secret-a': 'f', 'secret-b': 't', 'secret-c': 't', 'secret-d': 't'
-        }
-        s_2 = {
-            'agent_at-a': 1, 'agent_at-b': 2, 'agent_at-c': 1, 'agent_at-d': 1, 
-            'shared-a': 0, 'shared-b': 0, 'shared-c': 0, 'shared-d': 0, 
-            'secret-a': 't', 'secret-b': 't', 'secret-c': 't', 'secret-d': 't'
-        }
-        s_3 = {
-            'agent_at-a': 1, 'agent_at-b': 2, 'agent_at-c': 1, 'agent_at-d': 1, 
-            'shared-a': 1, 'shared-b': 0, 'shared-c': 0, 'shared-d': 0, 
-            'secret-a': 't', 'secret-b': 't', 'secret-c': 't', 'secret-d': 't'
-        }
-        s_4 = {
-            'agent_at-a': 2, 'agent_at-b': 2, 'agent_at-c': 1, 'agent_at-d': 1, 
-            'shared-a': 0, 'shared-b': 0, 'shared-c': 0, 'shared-d': 0, 
-            'secret-a': 't', 'secret-b': 't', 'secret-c': 't', 'secret-d': 't'
-        }
-        s_5 = {
-            'agent_at-a': 2, 'agent_at-b': 2, 'agent_at-c': 1, 'agent_at-d': 1, 
-            'shared-a': 2, 'shared-b': 0, 'shared-c': 0, 'shared-d': 0, 
-            'secret-a': 't', 'secret-b': 't', 'secret-c': 't', 'secret-d': 't'
-        }
-        path = [(s_0,"")]
-        path += [(s_1,"")]
-        path += [(s_2,"")]
-        path += [(s_3,"")]
-        path += [(s_4,"")]
-        path += [(s_5,"")]
+    
+    # for eq,value in eq_list:
+    #     # print(eq)
+    #     print(util.displayEQuery(eq))
+    #     # s_0 = {'dir-a': 'sw', 'dir-b': 'sw', 'x-a': 3, 'x-b': 2, 'x-p': 1, 'y-a': 3, 'y-b': 2, 'y-p': 1, 'v-p': 't'}
+    #     # s_1 = {'dir-a': 'sw', 'dir-b': 'n', 'x-a': 3, 'x-b': 2, 'x-p': 1, 'y-a': 3, 'y-b': 2, 'y-p': 1, 'v-p': 't'}
+    #     # print(model.checkingEQ(problem,eq,[({'dir-a': 'sw', 'dir-b': 'sw', 'x-a': 3, 'x-b': 2, 'x-p': 1, 'y-a': 3, 'y-b': 2, 'y-p': 1, 'v-p': 't'},""),(problem.initial_state,"a1")],problem.initial_state))
+    #     # print(model.checkingEQ(problem,eq,[(s_0,"")],s_0))
         
-        print(epistemic_model.checkingEQ(problem.external,eq,path,s_5,problem.entities,problem.variables))
+    #     s_0 = {'peeking-a': 'f','peeking-b': 'f', 'face-c': 'head'}
+    #     s_1 = {'peeking-a': 't','peeking-b': 'f', 'face-c': 'head'}
+    #     s_2 = {'peeking-a': 'f','peeking-b': 't', 'face-c': 'head'}
+    #     s_3 = {'peeking-a': 'f','peeking-b': 'f', 'face-c': 'head'}
+    #     s_4 = {'peeking-a': 'f','peeking-b': 't', 'face-c': 'tail'}
+    #     # s_5 = {'peeking-a': 'f','peeking-b': 'f', 'face-c': 'tail'}
+        
+        
+    #     print(epistemic_model.checkingEQ(problem.external,eq,[(s_0,""),(s_1,""),(s_2,""),(s_3,""),(s_4,"")],s_4,problem.entities,problem.variables))
         
         
         

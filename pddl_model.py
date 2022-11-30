@@ -47,10 +47,16 @@ class Problem():
         
         logger.debug("initialize variable")
         self.variables = {}
-        for v_name,targets in variables.items():
-            for i in targets:
-                v_temp = Variable(f"{v_name}-{i}",v_name,i)
-                self.variables.update({f"{v_name}-{i}":v_temp})
+        
+        for d_name,targets in variables.items():
+            # logger.debug(self.variables)
+            suffix_list = self._generateVariables(targets)
+            logger.debug(suffix_list)
+            for suffix in suffix_list:
+                var_name = f"{d_name}{suffix}"
+                v_parent = suffix.split('-')[1]
+                v_temp = Variable(var_name,d_name,v_parent)
+                self.variables.update({var_name:v_temp})
         logger.debug(self.variables)
             
         # grounding all actions or do not ground any actions?    
@@ -196,6 +202,26 @@ class Problem():
                 return False
             self.epistemic_call_time += datetime.now() - current_time
         return True
+
+    # generate all possible parameter combinations
+    def _generateVariables(self,params):
+        logger.debug(f'params: {params}')
+        param_list = []
+
+        if params == []:
+            return []
+        else:
+            
+            for i in params[0]:
+                next_param = copy.deepcopy(params[1:])
+                rest = self._generateVariables(next_param)
+                if len(rest) == 0:
+                    param_list = param_list + [f"-{i}"]
+                else:
+                    param_list = param_list + [ f"-{i}{t}" for t in rest ]
+        return param_list
+
+
     
     # generate all possible parameter combinations
     def _generateParams(self,params):
@@ -230,9 +256,10 @@ class Problem():
             old_value = state[v_name]
             # v_name = v_name.replace('?','-')
             logger.debug(f'single effect update: {v_name}/{old_value}/{update}')
-            if update in state:
-                new_state[v_name] = state[update]
-            elif '-' in update:
+            # if update in state:
+            #     new_state[v_name] = state[update]
+            # elif '-' in update:
+            if '-' in update:
                 logger.debug(f'update -')
                 delta_value = int(update.split('-')[1])
                 logger.debug(f'delta value: {delta_value}')
@@ -287,7 +314,13 @@ class Problem():
             #                 break
             #         new_state[v_name] = self.domains[domain_name].d_values[(index+int(value))%len(self.domains[domain_name].d_values)]
             else:
-                new_state[v_name] = update
+                
+                domain_name = self.variables[v_name].v_domain_name
+                logger.debug(f'update {v_name} with domain {domain_name} on type {self.domains[domain_name].d_type} ')
+                if self.domains[domain_name].d_type == D_TYPE.INTEGER:
+                    new_state[v_name] = int(update)
+                else:
+                    new_state[v_name] = update
 
         logger.debug(f'new state is : {new_state}')
         return new_state
@@ -323,6 +356,7 @@ class Entity():
 
     def __repr__(self): # show when in a dictionary
         return f"<Entity: e_name: {self.e_name}; e_type: {self.e_type}>\n"
+        # return self
 
 class Action():
     a_name = None

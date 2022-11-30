@@ -97,11 +97,23 @@ def getObservations(external,state,agt_id_nest_lst,entities,variables):
     temp_agt_nest_list = agt_id_nest_lst.copy()
     while not temp_agt_nest_list == []:
         temp_agent_list =  temp_agt_nest_list.pop()
-        new_state = getOneObservation(external,new_state,temp_agent_list[0],entities,variables)
+        temp_state = getOneObservation(external,new_state,temp_agent_list[0],entities,variables)
+        new_state = intersectObservation(new_state,temp_state)
         # while not temp_agent_list ==[]:
         #     getOneObservation
     logger.debug(f'observation of agent {agt_id_nest_lst} is {new_state}')
     return new_state
+
+def intersectObservation(state1,state2):
+    new_state = {}
+    for k,v in state1.items():
+        if k in state2.keys():
+            if v == state2[k]:
+                new_state[k] = v
+    return new_state
+
+
+
 
 def getOneObservation(external,state,agt_id,entities,variables):
     new_state = {}

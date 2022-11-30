@@ -117,7 +117,11 @@ def problemParser(file_path):
             for var_str in vars_list:
                 var_str = var_str[1:-1:].split(' ')
                 # print(var_str)
-                variables.update({var_str[0]:var_str[1][1:-1:].split(",")})
+                variable_name = var_str[0]
+                target_entities_list =[] 
+                for entities in var_str[1:]:
+                    target_entities_list.append(entities[1:-1:].split(","))
+                variables.update({variable_name:target_entities_list})
             logger.debug(variables)
         except AttributeError:
             logger.error("error when extract variables")
@@ -372,7 +376,7 @@ def domainParser(file_path):
                     e_list = e_str[1:].split(") ")
                     # if len(e_list) == 1:
                     #     e_list = e_list[0].split(" ")
-                    effects.append((e_list[0].replace(" ","").replace("(","").replace(")",""),e_list[1].replace(" ","").replace("(","").replace(")","").replace('"','').replace("'",'')))
+                    effects.append((e_list[0].replace(" ?","?").replace(" ","-").replace("(","").replace(")",""),e_list[1].replace(" ","").replace("(","").replace(")","").replace('"','').replace("'",'')))
                 logger.debug(f'effects: {effects}')
                 
                 actions.update({action_name: {"parameters":parameters,"precondition":preconditions,"effect":effects}})

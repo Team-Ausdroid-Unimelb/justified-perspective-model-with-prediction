@@ -64,6 +64,7 @@ def loadParameter():
 
     parser.add_option('-d', '--domain', help='path to the domain file', default='')
     parser.add_option('-p', '--problem', help='path to the problem file', default='')
+    parser.add_option('-e', '--external', help='path to the external function file', default='')
     parser.add_option('-o','--output', help='output directory for the running results (default: output)',default='output')
     # parser.add_option('-t','--title', help='title of the tournament options test, ones', default='test')
     # parser.add_option('--staffTeamOnly', action='store_true', help='only run among the staff teams', default=False)
@@ -104,12 +105,13 @@ if __name__ == '__main__':
     logger.info(f'loading problem.pddl')
     domains,i_state,g_states,agent_index,obj_index,variables,d_name,p_name= pddl_parser.problemParser(options.problem)
     logger.info(f'loading domain.pddl')
-    actions,domain_name = pddl_parser.domainParser(f"./examples/{options.domain_name}/domain.pddl")
+    actions,domain_name = pddl_parser.domainParser(f"{options.domain}")
     
     logger.info(f'loading external function')
     external = None
+    external_class = options.external.replace('.py','').replace('\\','.').replace('/','.').replace('..','')
     try:
-        external = importlib.import_module(f"examples.{options.domain_name}.{options.domain_name}")
+        external = importlib.import_module(external_class)
     except (NameError, ImportError, IOError):
         traceback.print_exc()
         pass
