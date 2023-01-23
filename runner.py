@@ -66,6 +66,7 @@ def loadParameter():
     parser.add_option('-p', '--problem', help='path to the problem file', default='')
     parser.add_option('-e', '--external', help='path to the external function file', default='')
     parser.add_option('-o','--output', help='output directory for the running results (default: output)',default='output')
+    parser.add_option('-s', '--search', help='the name of the search algorithm', default='bfs')
     # parser.add_option('-t','--title', help='title of the tournament options test, ones', default='test')
     # parser.add_option('--staffTeamOnly', action='store_true', help='only run among the staff teams', default=False)
     # parser.add_option('-i','--id', help='student id for run single assignment', default='000000')
@@ -111,6 +112,14 @@ if __name__ == '__main__':
     external = None
     external_class = options.external.replace('.py','').replace('\\','.').replace('/','.').replace('..','')
     try:
+        search_algorithm = importlib.import_module(f"search.{options.search}")
+    except (NameError, ImportError, IOError):
+        traceback.print_exc()
+        pass
+    except:
+        pass
+
+    try:
         external = importlib.import_module(external_class)
     except (NameError, ImportError, IOError):
         traceback.print_exc()
@@ -123,11 +132,11 @@ if __name__ == '__main__':
     
     # print(problem)
     
-    import search
+    # import search
     logger.info(f'starting search')
     
     start_search_time = datetime.datetime.now().astimezone(TIMEZONE)
-    print(search.BFS(problem,external.filterActionNames))
+    print(search_algorithm.searching(problem,external.filterActionNames))
     end_search_time = datetime.datetime.now().astimezone(TIMEZONE)
     logger.info(f'initialization time: {start_search_time - start_time }')
     logger.info(f'search time: {end_search_time - start_search_time }')
