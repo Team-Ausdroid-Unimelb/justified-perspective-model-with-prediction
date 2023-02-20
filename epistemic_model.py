@@ -92,7 +92,7 @@ def generateEpistemicQuery(eq_str):
 
 # update this function if we change how the model works
 def getObservations(external,state,agt_id_nest_lst,entities,variables):
-    logger.debug(f"generating observation of agent {agt_id_nest_lst} from state: {state}")
+    # logger.debug(f"generating observation of agent {agt_id_nest_lst} from state: {state}")
     new_state = state.copy()
     temp_agt_nest_list = agt_id_nest_lst.copy()
     while not temp_agt_nest_list == []:
@@ -101,7 +101,7 @@ def getObservations(external,state,agt_id_nest_lst,entities,variables):
         new_state = intersectObservation(new_state,temp_state)
         # while not temp_agent_list ==[]:
         #     getOneObservation
-    logger.debug(f'observation of agent {agt_id_nest_lst} is {new_state}')
+    # logger.debug(f'observation of agent {agt_id_nest_lst} is {new_state}')
     return new_state
 
 def intersectObservation(state1,state2):
@@ -142,7 +142,7 @@ def identifyMemorizedValue(external, path:typing.List, agt_id_nest_lst, ts_index
     while ts_index_temp >=0:
         state,action = path[ts_index_temp]
         temp_observation = getObservations(external,state,agt_id_nest_lst,entities,variables)
-        logger.debug(f'temp observation in identifyMemorization: {temp_observation}')
+        # logger.debug(f'temp observation in identifyMemorization: {temp_observation}')
         if not variable_index in temp_observation or temp_observation[variable_index] == None:
             ts_index_temp += -1
         else:
@@ -175,22 +175,22 @@ def identifyLastSeenTimestamp(external, path:typing.List, agt_id_nest_lst,variab
     return -1
 
 def generatePerspective(external, path:typing.List, agt_id_nest_lst,entities,variables):
-    logger.debug("generatePerspective")
+    # logger.debug("generatePerspective")
     if path == []:
         return {}
     # assert(path == [])
-    logger.debug(f'path: {path}')
+    # logger.debug(f'path: {path}')
     state, action = path[-1]
     new_state = {}
-    logger.debug(f'current state: {state}')
+    # logger.debug(f'current state: {state}')
     
     
     for v,e in state.items():
-        logger.debug(f'\t find history value for {v},{e}')
+        # logger.debug(f'\t find history value for {v},{e}')
         ts_index = identifyLastSeenTimestamp(external, path, agt_id_nest_lst,v,entities,variables)
-        logger.debug(f'\t timestamp index: {ts_index}')
+        # logger.debug(f'\t timestamp index: {ts_index}')
         value = identifyMemorizedValue(external, path, agt_id_nest_lst, ts_index,v,entities,variables)
-        logger.debug(f'\t {v}"s value is: {value}')
+        # logger.debug(f'\t {v}"s value is: {value}')
         new_state.update({v:value})
     return new_state 
 
@@ -219,46 +219,46 @@ def generatePerspective(external, path:typing.List, agt_id_nest_lst,entities,var
 #     return new_state
 
 def checkingEQstr(external,eq_str,path:typing.List,state,entities,variables):
-    logger.debug(f'checking for eq string: {eq_str}')
+    # logger.debug(f'checking for eq string: {eq_str}')
     eq = generateEpistemicQuery(eq_str) 
     return checkingEQ(external, eq, path, state, entities, variables)
 
 def checkingEQ(external,eq:EpistemicQuery,path:typing.List,state,entities,variables):
     var_list = external.extractVariables(eq)
-    logger.debug(f"checking eq {eq}, {eq.eq_type}")
-    logger.debug(f'current state: {state}')
-    logger.debug(f'var_list: {var_list}')
+    # logger.debug(f"checking eq {eq}, {eq.eq_type}")
+    # logger.debug(f'current state: {state}')
+    # logger.debug(f'var_list: {var_list}')
 
     if eq.eq_type == EQ_TYPE.BELIEF:
         
-        logger.debug(f"checking belief for {eq}")
+        # logger.debug(f"checking belief for {eq}")
         # generate the state
         # new_observation = getObservations(external,state,eq.q_group,entities,variables)
         new_path = []
         for i in range(len(path)):
-            logger.debug(f'generate perspective from timestamp {i}')
-            logger.debug(path)
+            # logger.debug(f'generate perspective from timestamp {i}')
+            # logger.debug(path)
             state,action = path[i]
             new_state = generatePerspective(external,path[:i+1],eq.q_group,entities,variables)
-            logger.debug(new_state)
+            # logger.debug(new_state)
             new_path.append((new_state,action))
-        logger.debug(f"{eq.q_group}'s perspective (new path) {new_path}")
+        # logger.debug(f"{eq.q_group}'s perspective (new path) {new_path}")
         if len(eq.q_group)>1:
             pass
-        logger.debug(f'perspectives:')
-        for state,action in new_path:
-            logger.debug(state)
+        # logger.debug(f'perspectives:')
+        # for state,action in new_path:
+        #     logger.debug(state)
         last_state,action = new_path[-1]
         eva = 2
-        logger.debug(f"checking belief for {eq.q_content}")
+        # logger.debug(f"checking belief for {eq.q_content}")
         if type(eq.q_content) == str:
             for var_name,value in var_list:
 
                 if not var_name in last_state.keys():
-                    logger.debug(f"return 0 due to {var_name} {len(var_name)} not in { last_state.keys() }")
+                    # logger.debug(f"return 0 due to {var_name} {len(var_name)} not in { last_state.keys() }")
                     return 0
                 if not last_state[var_name] == value:
-                    logger.debug(f"return 0 due to {value} not equal to {last_state[var_name]}")
+                    # logger.debug(f"return 0 due to {value} not equal to {last_state[var_name]}")
                     return 0
             eva = external.evaluateS(last_state,eq.q_content)
         else:

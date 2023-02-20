@@ -86,6 +86,34 @@ class Problem():
         self.external = external
     
         
+    def isGoalN(self,state,path):
+        is_goal=True
+        # let's keep iw1 version and extend it later
+        epistemic_items_set = {}
+        logger.debug(f"checking goal for state: {state} with path: {path}")
+        actions = [ a  for s,a in path]
+        actions = actions[1:]
+        logger.debug(f'plan is: {actions}')
+        logger.debug(f'ontic_goal: {self.goal_states["ontic_g"]}')
+        for k,i in self.goal_states["ontic_g"].items():
+            if not state[k] == i:
+                is_goal = False
+                break
+            
+        # adding epistemic checker here
+        logger.debug(f'epistemic_goal: {self.goal_states["epistemic_g"]}')
+        for eq,value in self.goal_states["epistemic_g"]:
+            self.epistemic_calls +=1
+            current_time = datetime.now()
+            temp_e_v = epistemic_model.checkingEQstr(self.external,eq,path,state,self.entities,self.variables)
+            self.epistemic_call_time += datetime.now() - current_time
+            if not temp_e_v == value:
+                is_goal=False
+            epistemic_items_set.update({eq:temp_e_v})
+        return is_goal,epistemic_items_set
+    
+    
+    
     def isGoal(self,state,path):
         logger.debug(f"checking goal for state: {state} with path: {path}")
         actions = [ a  for s,a in path]
@@ -107,16 +135,17 @@ class Problem():
             self.epistemic_call_time += datetime.now() - current_time
         return True
     
+    
     def getLegalActions(self,state,path):
         legal_actions = {}
         
         # get all type of actions
         for a_name, a in self.actions.items():
-            logger.debug(f'action: {a} ')
+            # logger.debug(f'action: {a} ')
             
             
             # generate all possible combination parameters for each type of action
-            logger.debug(f'all params: {self._generateParams(a.a_parameters)}')
+            # logger.debug(f'all params: {self._generateParams(a.a_parameters)}')
 
             if a.a_parameters == []:
                 a_temp_name = a_name
@@ -125,14 +154,14 @@ class Problem():
                 a_temp_effects = copy.deepcopy(a.a_effects)
                 if self._checkPreconditions(state,a_temp_precondition,path):
                     legal_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_precondition,a_temp_effects)})
-                    logger.debug(f'legal action after single precondition check: {legal_actions}') 
+                    # logger.debug(f'legal action after single precondition check: {legal_actions}') 
             else:
                 for params in self._generateParams(a.a_parameters):
                     a_temp_name = a_name
                     a_temp_parameters = copy.deepcopy(a.a_parameters)
                     a_temp_precondition = copy.deepcopy(a.a_precondition)
                     a_temp_effects = copy.deepcopy(a.a_effects)
-                    logger.debug(f'works on params: {params}')
+                    # logger.debug(f'works on params: {params}')
                     for i,v in params:
                         # a_temp_name = a_name
                         # a_temp_parameters = copy.deepcopy(a.a_parameters)
@@ -166,21 +195,60 @@ class Problem():
                             v_name = v_name.replace(f'{i}',f'-{v}')
                             v_effects = v_effects.replace(f'{i}',f'-{v}')
                             a_temp_effects[j] = (v_name,v_effects)
-                    logger.debug(f'precondition after matching parameters: {a_temp_precondition}')
-                    logger.debug(f'effect after matching parameters: {a_temp_effects}')
+                    # logger.debug(f'precondition after matching parameters: {a_temp_precondition}')
+                    # logger.debug(f'effect after matching parameters: {a_temp_effects}')
                     
                     
-                    logger.debug(f'legal action before precondition check: {legal_actions}') 
-                    # TODO: adding precondition check
-                    if self._checkPreconditions(state,a_temp_precondition,path):
-                        legal_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_precondition,a_temp_effects)})
-                    logger.debug(f'legal action after precondition check: {legal_actions}') 
+                    # logger.debug(f'legal action before precondition check: {legal_actions}') 
+                    # # TODO: adding precondition check
+                    # if self._checkPreconditions(state,a_temp_precondition,path):
+                    #     legal_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_precondition,a_temp_effects)})
+                    # logger.debug(f'legal action after precondition check: {legal_actions}') 
+                    legal_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_precondition,a_temp_effects)})
+                    # logger.debug(f'legal action before precondition check: {legal_actions}') 
         logger.debug(f'legal actions: {legal_actions}') 
         return legal_actions
     
-    def _checkPreconditions(self,state,preconditions,path):
-        logger.debug(f'checking precondition: {preconditions}')
-        
+
+    def checkPreconditionsN(self,state,action,path):
+        # logger.debug(f'checking precondition for action: {action}')
+        preconditions = action.a_precondition
+        pre_flag = True
+        epistemic_items_set = {}
+        # checking ontic preconditions
+        for v,e in preconditions['ontic_p']:
+            try:
+                if e in state:
+                    if not state[v] == state[e]:  
+                        pre_flag = False
+                        break
+                else:
+                    if not state[v] == e:  
+                        pre_flag = False
+                        break
+            except:
+                logger.error("Error when checking precondition: {}\n with state: {}")
+                
+                pre_flag = False
+                break
+            
+            
+        # checking epistemic preconditions
+        for eq,value in preconditions["epistemic_p"]:
+            self.epistemic_calls +=1
+            current_time = datetime.now()
+            temp_e_v = epistemic_model.checkingEQstr(self.external,eq,path,state,self.entities,self.variables)
+            self.epistemic_call_time += datetime.now() - current_time
+            epistemic_items_set.update({eq:temp_e_v})
+            if not temp_e_v == value:
+                pre_flag = False
+        return pre_flag,epistemic_items_set     
+    
+    
+    
+    def checkPreconditions(self,state,action,path):
+        logger.debug(f'checking precondition for action: {action}')
+        preconditions = action.a_precondition
         # checking ontic preconditions
         for v,e in preconditions['ontic_p']:
             try:
@@ -248,39 +316,39 @@ class Problem():
         
         # TODO valid action
         # need to go nested on the brackets
-        logger.debug(f'generate successor for state: {state}')
-        logger.debug(f'generate successor with action: {action}')
+        # logger.debug(f'generate successor for state: {state}')
+        # logger.debug(f'generate successor with action: {action}')
         new_state = copy.deepcopy(state)
         
         for v_name,update in action.a_effects:
             old_value = state[v_name]
             # v_name = v_name.replace('?','-')
-            logger.debug(f'single effect update: {v_name}/{old_value}/{update}')
+            # logger.debug(f'single effect update: {v_name}/{old_value}/{update}')
             # if update in state:
             #     new_state[v_name] = state[update]
             # elif '-' in update:
-            if '-' in update:
-                logger.debug(f'update -')
+            if update.startswith('-'):
+                # logger.debug(f'update -')
                 delta_value = int(update.split('-')[1])
-                logger.debug(f'delta value: {delta_value}')
+                # logger.debug(f'delta value: {delta_value}')
                 domain_name = self.variables[v_name].v_domain_name
-                logger.debug(f'domain_name {domain_name}')
+                # logger.debug(f'domain_name {domain_name}')
                 if self.domains[domain_name].d_type == D_TYPE.ENUMERATE:
                     index = self.domains[domain_name].d_values.index(old_value)
-                    logger.debug(f'index: {index} in the domain: {self.domains[domain_name].d_values}')
+                    # logger.debug(f'index: {index} in the domain: {self.domains[domain_name].d_values}')
                     new_index = (index-delta_value) % len(self.domains[domain_name].d_values)
-                    logger.debug(f'new_index: {new_index} in the domain: {self.domains[domain_name].d_values}')
+                    # logger.debug(f'new_index: {new_index} in the domain: {self.domains[domain_name].d_values}')
                     new_value = self.domains[domain_name].d_values[new_index]
-                    logger.debug(f'new_value: {new_value} in the domain: {self.domains[domain_name].d_values}')
+                    # logger.debug(f'new_value: {new_value} in the domain: {self.domains[domain_name].d_values}')
                     new_state[v_name] = new_value
                 elif self.domains[domain_name].d_type == D_TYPE.INTEGER:
                     old_int = int(old_value)
-                    logger.debug(f'old_int: {old_int}')
+                    # logger.debug(f'old_int: {old_int}')
                     new_value = old_int - delta_value
-                    logger.debug(f'new_value: {new_value} in the domain: {self.domains[domain_name].d_values}')
+                    # logger.debug(f'new_value: {new_value} in the domain: {self.domains[domain_name].d_values}')
                     new_state[v_name] = new_value
                     
-            elif '+' in update:
+            elif update.startswith('+'):
                 delta_value = int(update.split('+')[-1])
                 domain_name = self.variables[v_name].v_domain_name
                 if self.domains[domain_name].d_type == D_TYPE.ENUMERATE:
@@ -316,13 +384,15 @@ class Problem():
             else:
                 
                 domain_name = self.variables[v_name].v_domain_name
-                logger.debug(f'update {v_name} with domain {domain_name} on type {self.domains[domain_name].d_type} ')
+                # logger.debug(f'update {v_name} with domain {domain_name} on type {self.domains[domain_name].d_type} ')
                 if self.domains[domain_name].d_type == D_TYPE.INTEGER:
+                    if re.search("[a-z]|[A-Z]", update):
+                        update = state[update]
                     new_state[v_name] = int(update)
                 else:
                     new_state[v_name] = update
 
-        logger.debug(f'new state is : {new_state}')
+        # logger.debug(f'new state is : {new_state}')
         return new_state
         
         
