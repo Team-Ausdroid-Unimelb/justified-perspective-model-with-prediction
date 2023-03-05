@@ -15,7 +15,7 @@ def searching(problem, filterActionNames = None):
     logger.info(f'the domains are {problem.domains}')
     
     
-    
+    result = dict()
     # Your code here:
     
     
@@ -25,6 +25,8 @@ def searching(problem, filterActionNames = None):
     expanded = 0
     generated = 0
     pruned = 0
+    goal_checked = 0
+    
     novelty = 1
     # visited = {}
     max_novelty = _max_novelty(problem)
@@ -45,7 +47,7 @@ def searching(problem, filterActionNames = None):
             state, path = current_node
             # if len(path) == 8: 
             #     return "cannot find solution"
-            expanded += 1
+            
             novelty_flag = False
             # logger.debug(f'novelty table is {novelty_table}')
             # if novelty_check(novelty_table,state,novelty):
@@ -56,6 +58,7 @@ def searching(problem, filterActionNames = None):
             
             # visited[str(state)]=1
             # Goal Check
+            goal_checked += 1
             is_goal, epistemic_item_set = problem.isGoalN(state,path)
             if is_goal:
                 logger.info(f'Goal found')
@@ -64,11 +67,23 @@ def searching(problem, filterActionNames = None):
                 actions = actions[1:]
                 logger.info(f'plan is: {actions}')
                 logger.info(f'[number of node pruned]: {pruned}')
+                logger.info(f'[number of node goal_checked]: {goal_checked}')
                 logger.info(f'[number of node expansion]: {expanded}')
                 logger.info(f'[number of node generated]: {generated}')
                 logger.info(f'[number of epistemic formula evaluation: {problem.epistemic_calls}]')
                 logger.info(f'[time in epistemic formulas evaluation: {problem.epistemic_call_time}]')
-                return actions
+                
+                result.update({'plan':actions})
+                result.update({'solvable': True})
+                result.update({'pruned':pruned})
+                result.update({'goal_checked':goal_checked})
+                result.update({'expanded':expanded})
+                result.update({'generated':generated})
+                result.update({'epistemic_calls':problem.epistemic_calls})
+                result.update({'epistemic_call_time':problem.epistemic_call_time.total_seconds()})
+                
+                
+                return result
             
             # check novelty
             epistemic_item_set.update(state)
@@ -77,6 +92,7 @@ def searching(problem, filterActionNames = None):
                 novelty_flag = True
             
             # Add successor nodes into queue (no loop check; randomly tie-break)
+            expanded += 1
             logger.debug("finding legal actions:")
             actions = problem.getLegalActions(state,path)
             logger.debug(actions)
@@ -103,12 +119,22 @@ def searching(problem, filterActionNames = None):
         
     logger.info(f'Problem is not solvable')
     logger.info(f'[number of node pruned]: {pruned}')
+    logger.info(f'[number of node goal_checked]: {goal_checked}')
     logger.info(f'[number of node expansion]: {expanded}')
     logger.info(f'[number of node generated]: {generated}')
     logger.info(f'[number of epistemic formulas evaluation: {problem.epistemic_calls}]')
     logger.info(f'[time in epistemic formulas evaluation: {problem.epistemic_call_time}]')
-    return False
-
+    
+    result.update({'plan':[]})
+    result.update({'solvable': False})
+    result.update({'pruned':pruned})
+    result.update({'goal_checked':goal_checked})
+    result.update({'expanded':expanded})
+    result.update({'generated':generated})
+    result.update({'epistemic_calls':problem.epistemic_calls})
+    result.update({'epistemic_call_time':problem.epistemic_call_time.total_seconds()})
+    
+    return result
 
 def novelty_check(novelty_table = {}, state = {},novelty_bound=1):
     logger.debug(f'before novelty check: {novelty_table}')
