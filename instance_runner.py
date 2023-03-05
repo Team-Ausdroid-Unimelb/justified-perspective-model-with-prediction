@@ -53,12 +53,14 @@ class Instance:
         self.external_function = external_function
         self.search_algorithm = search_algorithm
 
-    def solve(self,timeout=300,enable_debug = False, output_path = "output" ):
+    def solve(self,timeout=300,enable_debug = False, output_path = '' ):
         
         start_time = datetime.datetime.now().astimezone(TIMEZONE)
-        
+        if output_path == '':
+            output_path = f"output/{start_time.strftime(DATE_FORMAT)}"
+            
         if not os.path.isdir(output_path):
-            os.mkdir(output_path)
+            os.makedirs(output_path)
         
         if enable_debug:
             debug_level = logging.DEBUG
@@ -66,7 +68,7 @@ class Instance:
             debug_level = logging.INFO
         
         # Set up root logger, and add a file handler to root logger
-        logging.basicConfig(filename = f'{output_path}/{self.instance_name}_{start_time.strftime(DATE_FORMAT)}.log',
+        logging.basicConfig(filename = f'{output_path}/{self.instance_name}.log',
                             level = debug_level,
                             format = '%(asctime)s:%(levelname)s:%(name)s:%(message)s')
         logger = logging.getLogger(LOGGER_NAME)    
@@ -77,7 +79,7 @@ class Instance:
 
         logger.info(f"loading domain file: {self.domain_path}")
         actions,domain_name = pddl_parser.domainParser(f"{self.domain_path}")
-        logger.info(f"finish loading domain file: {p_name}")        
+        logger.info(f"finish loading domain file: {domain_name}")        
         
         if type(self.search_algorithm) ==str:
             logger.info(f"loading search algorithm: {self.search_algorithm}")
@@ -128,8 +130,14 @@ class Instance:
         logger.info(f'initialization time: { init_time}')
         logger.info(f'search time: {search_time }') 
             
+            
+        result.update({'domain_name':domain_name})  
+        result.update({'problem':p_name})
+        result.update({'search':self.instance_name.split('_')[0]})
         result.update({'init_time':init_time.total_seconds()})
         result.update({'search_time':search_time.total_seconds()})
+        
+        
 
         print(result)
         with open(f"{output_path}/{self.instance_name}.json",'w') as f:
@@ -151,7 +159,7 @@ def loadParameter():
     parser.add_option('-d', '--domain', dest="domain_path", help='path to the domain file', default='')
     parser.add_option('-p', '--problem', dest="problem_path", help='path to the problem file', default='')
     parser.add_option('-e', '--external', dest="external_path", help='path to the external function file', default='')
-    parser.add_option('-o', '--output', dest="output_path", help='output directory for the running results (default: output)',default='output')
+    parser.add_option('-o', '--output', dest="output_path", help='output directory for the running results (default: output/timestamp)',default='')
     parser.add_option('-s', '--search', dest="search_path", help='the name of the search algorithm', default='bfs')
     parser.add_option('--debug', dest="enable_debug", action='store_true', help='enable logging level to debug', default=False)
     parser.add_option('-t', '--timeout', dest="timeout", help='timeout, default 300s', type='int', default=300)
@@ -180,6 +188,8 @@ if __name__ == '__main__':
         problem_name = problem_path.split('\\')[-1].replace('.pddl','')
         search_name = search_algorithm.split('\\')[-1].replace('.py','')
     instance_name = f"{search_name}_{domain_name}_{problem_name}"
+    
+        
     
     ins = Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search_algorithm= search_algorithm)
     ins.solve(timeout=options.timeout,enable_debug = options.enable_debug, output_path = options.output_path)
