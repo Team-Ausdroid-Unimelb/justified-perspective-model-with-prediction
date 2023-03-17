@@ -9,8 +9,10 @@ import re
 import pddl_model
 import epistemic_model
 
-# logger = logging.getLogger("sn")
-LOGGER_NAME = "sn"
+# logger = logging.getLogger("bbl")
+
+
+LOGGER_NAME = "grapevine8"
 LOGGER_LEVEL = logging.INFO
 from util import setup_logger
  
@@ -24,6 +26,7 @@ class ExternalFunction:
     
     def __init__(self, logger_handler):
         self.logger = setup_logger(LOGGER_NAME,logger_handler,logging.INFO) 
+
 
     # # customized evaluation function
 
@@ -71,56 +74,46 @@ class ExternalFunction:
 
     def checkVisibility(self,external,state,agt_index,var_index,entities,variables):
         
-        self.logger.debug(f"checkVisibility(_,_,{agt_index},{var_index})")
+        # logger.debug(f"checkVisibility(_,_,{agt_index},{var_index})")
         try:
-            self.logger.debug(f'checking seeing for agent {agt_index} on {var_index}')
+            # logger.debug(f'checking seeing for agent {agt_index} on {var_index}')
             tgt_index = variables[var_index].v_parent
             
             # check if the agt_index can be found
             assert(entities[agt_index].e_type==pddl_model.E_TYPE.AGENT)
             
-            if entities[tgt_index].e_type==pddl_model.E_TYPE.AGENT:
-                if state[f'friended-{agt_index}-{tgt_index}'] ==1:
+            # if the variable contains shared or secret, then it means checking secret location
+            # which mean checking location of shared (agent's own secret can be shared by others)
+            # otherwise it checking agent's current location
+            if 'shared' in var_index or 'secret' in var_index:
+                tgt_loc = state[f'shared-{tgt_index}']
+                if type(tgt_loc) == str:
+                    tgt_loc = int(state[f'shared-{tgt_index}'])
+
+                # agent should know their own secret before sharing
+                if tgt_index == agt_index:
                     return pddl_model.T_TYPE.TRUE
-                else:
+                
+                # if the secret has not been shared
+                if tgt_loc == 0:
+                    
                     return pddl_model.T_TYPE.FALSE
             else:
-                # print(entities)
-                for name,entity in entities.items():
-                    if entity.e_type == pddl_model.E_TYPE.AGENT:
-                        if state[f'post-{tgt_index}-{name}'] == 1:
-                            if state[f'friended-{agt_index}-{name}'] ==1:
-                                return pddl_model.T_TYPE.TRUE
-            
-            # if 'shared' in var_index or 'secret' in var_index:
-            #     tgt_loc = state[f'shared-{tgt_index}']
-            #     if type(tgt_loc) == str:
-            #         tgt_loc = int(state[f'shared-{tgt_index}'])
-
-            #     # agent should know their own secret before sharing
-            #     if tgt_index == agt_index:
-            #         return pddl_model.T_TYPE.TRUE
-                
-            #     # if the secret has not been shared
-            #     if tgt_loc == 0:
-                    
-            #         return pddl_model.T_TYPE.FALSE
-            # else:
-            #     # the target is an agent, it has its own location
-            #     tgt_loc = int(state[f'agent_at-{tgt_index}'])
+                # the target is an agent, it has its own location
+                tgt_loc = int(state[f'agent_at-{tgt_index}'])
 
 
 
-            # agt_loc = int(state[f'agent_at-{agt_index}'])
+            agt_loc = int(state[f'agent_at-{agt_index}'])
 
             
-            # # extract necessary common constants from given domain
-            # # logger.debug(f"necessary common constants from given domain")
+            # extract necessary common constants from given domain
+            # logger.debug(f"necessary common constants from given domain")
 
-            # # logger.debug(f'checking seeing with agent location: {agt_loc} and target location: {tgt_loc}')
-            # # agent is able to see anything in the same location
-            # if tgt_loc == agt_loc:
-            #     return pddl_model.T_TYPE.TRUE
+            # logger.debug(f'checking seeing with agent location: {agt_loc} and target location: {tgt_loc}')
+            # agent is able to see anything in the same location
+            if tgt_loc == agt_loc:
+                return pddl_model.T_TYPE.TRUE
 
 
             # seeing relation for corridor is in the same room or adjuscent room
@@ -169,6 +162,6 @@ class ExternalFunction:
     # if __name__ == "__main__":
         
     #     pass
-        
+    
 
-        
+    

@@ -1,6 +1,6 @@
 ; depth 5 agent 7
 (define 
-    (problem corridor_01) 
+    (problem corridor_09) 
     (:domain corridor)
 
     (:agents
@@ -55,6 +55,7 @@
         (secret_at integer [1,4])
         (shared integer [0,4])
         (sensed enumerate ['t','f'])
+        (secret enumerate ['t','f'])
         ; the following line is the default
         ;(epistemic epistemic ['1','0','2']) true false unknown
     )
