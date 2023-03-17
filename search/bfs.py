@@ -61,7 +61,7 @@ def searching(problem, filterActionNames = None):
         logger.debug(actions)
         filtered_action_names = filterActionNames(problem,actions)
         for action in filtered_action_names:
-            succ_state = problem.generatorSuccessor(state, actions[action],path)
+            succ_state = problem.generateSuccessor(state, actions[action],path)
             # if str(succ_state) not in visited:
             generated += 1
             queue.append((succ_state, path + [(succ_state,action)]))

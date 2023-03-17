@@ -31,8 +31,9 @@ import pytz
 import logging
 import pddl_model
 import epistemic_model
-import pddl_parser
-import util
+from pddl_parser import PDDLParser
+# import util
+from util import setup_log_handler,setup_logger
 
 TIMEZONE = pytz.timezone('Australia/Melbourne')
 DATE_FORMAT = '%d-%m-%Y_%H-%M-%S'
@@ -47,6 +48,12 @@ class Instance:
     search_algorithm = None
     
     def __init__(self,instance_name="",problem_path="",domain_path="",external_function= "",search_algorithm= ""):
+        self.problem_path = ""
+        self.domain_path = ""
+        self.instance_name = ""
+        self.external_function = None
+        self.search_algorithm = None
+        
         self.instance_name = instance_name
         self.problem_path = problem_path
         self.domain_path = domain_path
@@ -56,6 +63,7 @@ class Instance:
     def solve(self,timeout=300,enable_debug = False, output_path = '' ):
         
         start_time = datetime.datetime.now().astimezone(TIMEZONE)
+        result = dict()
         if output_path == '':
             output_path = f"output/{start_time.strftime(DATE_FORMAT)}"
             
@@ -68,11 +76,15 @@ class Instance:
             debug_level = logging.INFO
         
         # Set up root logger, and add a file handler to root logger
-        logging.basicConfig(filename = f'{output_path}/{self.instance_name}.log',
-                            level = debug_level,
-                            format = '%(asctime)s:%(levelname)s:%(name)s:%(message)s')
-        logger = logging.getLogger(LOGGER_NAME)    
+        # logging.basicConfig(filename = f'{output_path}/{self.instance_name}.log',
+        #                     level = debug_level,
+        #                     format = '%(asctime)s:%(levelname)s:%(name)s:%(message)s')
+
+        logger_handler = setup_log_handler(f'{output_path}/{self.instance_name}.log')
+        logger = setup_logger(LOGGER_NAME,logger_handler,debug_level) 
         
+        # read the pddl files
+        pddl_parser = PDDLParser(logger_handler)
         logger.info(f"loading problem file: {self.problem_path}")
         variable_domains,i_state,g_states,agent_index,obj_index,variables,vd_name,p_name= pddl_parser.problemParser(self.problem_path)
         logger.info(f"finish loading problem file: {p_name}")
@@ -104,7 +116,8 @@ class Instance:
             external_path = self.external_function
             external_path = external_path.replace('.py','').replace('\\','.').replace('/','.').replace('..','')
             try:
-                self.external_function = importlib.import_module(external_path)
+                external_module = importlib.import_module(external_path)
+                self.external_function = external_module.ExternalFunction(logger_handler)
                 logger.info(f"finish loading external function")
             except (NameError, ImportError, IOError):
                 traceback.print_exc()
@@ -117,11 +130,19 @@ class Instance:
             
             
         logger.info(f'Initialize problem')
-        problem = pddl_model.Problem(variable_domains,i_state,g_states,agent_index,obj_index,variables,actions,self.external_function)
+        problem = pddl_model.Problem(variable_domains,i_state,g_states,agent_index,obj_index,variables,actions,self.external_function,logger_handler)
             
         logger.info(f'starting search')
         start_search_time = datetime.datetime.now().astimezone(TIMEZONE)
-        result = self.search_algorithm.searching(problem,self.external_function.filterActionNames)
+        import func_timeout
+        
+        try:
+            result = func_timeout.func_timeout(timeout, self.search_algorithm.searching,args=(problem,self.external_function.filterActionNames))
+        except func_timeout.FunctionTimedOut:
+            result.update({"running": f"timeout after {timeout}"})
+
+        
+        # result = self.search_algorithm.searching(problem,self.external_function.filterActionNames)
         end_search_time = datetime.datetime.now().astimezone(TIMEZONE)
         
         init_time = start_search_time - start_time
@@ -183,10 +204,14 @@ if __name__ == '__main__':
 
     
     
-    if '\\' in domain_path:
+    if '\\' in search_algorithm:
         domain_name = domain_path.split('\\')[2]
         problem_name = problem_path.split('\\')[-1].replace('.pddl','')
         search_name = search_algorithm.split('\\')[-1].replace('.py','')
+    elif '/' in search_algorithm:
+        domain_name = domain_path.split('/')[2]
+        problem_name = problem_path.split('/')[-1].replace('.pddl','')
+        search_name = search_algorithm.split('/')[-1].replace('.py','')        
     instance_name = f"{search_name}_{domain_name}_{problem_name}"
     
         

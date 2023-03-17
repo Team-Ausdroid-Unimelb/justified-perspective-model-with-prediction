@@ -105,7 +105,7 @@ def searching(problem, filterActionNames = None):
             for action in filtered_action_names:
                 pre_flag,temp_epistemic_item_set = problem.checkPreconditionsN(state,actions[action],path)
                 if pre_flag: 
-                    succ_state = problem.generatorSuccessor(state, actions[action],path)
+                    succ_state = problem.generateSuccessor(state, actions[action],path)
                     generated += 1
                     succ_node = SearchNode(succ_state,temp_epistemic_item_set,path + [(succ_state,action)])
                     queue.append(succ_node)

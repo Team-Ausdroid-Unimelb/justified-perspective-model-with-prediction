@@ -100,7 +100,7 @@ def searching(problem, filterActionNames = None):
             for action in filtered_action_names:
                 pre_flag,epistemic_item_set = problem.checkPreconditionsN(state,actions[action],path)
                 if pre_flag: 
-                    succ_state = problem.generatorSuccessor(state, actions[action],path)
+                    succ_state = problem.generateSuccessor(state, actions[action],path)
                     epistemic_item_set.update(state)
                     logger.debug(f'checking for precondition of {action}')
                     if novelty_check(novelty_table,epistemic_item_set,novelty):

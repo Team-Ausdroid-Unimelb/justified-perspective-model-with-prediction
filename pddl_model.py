@@ -4,9 +4,14 @@ import os
 import copy
 import re
 from typing import List
-import epistemic_model
+from epistemic_model import EpistemicModel
 
-logger = logging.getLogger("pddl_model")
+
+LOGGER_NAME = "pddl_model"
+LOG_LEVEL = logging.INFO
+
+from util import setup_logger
+# logger = setup_logger(LOGGER_NAME,instance_handler,logging.INFO) 
 # from numpy.core.defchararray import _join_dispatcher
 # from numpy.lib.function_base import extract
 # from numpy.lib.shape_base import _put_along_axis_dispatcher
@@ -21,7 +26,7 @@ logger = logging.getLogger("pddl_model")
 
 
 # Class of the problem
-class Problem():
+class Problem:
     initial_state = {}
     actions = {} 
     entities = {} # agent indicators, should be unique
@@ -32,10 +37,25 @@ class Problem():
     external = None
     epistemic_calls = 0
     epistemic_call_time = timedelta(0)
+    epistemic_model = None
+    logger = None
 
-    def __init__(self, domains,i_state,g_states,agent_index,obj_index,variables,actions, external=None):
-        
-        logger.debug("initialize entities")
+    def __init__(self, domains,i_state,g_states,agent_index,obj_index,variables,actions, external=None,logger_handler=None):
+        self.initial_state = {}
+        self.actions = {} 
+        self.entities = {} # agent indicators, should be unique
+        self.variables = {} #variable
+        self.domains = {}
+        self.initial_state = {}
+        self.goal_states = {}
+        self.external = None
+        self.epistemic_calls = 0
+        self.epistemic_call_time = timedelta(0)
+        self.epistemic_model = None
+        self.epistemic_model = EpistemicModel(logger_handler)
+        self.logger = None
+        self.logger = setup_logger(LOGGER_NAME,logger_handler,LOG_LEVEL)
+        self.logger.info("initialize entities")
         self.entities = {}
         for i in agent_index:
             e_temp = Entity(i,E_TYPE.AGENT)
@@ -43,45 +63,45 @@ class Problem():
         for i in obj_index:
             e_temp = Entity(i,E_TYPE.OBJECT)
             self.entities.update({i:e_temp})        
-        logger.debug(self.entities)
+        self.logger.debug(self.entities)
         
-        logger.debug("initialize variable")
+        self.logger.debug("initialize variable")
         self.variables = {}
         
         for d_name,targets in variables.items():
-            # logger.debug(self.variables)
+            # self.logger.debug(self.variables)
             suffix_list = self._generateVariables(targets)
-            logger.debug(suffix_list)
+            self.logger.debug(suffix_list)
             for suffix in suffix_list:
                 var_name = f"{d_name}{suffix}"
                 v_parent = suffix.split('-')[1]
                 v_temp = Variable(var_name,d_name,v_parent)
                 self.variables.update({var_name:v_temp})
-        logger.debug(self.variables)
+        self.logger.debug(self.variables)
             
         # grounding all actions or do not ground any actions?    
-        logger.debug("initialize actions")
-        logger.debug(actions )
+        self.logger.debug("initialize actions")
+        self.logger.debug(actions )
         for a_name, parts in actions.items():
             
-            p = [ (i,eTypeConvert(t))for i,t in parts['parameters']]
+            p = [ (i,eTypeConvert(self.logger,t))for i,t in parts['parameters']]
             a_temp = Action(a_name, p,parts['precondition'], parts['effect'])
             self.actions.update({a_name:a_temp})
-        logger.debug(self.actions)
+        self.logger.debug(self.actions)
         
-        logger.debug("initialize domains")
+        self.logger.debug("initialize domains")
         self.domains = {}
-        logger.debug(f'input domains: {domains}')
+        self.logger.debug(f'input domains: {domains}')
         for d_name in domains.keys():
             # print(d_name)
-            domain_temp = Domain(d_name,domains[d_name]['values'],d_name=='agent',dTypeConvert(domains[d_name]['basic_type']))
+            domain_temp = Domain(d_name,domains[d_name]['values'],d_name=='agent',dTypeConvert(self.logger,domains[d_name]['basic_type']))
             self.domains.update({d_name:domain_temp})
-        logger.debug(self.domains)
+        self.logger.debug(self.domains)
         
         self.goal_states = g_states
-        logger.debug(self.goal_states)
+        self.logger.debug(self.goal_states)
         self.initial_state = i_state
-        logger.debug(self.initial_state)
+        self.logger.debug(self.initial_state)
         
         self.external = external
     
@@ -90,22 +110,22 @@ class Problem():
         is_goal=True
         # let's keep iw1 version and extend it later
         epistemic_items_set = {}
-        logger.debug(f"checking goal for state: {state} with path: {path}")
+        self.logger.debug(f"checking goal for state: {state} with path: {path}")
         actions = [ a  for s,a in path]
         actions = actions[1:]
-        logger.debug(f'plan is: {actions}')
-        logger.debug(f'ontic_goal: {self.goal_states["ontic_g"]}')
+        self.logger.debug(f'plan is: {actions}')
+        self.logger.debug(f'ontic_goal: {self.goal_states["ontic_g"]}')
         for k,i in self.goal_states["ontic_g"].items():
             if not state[k] == i:
                 is_goal = False
                 break
             
         # adding epistemic checker here
-        logger.debug(f'epistemic_goal: {self.goal_states["epistemic_g"]}')
+        self.logger.debug(f'epistemic_goal: {self.goal_states["epistemic_g"]}')
         for eq,value in self.goal_states["epistemic_g"]:
             self.epistemic_calls +=1
             current_time = datetime.now()
-            temp_e_v = epistemic_model.checkingEQstr(self.external,eq,path,state,self.entities,self.variables)
+            temp_e_v = self.epistemic_model.checkingEQstr(self.external,eq,path,state,self.entities,self.variables)
             self.epistemic_call_time += datetime.now() - current_time
             if not temp_e_v == value:
                 is_goal=False
@@ -115,21 +135,21 @@ class Problem():
     
     
     def isGoal(self,state,path):
-        logger.debug(f"checking goal for state: {state} with path: {path}")
+        self.logger.debug(f"checking goal for state: {state} with path: {path}")
         actions = [ a  for s,a in path]
         actions = actions[1:]
-        logger.debug(f'plan is: {actions}')
-        logger.debug(f'ontic_goal: {self.goal_states["ontic_g"]}')
+        self.logger.debug(f'plan is: {actions}')
+        self.logger.debug(f'ontic_goal: {self.goal_states["ontic_g"]}')
         for k,i in self.goal_states["ontic_g"].items():
             if not state[k] == i:
                 return False
             
         # adding epistemic checker here
-        logger.debug(f'epistemic_goal: {self.goal_states["epistemic_g"]}')
+        self.logger.debug(f'epistemic_goal: {self.goal_states["epistemic_g"]}')
         for eq,value in self.goal_states["epistemic_g"]:
             self.epistemic_calls +=1
             current_time = datetime.now()
-            if not epistemic_model.checkingEQstr(self.external,eq,path,state,self.entities,self.variables) == value:
+            if not self.epistemic_model.checkingEQstr(self.external,eq,path,state,self.entities,self.variables) == value:
                 self.epistemic_call_time += datetime.now() - current_time
                 return False
             self.epistemic_call_time += datetime.now() - current_time
@@ -141,27 +161,27 @@ class Problem():
         
         # get all type of actions
         for a_name, a in self.actions.items():
-            # logger.debug(f'action: {a} ')
+            # self.logger.debug(f'action: {a} ')
             
             
             # generate all possible combination parameters for each type of action
-            # logger.debug(f'all params: {self._generateParams(a.a_parameters)}')
+            # self.logger.debug(f'all params: {self._generateParams(a.a_parameters)}')
 
             if a.a_parameters == []:
                 a_temp_name = a_name
                 a_temp_parameters = copy.deepcopy(a.a_parameters)
                 a_temp_precondition = copy.deepcopy(a.a_precondition)
                 a_temp_effects = copy.deepcopy(a.a_effects)
-                if self._checkPreconditions(state,a_temp_precondition,path):
-                    legal_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_precondition,a_temp_effects)})
-                    # logger.debug(f'legal action after single precondition check: {legal_actions}') 
+                # if self._checkPreconditions(state,a_temp_precondition,path):
+                legal_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_precondition,a_temp_effects)})
+                    # self.logger.debug(f'legal action after single precondition check: {legal_actions}') 
             else:
                 for params in self._generateParams(a.a_parameters):
                     a_temp_name = a_name
                     a_temp_parameters = copy.deepcopy(a.a_parameters)
                     a_temp_precondition = copy.deepcopy(a.a_precondition)
                     a_temp_effects = copy.deepcopy(a.a_effects)
-                    # logger.debug(f'works on params: {params}')
+                    # self.logger.debug(f'works on params: {params}')
                     for i,v in params:
                         # a_temp_name = a_name
                         # a_temp_parameters = copy.deepcopy(a.a_parameters)
@@ -195,23 +215,23 @@ class Problem():
                             v_name = v_name.replace(f'{i}',f'-{v}')
                             v_effects = v_effects.replace(f'{i}',f'-{v}')
                             a_temp_effects[j] = (v_name,v_effects)
-                    # logger.debug(f'precondition after matching parameters: {a_temp_precondition}')
-                    # logger.debug(f'effect after matching parameters: {a_temp_effects}')
+                    # self.logger.debug(f'precondition after matching parameters: {a_temp_precondition}')
+                    # self.logger.debug(f'effect after matching parameters: {a_temp_effects}')
                     
                     
-                    # logger.debug(f'legal action before precondition check: {legal_actions}') 
+                    # self.logger.debug(f'legal action before precondition check: {legal_actions}') 
                     # # TODO: adding precondition check
                     # if self._checkPreconditions(state,a_temp_precondition,path):
                     #     legal_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_precondition,a_temp_effects)})
-                    # logger.debug(f'legal action after precondition check: {legal_actions}') 
+                    # self.logger.debug(f'legal action after precondition check: {legal_actions}') 
                     legal_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_precondition,a_temp_effects)})
-                    # logger.debug(f'legal action before precondition check: {legal_actions}') 
-        logger.debug(f'legal actions: {legal_actions}') 
+                    # self.logger.debug(f'legal action before precondition check: {legal_actions}') 
+        self.logger.debug(f'legal actions: {legal_actions}') 
         return legal_actions
     
 
     def checkPreconditionsN(self,state,action,path):
-        # logger.debug(f'checking precondition for action: {action}')
+        # self.logger.debug(f'checking precondition for action: {action}')
         preconditions = action.a_precondition
         pre_flag = True
         epistemic_items_set = {}
@@ -227,7 +247,7 @@ class Problem():
                         pre_flag = False
                         break
             except:
-                logger.error("Error when checking precondition: {}\n with state: {}")
+                self.logger.error("Error when checking precondition: {}\n with state: {}")
                 
                 pre_flag = False
                 break
@@ -237,7 +257,7 @@ class Problem():
         for eq,value in preconditions["epistemic_p"]:
             self.epistemic_calls +=1
             current_time = datetime.now()
-            temp_e_v = epistemic_model.checkingEQstr(self.external,eq,path,state,self.entities,self.variables)
+            temp_e_v = self.epistemic_model.checkingEQstr(self.external,eq,path,state,self.entities,self.variables)
             self.epistemic_call_time += datetime.now() - current_time
             epistemic_items_set.update({eq:temp_e_v})
             if not temp_e_v == value:
@@ -247,7 +267,7 @@ class Problem():
     
     
     def checkPreconditions(self,state,action,path):
-        logger.debug(f'checking precondition for action: {action}')
+        self.logger.debug(f'checking precondition for action: {action}')
         preconditions = action.a_precondition
         # checking ontic preconditions
         for v,e in preconditions['ontic_p']:
@@ -257,7 +277,7 @@ class Problem():
                 else:
                     if not state[v] == e: return False
             except:
-                logger.error("Error when checking precondition: {}\n with state: {}")
+                self.logger.error("Error when checking precondition: {}\n with state: {}")
                 
                 return False
             
@@ -265,7 +285,7 @@ class Problem():
         for eq,value in preconditions["epistemic_p"]:
             self.epistemic_calls +=1
             current_time = datetime.now()
-            if not epistemic_model.checkingEQstr(self.external,eq,path,state,self.entities,self.variables) == value:
+            if not self.epistemic_model.checkingEQstr(self.external,eq,path,state,self.entities,self.variables) == value:
                 self.epistemic_call_time += datetime.now() - current_time
                 return False
             self.epistemic_call_time += datetime.now() - current_time
@@ -273,7 +293,7 @@ class Problem():
 
     # generate all possible parameter combinations
     def _generateVariables(self,params):
-        logger.debug(f'params: {params}')
+        self.logger.debug(f'params: {params}')
         param_list = []
 
         if params == []:
@@ -312,40 +332,40 @@ class Problem():
         return param_list
                     
     # TODO adding action cost
-    def generatorSuccessor(self,state,action,path):
+    def generateSuccessor(self,state,action,path):
         
         # TODO valid action
         # need to go nested on the brackets
-        # logger.debug(f'generate successor for state: {state}')
-        # logger.debug(f'generate successor with action: {action}')
+        self.logger.debug(f'generate successor for state: {state}')
+        self.logger.debug(f'generate successor with action: {action}')
         new_state = copy.deepcopy(state)
         
         for v_name,update in action.a_effects:
             old_value = state[v_name]
             # v_name = v_name.replace('?','-')
-            # logger.debug(f'single effect update: {v_name}/{old_value}/{update}')
+            # self.logger.debug(f'single effect update: {v_name}/{old_value}/{update}')
             # if update in state:
             #     new_state[v_name] = state[update]
             # elif '-' in update:
             if update.startswith('-'):
-                # logger.debug(f'update -')
+                # self.logger.debug(f'update -')
                 delta_value = int(update.split('-')[1])
-                # logger.debug(f'delta value: {delta_value}')
+                # self.logger.debug(f'delta value: {delta_value}')
                 domain_name = self.variables[v_name].v_domain_name
-                # logger.debug(f'domain_name {domain_name}')
+                # self.logger.debug(f'domain_name {domain_name}')
                 if self.domains[domain_name].d_type == D_TYPE.ENUMERATE:
                     index = self.domains[domain_name].d_values.index(old_value)
-                    # logger.debug(f'index: {index} in the domain: {self.domains[domain_name].d_values}')
+                    # self.logger.debug(f'index: {index} in the domain: {self.domains[domain_name].d_values}')
                     new_index = (index-delta_value) % len(self.domains[domain_name].d_values)
-                    # logger.debug(f'new_index: {new_index} in the domain: {self.domains[domain_name].d_values}')
+                    # self.logger.debug(f'new_index: {new_index} in the domain: {self.domains[domain_name].d_values}')
                     new_value = self.domains[domain_name].d_values[new_index]
-                    # logger.debug(f'new_value: {new_value} in the domain: {self.domains[domain_name].d_values}')
+                    # self.logger.debug(f'new_value: {new_value} in the domain: {self.domains[domain_name].d_values}')
                     new_state[v_name] = new_value
                 elif self.domains[domain_name].d_type == D_TYPE.INTEGER:
                     old_int = int(old_value)
-                    # logger.debug(f'old_int: {old_int}')
+                    # self.logger.debug(f'old_int: {old_int}')
                     new_value = old_int - delta_value
-                    # logger.debug(f'new_value: {new_value} in the domain: {self.domains[domain_name].d_values}')
+                    # self.logger.debug(f'new_value: {new_value} in the domain: {self.domains[domain_name].d_values}')
                     new_state[v_name] = new_value
                     
             elif update.startswith('+'):
@@ -357,9 +377,9 @@ class Problem():
                     new_state[v_name] = self.domains[domain_name].d_values[new_index]
                 elif self.domains[domain_name].d_type == D_TYPE.INTEGER:
                     old_int = int(old_value)
-                    logger.debug(f'old_int: {old_int}')
+                    self.logger.debug(f'old_int: {old_int}')
                     new_value = old_int + delta_value
-                    logger.debug(f'new_value: {new_value} in the domain: {self.domains[domain_name].d_values}')
+                    self.logger.debug(f'new_value: {new_value} in the domain: {self.domains[domain_name].d_values}')
                     new_state[v_name] = new_value
             # if '-' in update:
             #     v2_name,value = update.split('-')
@@ -384,7 +404,7 @@ class Problem():
             else:
                 
                 domain_name = self.variables[v_name].v_domain_name
-                # logger.debug(f'update {v_name} with domain {domain_name} on type {self.domains[domain_name].d_type} ')
+                # self.logger.debug(f'update {v_name} with domain {domain_name} on type {self.domains[domain_name].d_type} ')
                 if self.domains[domain_name].d_type == D_TYPE.INTEGER:
                     if re.search("[a-z]|[A-Z]", update):
                         update = state[update]
@@ -392,7 +412,7 @@ class Problem():
                 else:
                     new_state[v_name] = update
 
-        # logger.debug(f'new state is : {new_state}')
+        # self.logger.debug(f'new state is : {new_state}')
         return new_state
         
         
@@ -405,7 +425,7 @@ class E_TYPE(Enum):
     AGENT = 1
     OBJECT = 2
 
-def eTypeConvert(str):
+def eTypeConvert(logger,str):
     logger.debug(f"converting E_TYPE for {str}")
     if str == "agent":
         return E_TYPE.AGENT
@@ -474,7 +494,7 @@ class D_TYPE(Enum):
     ENUMERATE = 1
     INTEGER = 2 
 
-def dTypeConvert(str):
+def dTypeConvert(logger,str):
     logger.debug(f"converting D_TYPE for {str}")
     if str == "enumerate":
         return D_TYPE.ENUMERATE
