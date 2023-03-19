@@ -156,7 +156,7 @@ class Problem:
         return True
     
     
-    def getLegalActions(self,state,path):
+    def getAllActions(self,state,path):
         legal_actions = {}
         
         # get all type of actions

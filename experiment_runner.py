@@ -106,20 +106,20 @@ if __name__ == '__main__':
     
     
     # loading search algorithm
-    search_algorithm = options.search_path
-    search_name = search_algorithm
-    if '\\' in search_algorithm:
-        search_name = search_algorithm.split('\\')[-1].replace('.py','')
-    elif '/' in search_algorithm:
-        search_name = search_algorithm.split('/')[-1].replace('.py','')   
+    search = options.search_path
+    search_name = search
+    if '\\' in search:
+        search_name = search.split('\\')[-1].replace('.py','')
+    elif '/' in search:
+        search_name = search.split('/')[-1].replace('.py','')   
         
-    if type(search_algorithm) ==str:
-        logger.info(f"loading search algorithm: {search_algorithm}")
-        search_path = search_algorithm
+    if type(search) ==str:
+        logger.info(f"loading search algorithm: {search}")
+        search_path = search
         search_path = search_path.replace('.py','').replace('\\','.').replace('/','.').replace('..','')
         
         try:
-            search_algorithm = importlib.import_module(search_path)
+            search = importlib.import_module(search_path)
             logger.info(f"finish loading search algorithm:")
         except (NameError, ImportError, IOError):
             traceback.print_exc()
@@ -173,7 +173,7 @@ if __name__ == '__main__':
                 instance_name = f"{search_name}_{domain_name}_{problem_name}"
                 logger.info(f"solving {instance_name} - {problem_folder}")
                 
-                ins = instance_runner.Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search_algorithm= search_algorithm)
+                ins = instance_runner.Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search= search)
                 ins.solve(timeout=options.timeout,enable_debug = options.enable_debug, output_path = output_path)
 
     
@@ -208,7 +208,7 @@ if __name__ == '__main__':
     # external = None
     # external_class = options.external.replace('.py','').replace('\\','.').replace('/','.').replace('..','')
     # try:
-    #     search_algorithm = importlib.import_module(f"search.{options.search}")
+    #     search = importlib.import_module(f"search.{options.search}")
     # except (NameError, ImportError, IOError):
     #     traceback.print_exc()
     #     pass
@@ -232,7 +232,7 @@ if __name__ == '__main__':
     # logger.info(f'starting search')
     
     # start_search_time = datetime.datetime.now().astimezone(TIMEZONE)
-    # print(search_algorithm.searching(problem,external.filterActionNames))
+    # print(search.searching(problem,external.filterActionNames))
     # end_search_time = datetime.datetime.now().astimezone(TIMEZONE)
     # logger.info(f'initialization time: {start_search_time - start_time }')
     # logger.info(f'search time: {end_search_time - start_search_time }')

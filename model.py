@@ -80,7 +80,7 @@ class Problem():
         # adding epistemic checker here
         return True
     
-    def getLegalActions(self,state):
+    def getAllActions(self,state):
         legal_actions = {}
         
         # get all type of actions

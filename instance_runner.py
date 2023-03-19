@@ -45,20 +45,20 @@ class Instance:
     domain_path = ""
     instance_name = ""
     external_function = None
-    search_algorithm = None
+    search = None
     
-    def __init__(self,instance_name="",problem_path="",domain_path="",external_function= "",search_algorithm= ""):
+    def __init__(self,instance_name="",problem_path="",domain_path="",external_function= "",search= ""):
         self.problem_path = ""
         self.domain_path = ""
         self.instance_name = ""
         self.external_function = None
-        self.search_algorithm = None
+        self.search = None
         
         self.instance_name = instance_name
         self.problem_path = problem_path
         self.domain_path = domain_path
         self.external_function = external_function
-        self.search_algorithm = search_algorithm
+        self.search = search
 
     def solve(self,timeout=300,enable_debug = False, output_path = '' ):
         
@@ -93,14 +93,15 @@ class Instance:
         actions,domain_name = pddl_parser.domainParser(f"{self.domain_path}")
         logger.info(f"finish loading domain file: {domain_name}")        
         
-        if type(self.search_algorithm) ==str:
-            logger.info(f"loading search algorithm: {self.search_algorithm}")
-            search_path = self.search_algorithm
+        if type(self.search) ==str:
+            logger.info(f"loading search algorithm: {self.search}")
+            search_path = self.search
             search_path = search_path.replace('.py','').replace('\\','.').replace('/','.').replace('..','')
             
             try:
-                self.search_algorithm = importlib.import_module(search_path)
-                logger.info(f"finish loading search algorithm:")
+                self.search = importlib.import_module(search_path)
+                # self.search = __import__(search_path)
+                # logger.info(f"finish loading search algorithm:")
             except (NameError, ImportError, IOError):
                 traceback.print_exc()
                 exit()
@@ -137,7 +138,8 @@ class Instance:
         import func_timeout
         
         try:
-            result = func_timeout.func_timeout(timeout, self.search_algorithm.searching,args=(problem,self.external_function.filterActionNames))
+            search_algorithm = self.search.Search(logger_handler)
+            result = func_timeout.func_timeout(timeout, search_algorithm.searching,args=(problem,self.external_function.filterActionNames))
         except func_timeout.FunctionTimedOut:
             result.update({"running": f"timeout after {timeout}"})
         except:
@@ -145,7 +147,7 @@ class Instance:
             exit()
 
         
-        # result = self.search_algorithm.searching(problem,self.external_function.filterActionNames)
+        # result = self.search.searching(problem,self.external_function.filterActionNames)
         end_search_time = datetime.datetime.now().astimezone(TIMEZONE)
         
         init_time = start_search_time - start_time
@@ -203,23 +205,23 @@ if __name__ == '__main__':
     domain_path = options.domain_path
     # initialise with path, the function will load it later
     external_function = options.external_path
-    search_algorithm = options.search_path
+    search = options.search_path
 
     
     
-    if '\\' in search_algorithm:
+    if '\\' in search:
         domain_name = domain_path.split('\\')[2]
         problem_name = problem_path.split('\\')[-1].replace('.pddl','')
-        search_name = search_algorithm.split('\\')[-1].replace('.py','')
-    elif '/' in search_algorithm:
+        search_name = search.split('\\')[-1].replace('.py','')
+    elif '/' in search:
         domain_name = domain_path.split('/')[2]
         problem_name = problem_path.split('/')[-1].replace('.pddl','')
-        search_name = search_algorithm.split('/')[-1].replace('.py','')        
+        search_name = search.split('/')[-1].replace('.py','')        
     instance_name = f"{search_name}_{domain_name}_{problem_name}"
     
         
     
-    ins = Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search_algorithm= search_algorithm)
+    ins = Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search= search)
     ins.solve(timeout=options.timeout,enable_debug = options.enable_debug, output_path = options.output_path)
     
     
