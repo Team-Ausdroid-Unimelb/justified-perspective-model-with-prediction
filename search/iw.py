@@ -149,9 +149,9 @@ class Search:
                 
                 rest = self._create_checklist(state=state, novelty_bound=novelty_bound-1)
                 if rest == []: 
-                    novel_item = novel_item + [f"|{self._toNoveltyItem(key,value)}"]
+                    novel_item = novel_item + [f"|{Search._toNoveltyItem(key,value)}"]
                 else:
-                    novel_item = novel_item + [ f"|{self._toNoveltyItem(key,value)}{t}" for t in rest ]
+                    novel_item = novel_item + [ f"|{Search._toNoveltyItem(key,value)}{t}" for t in rest ]
         return novel_item
 
     def _max_novelty(self,problem):
@@ -162,7 +162,7 @@ class Search:
             novelty *= len(values)
         return novelty
 
-    def _toNoveltyItem(self,key,value):
+    def _toNoveltyItem(key,value):
         return f'{key}{NOVELTY_KEY_WORD}{value}'
 
 

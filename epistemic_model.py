@@ -7,7 +7,7 @@ import copy
 
 
 LOGGER_NAME = "epistemic_model"
-LOGGER_LEVEL = logging.DEBUG
+LOGGER_LEVEL = logging.INFO
 from util import setup_logger
 
 

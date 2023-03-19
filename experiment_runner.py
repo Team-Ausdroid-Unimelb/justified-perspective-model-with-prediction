@@ -172,10 +172,12 @@ if __name__ == '__main__':
                 problem_path = f"{problem_folder}/{problem_name}"
                 instance_name = f"{search_name}_{domain_name}_{problem_name}"
                 logger.info(f"solving {instance_name} - {problem_folder}")
-                
+                start_time = datetime.datetime.now().astimezone(TIMEZONE)
                 ins = instance_runner.Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search= search)
                 ins.solve(timeout=options.timeout,enable_debug = options.enable_debug, output_path = output_path)
-
+                end_time = datetime.datetime.now().astimezone(TIMEZONE)
+                used_time = end_time - start_time
+                logger.info(f"solving time: {used_time}")
     
     
     
