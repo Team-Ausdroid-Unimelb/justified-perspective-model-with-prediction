@@ -69,7 +69,8 @@ def loadParameter():
     parser.add_option('-o','--output', dest="output_path", help='output directory for the running results (default: output/<timestamp>)',default='')
     parser.add_option('-s', '--search', dest="search_path", help='the name of the search algorithm', default='bfs')
     parser.add_option('-d','--debug', dest="enable_debug", action='store_true', help='enable logging level to debug', default=False)
-    parser.add_option('-i','--input', dest="input_path", help='input directory for the experiments (default: examples/*)',default='examples')
+    # parser.add_option('-i','--input', dest="input_path", help='input directory for the experiments (default: examples/*)',default='examples')
+    parser.add_option('-i','--input', dest="input_domain_names", help='input for the experiment config (default: examples/*)',default='examples/CONFIG')
 
     # parser.add_option('-s','--savefiles', action='store_true', help='keep the student repos', default=False)
     # parser.add_option('--tag', help='the tag for submission', default='submission')
@@ -130,38 +131,51 @@ if __name__ == '__main__':
         logger.info(f"Search algorithm exists")
     
     
-    for domain_name in os.listdir(options.input_path):
-        if domain_name == '__pycache__':
-            pass
-        else:
-            problem_folder = f"{options.input_path}/{domain_name}"
-            domain_path = f"{problem_folder}/domain.pddl"
-            external_path = f"{problem_folder}/{domain_name}.py"
-            
-            
-            # loading external function
-            external_function = external_path
-            # logger.info(f"loading external function: {external_path}")
-            # external_path = external_path.replace('.py','').replace('\\','.').replace('/','.').replace('..','')
-            # try:
-            #     external_function = importlib.import_module(external_path)
-            #     logger.info(f"finish loading external function")
-            # except (NameError, ImportError, IOError):
-            #     traceback.print_exc()
-            #     exit()
-            # except:
-            #     traceback.print_exc()
-            #     exit()
+    domain_name_list = []
+    example_folder_path = ""
+    try:
+        with open(options.input_domain_names, 'r') as f:
+            domain_name_str = f.readline()
+            domain_name_list = domain_name_str.split(" ")
+        directory_breaker = "/"
+        example_folder_path = directory_breaker.join(options.input_domain_names.split("/")[:-1])
+        for domain_name in domain_name_list:
+            if not os.path.exists(f"{example_folder_path}/{domain_name}"):
+                raise FileNotFoundError(f"{example_folder_path}/{domain_name}")
+    except:
+        traceback.print_exc()
+        exit()
     
-            for problem_name in os.listdir(problem_folder):
-                if '.pddl' in problem_name and not problem_name == 'domain.pddl':
-                    problem_path = f"{problem_folder}/{problem_name}"
-                    instance_name = f"{search_name}_{domain_name}_{problem_name}"
-                    logger.info(f"solving {instance_name} - {problem_folder}")
-                    
-                    ins = instance_runner.Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search_algorithm= search_algorithm)
-                    ins.solve(timeout=options.timeout,enable_debug = options.enable_debug, output_path = output_path)
     
+    for domain_name in domain_name_list:
+        problem_folder = f"{example_folder_path}/{domain_name}"
+        domain_path = f"{problem_folder}/domain.pddl"
+        external_path = f"{problem_folder}/{domain_name}.py"
+        
+        
+        # loading external function
+        external_function = external_path
+        # logger.info(f"loading external function: {external_path}")
+        # external_path = external_path.replace('.py','').replace('\\','.').replace('/','.').replace('..','')
+        # try:
+        #     external_function = importlib.import_module(external_path)
+        #     logger.info(f"finish loading external function")
+        # except (NameError, ImportError, IOError):
+        #     traceback.print_exc()
+        #     exit()
+        # except:
+        #     traceback.print_exc()
+        #     exit()
+
+        for problem_name in os.listdir(problem_folder):
+            if '.pddl' in problem_name and not problem_name == 'domain.pddl':
+                problem_path = f"{problem_folder}/{problem_name}"
+                instance_name = f"{search_name}_{domain_name}_{problem_name}"
+                logger.info(f"solving {instance_name} - {problem_folder}")
+                
+                ins = instance_runner.Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search_algorithm= search_algorithm)
+                ins.solve(timeout=options.timeout,enable_debug = options.enable_debug, output_path = output_path)
+
     
     
     

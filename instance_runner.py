@@ -140,6 +140,9 @@ class Instance:
             result = func_timeout.func_timeout(timeout, self.search_algorithm.searching,args=(problem,self.external_function.filterActionNames))
         except func_timeout.FunctionTimedOut:
             result.update({"running": f"timeout after {timeout}"})
+        except:
+            traceback.print_exc()
+            exit()
 
         
         # result = self.search_algorithm.searching(problem,self.external_function.filterActionNames)
