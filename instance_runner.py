@@ -47,7 +47,7 @@ class Instance:
     external_function = None
     search = None
     
-    def __init__(self,instance_name="",problem_path="",domain_path="",external_function= "",search= ""):
+    def __init__(self,instance_name="",problem_path="",domain_path="",external_function= "",search= "", debug=False):
         self.problem_path = ""
         self.domain_path = ""
         self.instance_name = ""
@@ -60,7 +60,7 @@ class Instance:
         self.external_function = external_function
         self.search = search
 
-    def solve(self,timeout=300,enable_debug = False, output_path = '' ):
+    def solve(self,timeout=300,log_debug = False, output_path = '', time_debug =False ):
         
         start_time = datetime.datetime.now().astimezone(TIMEZONE)
         result = dict()
@@ -70,7 +70,7 @@ class Instance:
         if not os.path.isdir(output_path):
             os.makedirs(output_path)
         
-        if enable_debug:
+        if log_debug:
             debug_level = logging.DEBUG
         else:
             debug_level = logging.INFO
@@ -137,14 +137,19 @@ class Instance:
         start_search_time = datetime.datetime.now().astimezone(TIMEZONE)
         import func_timeout
         
-        try:
+        if time_debug:
             search_algorithm = self.search.Search(logger_handler)
-            result = func_timeout.func_timeout(timeout, search_algorithm.searching,args=(problem,self.external_function.filterActionNames))
-        except func_timeout.FunctionTimedOut:
-            result.update({"running": f"timeout after {timeout}"})
-        except:
-            traceback.print_exc()
-            exit()
+            result = search_algorithm.searching(problem,self.external_function.filterActionNames)
+        else:
+            
+            try:
+                search_algorithm = self.search.Search(logger_handler)
+                result = func_timeout.func_timeout(timeout, search_algorithm.searching,args=(problem,self.external_function.filterActionNames))
+            except func_timeout.FunctionTimedOut:
+                result.update({"running": f"timeout after {timeout}"})
+            except:
+                traceback.print_exc()
+                exit()
 
         
         # result = self.search.searching(problem,self.external_function.filterActionNames)
@@ -187,7 +192,8 @@ def loadParameter():
     parser.add_option('-e', '--external', dest="external_path", help='path to the external function file', default='')
     parser.add_option('-o', '--output', dest="output_path", help='output directory for the running results (default: output/timestamp)',default='')
     parser.add_option('-s', '--search', dest="search_path", help='the name of the search algorithm', default='bfs')
-    parser.add_option('--debug', dest="enable_debug", action='store_true', help='enable logging level to debug', default=False)
+    parser.add_option('--log_debug', dest="log_debug", action='store_true', help='enable logging level to debug', default=False)
+    parser.add_option('--time_debug', dest="time_debug", action='store_true', help='enable logging level to debug', default=False)
     parser.add_option('-t', '--timeout', dest="timeout", help='timeout, default 300s', type='int', default=300)
     
     options, otherjunk = parser.parse_args(sys.argv[1:] )
@@ -206,6 +212,7 @@ if __name__ == '__main__':
     # initialise with path, the function will load it later
     external_function = options.external_path
     search = options.search_path
+    output_path = ''
 
     
     
@@ -219,10 +226,44 @@ if __name__ == '__main__':
         search_name = search.split('/')[-1].replace('.py','')        
     instance_name = f"{search_name}_{domain_name}_{problem_name}"
     
-        
+    if options.output_path == '':
+        output_path = f"output/{start_time.strftime(DATE_FORMAT)}"
+    if not os.path.isdir(output_path):
+        os.makedirs(output_path)
     
-    ins = Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search= search)
-    ins.solve(timeout=options.timeout,enable_debug = options.enable_debug, output_path = options.output_path)
+        
+    if options.time_debug:
+        import cProfile
+        import pstats, math
+        import io
+        import pandas as pd
+        print("starting profiling")
+        pr = cProfile.Profile()
+        pr.enable()
+        ins = Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search= search)
+        ins.solve(timeout=options.timeout,log_debug = options.log_debug, output_path = output_path, time_debug= options.time_debug)
+        
+        
+        pr.disable()
+        
+        result = io.StringIO()
+        pstats.Stats(pr,stream=result).print_stats()
+        result=result.getvalue()
+        # chop the string into a csv-like buffer
+        result='ncalls'+result.split('ncalls')[-1]
+        result='\n'.join([','.join(line.rstrip().split(None,5)) for line in result.split('\n')])
+        # save it to disk
+        file_path = f"{output_path}/{instance_name}_cprofile.csv"
+        print(file_path)
+        with open(f"{output_path}/{instance_name}_cprofile.csv", 'w+') as f:
+            #f=open(result.rsplit('.')[0]+'.csv','w')
+            f.write(result)
+            f.close()
+
+        
+    else:
+        ins = Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search= search)
+        ins.solve(timeout=options.timeout,log_debug = options.log_debug, output_path = output_path, time_debug= options.time_debug)
     
     
     
