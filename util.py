@@ -44,6 +44,11 @@ class PriorityQueue:
         (_, _, item) = heapq.heappop(self.heap)
         return item
 
+    def pop_full(self):
+        # (_, _, item) = 
+        return heapq.heappop(self.heap)
+
+
     def isEmpty(self):
         return len(self.heap) == 0
 
