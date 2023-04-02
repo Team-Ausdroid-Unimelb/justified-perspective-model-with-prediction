@@ -5,7 +5,6 @@ import util
 LOGGER_NAME = "search:heuristic_search"
 LOGGER_LEVEL = logging.DEBUG
 
-
 # logger = logging.getLogger("bfsdc")
 # logger.setLevel(logging.DEBUG)
 
@@ -49,24 +48,31 @@ class Search:
         init_state = problem.initial_state
         init_path = [(problem.initial_state,'None')]
         init_epistemic_item_set = set([])
+        
         init_node = Search.SearchNode(init_state,init_epistemic_item_set,init_path)
 
         
         open_list = util.PriorityQueue()
-        open_list.push(item=init_node, priority=_f(init_node,problem))
+        p,es = _f(init_node,problem)
+        init_node.epistemic_item_set.update(es)
+        # remaining_g = p-_gn(init_node)
+        open_list.push(item=init_node, priority=p)
         
         while not open_list.isEmpty():
             # logger.debug(f"queue length {len(queue)}")
-            current_node = open_list.pop()
+            current_p , _, current_node = open_list.pop_full()
             state = current_node.state
             epistemic_item_set = current_node.epistemic_item_set
             path = current_node.path
             self.goal_checked += 1
             
             # Goal Check
-            is_goal, temp_epistemic_item_set = problem.isGoalN(state,path)
+            # is_goal, temp_epistemic_item_set = problem.isGoalN(state,path)
             # print(temp_epistemic_item_set)
             # print(problem.goal_states)
+            remaining_g = current_p - _gn(current_node)
+            # print(f"p:{current_p}, g:{ _gn(current_node)}, r:{remaining_g}")
+            is_goal = remaining_g==0
             if is_goal:
                 # self.logger.info(path)
                 actions = [ a  for s,a in path]
@@ -79,16 +85,16 @@ class Search:
                 return self.result
             
             # check whether the node has been visited before
-            temp_epistemic_item_set.update(epistemic_item_set)
-            temp_epistemic_item_set.update(state)
+            # epistemic_item_set.update(epistemic_item_set)
+            epistemic_item_set.update(state)
             # temp_str = state_to_string(temp_epistemic_item_set)
-            if not temp_epistemic_item_set in self.visited:
+            if not epistemic_item_set in self.visited:
                 
                 self.expanded +=1
                 # print(expanded)
                 # update the visited list
                 # short_visited.append(temp_str)
-                self.visited.append(temp_epistemic_item_set)
+                self.visited.append(epistemic_item_set)
                 # self.logger.debug(f"visited: {short_visited}")
                 # self.logger.debug(f"short visited: {short_visited}")
                 # self.logger.debug(f"{temp_epistemic_item_set}")
@@ -105,7 +111,10 @@ class Search:
                         succ_state = problem.generateSuccessor(state, actions[action],path)
                         succ_node = self.SearchNode(succ_state,temp_epistemic_item_set,path + [(succ_state,action)])
                         self.generated += 1
-                        open_list.push(item=succ_node, priority=_f(succ_node,problem))
+                        p,es = _f(succ_node,problem)
+                        # es.update(succ_node.epistemic_item_set)
+                        succ_node.epistemic_item_set.update(es)
+                        open_list.push(item=succ_node, priority=p)
             else:
                 self.pruned += 1
             
@@ -145,9 +154,9 @@ class Search:
 def _f(node,problem):
     heuristic = goal_counting
     g = _gn(node)
-    h = heuristic(node,problem)
+    h,es = heuristic(node,problem)
     f = g+h
-    return f
+    return f,es
 
 def _gn(node):
     path = node.path
@@ -181,5 +190,5 @@ def goal_counting(node,problem):
             
     # print(state)
     # print(epistemic_item_set)
-    print(remain_goal_number)
-    return remain_goal_number
+    # print(remain_goal_number)
+    return remain_goal_number,epistemic_item_set
