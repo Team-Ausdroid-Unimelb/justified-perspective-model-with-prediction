@@ -1,4 +1,4 @@
-# from model import Problem,E_TYPE,T_TYPE
+# from model import Problem,E_TYPE,PDDL_TERNARY
 import logging 
 import math
 from typing import Tuple
@@ -8,6 +8,8 @@ import traceback
 import re
 import pddl_model
 import epistemic_model
+from util import PDDL_TERNARY
+AGENT_ID_PREFIX = "agent_at"
 
 # logger = logging.getLogger("bbl")
 
@@ -70,9 +72,15 @@ class ExternalFunction:
             self.logger.warning("the evaluation of the seeing equation has not defined")
             return 0
 
+    def agentsExists(self,path,g_group_index):
+        state = path[-1][0]
+        for agt_id in g_group_index:
+            if not AGENT_ID_PREFIX+agt_id in state.keys():
+                return False
+        return True
 
 
-    def checkVisibility(self,external,state,agt_index,var_index,entities,variables):
+    def checkVisibility(self,state,agt_index,var_index,entities,variables):
         
         # logger.debug(f"checkVisibility(_,_,{agt_index},{var_index})")
         try:
@@ -92,12 +100,12 @@ class ExternalFunction:
 
                 # agent should know their own secret before sharing
                 if tgt_index == agt_index:
-                    return pddl_model.T_TYPE.TRUE
+                    return PDDL_TERNARY.TRUE
                 
                 # if the secret has not been shared
                 if tgt_loc == 0:
                     
-                    return pddl_model.T_TYPE.FALSE
+                    return PDDL_TERNARY.FALSE
             else:
                 # the target is an agent, it has its own location
                 tgt_loc = int(state[f'agent_at-{tgt_index}'])
@@ -113,25 +121,25 @@ class ExternalFunction:
             # logger.debug(f'checking seeing with agent location: {agt_loc} and target location: {tgt_loc}')
             # agent is able to see anything in the same location
             if tgt_loc == agt_loc:
-                return pddl_model.T_TYPE.TRUE
+                return PDDL_TERNARY.TRUE
 
 
             # seeing relation for corridor is in the same room or adjuscent room
             if False:
-                return pddl_model.T_TYPE.TRUE
+                return PDDL_TERNARY.TRUE
             else:
-                return pddl_model.T_TYPE.FALSE
+                return PDDL_TERNARY.FALSE
 
         except KeyError:
             self.logger.warning(traceback.format_exc())
             self.logger.warning("variable not found when check visibility")
             # logging.error("error when checking visibility")
-            return pddl_model.T_TYPE.UNKNOWN
+            return PDDL_TERNARY.UNKNOWN
         except TypeError:
             self.logger.warning(traceback.format_exc())
             self.logger.warning("variable is None d when check visibility")
             # logging.error("error when checking visibility")
-            return pddl_model.T_TYPE.UNKNOWN
+            return PDDL_TERNARY.UNKNOWN
 
     # customise action filters
     # to filter out the irrelevant actions
@@ -140,12 +148,29 @@ class ExternalFunction:
         action_name_list = []
         relevant_variable_parent_index = []
         relevant_agent_index = []
+        
+        
+
+        
+        
+        
         for eq_str,value in problem.goal_states["epistemic_g"]:
-            eq = problem.epistemic_model.generateEpistemicQuery(eq_str)
-            relevant_agent_index += self.extractAgents(eq)
-            for variable_name,value in self.extractVariables(eq):
-                relevant_variable_parent_index.append(problem.variables[variable_name].v_parent)
-        self.logger.debug(f'relevant agent index: {relevant_variable_parent_index}') 
+            
+            match = re.search("[edc]?[ksb] \[[0-9a-z_,]*\] ",eq_str)
+            while not match == None:
+                eq_list = eq_str.split(" ")
+                # print(eq_list[1])
+                relevant_agent_index += eq_list[1][1:-1].split(",")
+                eq_str = eq_str[len(eq_list[0])+len(eq_list[1])+2:]
+                match = re.search("[edc]?[ksb] \[[0-9a-z_,]*\] ",eq_str)
+                
+            variable_name,value =self.extractVariable(eq_str)
+            relevant_variable_parent_index.append(problem.variables[variable_name].v_parent)
+
+
+
+        self.logger.debug(f'relevant agent index: {relevant_agent_index}') 
+        self.logger.debug(f'relevant variables index: {relevant_variable_parent_index}') 
         # relevant_agent_index += relevant_variable_parent_index
         for name,action in action_dict.items():
             if "sharing" in name:

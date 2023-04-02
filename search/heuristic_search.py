@@ -3,8 +3,8 @@ import util
 
 
 LOGGER_NAME = "search:heuristic_search"
-LOGGER_LEVEL = logging.DEBUG
-
+LOGGER_LEVEL = logging.INFO
+# LOGGER_LEVEL = logging.DEBUG
 # logger = logging.getLogger("bfsdc")
 # logger.setLevel(logging.DEBUG)
 
@@ -61,11 +61,17 @@ class Search:
         while not open_list.isEmpty():
             # logger.debug(f"queue length {len(queue)}")
             current_p , _, current_node = open_list.pop_full()
+            self.logger.debug(f"current_p: {current_p}-{_gn(current_node)}, current_node {current_node}")
+
             state = current_node.state
             epistemic_item_set = current_node.epistemic_item_set
             path = current_node.path
-            self.goal_checked += 1
-            
+            actions = [ a  for s,a in path]
+            actions = actions[1:]
+            self.logger.debug(f"action_lists: {actions}")
+            # self.goal_checked += 1
+            # if len(path) >3:
+            #     return
             # Goal Check
             # is_goal, temp_epistemic_item_set = problem.isGoalN(state,path)
             # print(temp_epistemic_item_set)
@@ -89,6 +95,8 @@ class Search:
             epistemic_item_set.update(state)
             # temp_str = state_to_string(temp_epistemic_item_set)
             if not epistemic_item_set in self.visited:
+                self.logger.debug(epistemic_item_set)
+            # if True:
                 
                 self.expanded +=1
                 # print(expanded)
@@ -106,14 +114,19 @@ class Search:
                 filtered_action_names = filterActionNames(problem,actions)
                 # self.logger.debug(filtered_action_names)
                 for action in filtered_action_names:
-                    pre_flag,temp_epistemic_item_set = problem.checkPreconditionsN(state,actions[action],path)
+                    # pre_flag,temp_epistemic_item_set = problem.checkPreconditionsN(state,actions[action],path)
+                    pre_flag,p_dict,e_dict,pre_dict = problem.checkPreconditions(state,actions[action],path)
                     if pre_flag: 
                         succ_state = problem.generateSuccessor(state, actions[action],path)
-                        succ_node = self.SearchNode(succ_state,temp_epistemic_item_set,path + [(succ_state,action)])
+                        succ_node = self.SearchNode(succ_state,pre_dict,path + [(succ_state,action)])
                         self.generated += 1
-                        p,es = _f(succ_node,problem)
+                        self.goal_checked += 1
+                        p,goal_dict = _f(succ_node,problem)
                         # es.update(succ_node.epistemic_item_set)
-                        succ_node.epistemic_item_set.update(es)
+                        succ_node.epistemic_item_set.update(goal_dict)
+                        self.logger.debug(f"succ_state = {succ_state}")
+                        self.logger.debug(f"goal_dict = {goal_dict}")
+                        
                         open_list.push(item=succ_node, priority=p)
             else:
                 self.pruned += 1
@@ -171,24 +184,26 @@ def goal_counting(node,problem):
     state = node.state
     path = node.path
     
-    _, epistemic_item_set = problem.isGoalN(state,path)
-    
-    for goal,value in ontic_goal_states:
-        if goal in state:
-            if not state[goal] == value:
-                remain_goal_number += 1
-        else:
-            remain_goal_number += 1    
+    is_goal,perspectives_dict,epistemic_dict,goal_dict = problem.isGoal(state,path)
     
     
-    for goal,value in epistemic_goal_states:
-        if goal in epistemic_item_set:
-            if not epistemic_item_set[goal] == value:
-                remain_goal_number += 1
-        else:
-            remain_goal_number += 1
+    remain_goal_number = list(goal_dict.values()).count(False)
+    # for goal,value in ontic_goal_states:
+    #     if goal in state:
+    #         if not state[goal] == value:
+    #             remain_goal_number += 1
+    #     else:
+    #         remain_goal_number += 1    
+    
+    
+    # for goal,value in epistemic_goal_states:
+    #     if goal in epistemic_item_set:
+    #         if not epistemic_item_set[goal] == value:
+    #             remain_goal_number += 1
+    #     else:
+    #         remain_goal_number += 1
             
     # print(state)
     # print(epistemic_item_set)
     # print(remain_goal_number)
-    return remain_goal_number,epistemic_item_set
+    return remain_goal_number,goal_dict

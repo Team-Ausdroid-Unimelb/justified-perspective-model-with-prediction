@@ -3,6 +3,7 @@ import logging
 import datetime
 import pytz
 import re
+import traceback
 TIMEZONE = pytz.timezone('Australia/Melbourne')
 DATE_FORMAT = '%d-%m-%Y_%H-%M-%S'
 timestamp = datetime.datetime.now().astimezone(TIMEZONE).strftime(DATE_FORMAT)
@@ -12,6 +13,7 @@ timestamp = datetime.datetime.now().astimezone(TIMEZONE).strftime(DATE_FORMAT)
 
 LOGGER_NAME = "pddl_parser"
 LOGGER_LEVEL = logging.INFO
+# LOGGER_LEVEL = logging.DEBUG
 from util import setup_logger
 # self.logger = setup_self.logger(LOGGER_NAME,instance_handler,logging.INFO) 
 
@@ -164,7 +166,7 @@ class PDDLParser:
             self.logger.debug("extract goal")
             try:
                 
-                found = re.search("\(:goal\(and(\(= \([:0-9a-z_ \[\],]*(\(.*\)\) |\) )[0-9a-z_ \"\']*\))*\)\)",str).group(0)
+                found = re.search("\(:goal\(and\(= \([:0-9a-z_ \- \[\],]*(\(.*\)\)|\))[0-9a-z_ \"\'\-]*\)*\)\)",str).group(0)
                 self.logger.debug(found)
                 
                 # loading ontic goals
@@ -193,7 +195,7 @@ class PDDLParser:
                 # loading epismetic goals
                 self.logger.debug("extract epistemic goal propositions")
                 g_states.update({"epistemic_g":[]})   
-                epistemic_goal_list = re.findall('\(= \(:epistemic[ 0-9a-z_\[\],]*\(= \([ 0-9a-z_]*\) [0-9a-z_\'\"]*\)\) [0-9a-z_\'\"]*\)',found[10:-1:])  
+                epistemic_goal_list = re.findall('\(= \(:epistemic[ 0-9a-z_\[\],]*\(= \([ 0-9a-z_]*\) [0-9a-z_\'\"]*\)\) [0-9a-z_\'\"\-]*\)',found[10:-1:].replace(")-1)",") -1)"))  
                 self.logger.debug(epistemic_goal_list)
                 for goal_str in epistemic_goal_list:
                     goal_str = goal_str[15:-1:]
@@ -212,6 +214,7 @@ class PDDLParser:
                 self.logger.debug(g_states)
             except AttributeError:
                 self.logger.error("error when extract goal")
+                self.logger.error(traceback.format_exc())
                 exit()   
                             
             self.logger.debug("extract domains")
@@ -335,7 +338,7 @@ class PDDLParser:
                         # loading epismetic goals
                         self.logger.debug("extract epistemic precondition propositions")
                         preconditions.update({"epistemic_p":[]})   
-                        epistemic_preconditions_list = re.findall('\(= \(:epistemic[\? 0-9a-z_\[\],]*\(= \([ 0-9a-z_\? ]*\) [0-9a-z_\'\"\]*\)\) [0-9a-z_\'\"]*\)',preconditions_str)  
+                        epistemic_preconditions_list = re.findall('\(= \(:epistemic[\? 0-9a-z_\[\],]*\(= \([ 0-9a-z_\? ]*\) [0-9a-z_\'\"\]*\)\) [0-9a-z_\'\"\-]*\)',preconditions_str)  
                         self.logger.debug(epistemic_preconditions_list)
                         for pre_str in epistemic_preconditions_list:
                             pre_str = pre_str[15:-1:]

@@ -1,4 +1,4 @@
-# from model import Problem,E_TYPE,T_TYPE
+# from model import Problem,E_TYPE,PDDL_TERNARY
 import logging 
 import math
 from typing import Tuple
@@ -8,6 +8,8 @@ import traceback
 import re
 import pddl_model
 import epistemic_model
+from util import PDDL_TERNARY
+AGENT_ID_PREFIX = "peeking_"
 
 
 # logger = logging.getLogger("coin")
@@ -67,9 +69,15 @@ class ExternalFunction:
             self.logger.warning("the evaluation of the seeing equation has not defined")
             return 0
 
+    def agentsExists(self,path,g_group_index):
+        state = path[-1][0]
+        for agt_id in g_group_index:
+            if not AGENT_ID_PREFIX+agt_id in state.keys():
+                return False
+        return True
 
 
-    def checkVisibility(self,problem,state,agt_index,var_index,entities,variables):
+    def checkVisibility(self,state,agt_index,var_index,entities,variables):
         
         self.logger.debug(f"checkVisibility(_,{state},{agt_index},{var_index})")
         try:
@@ -79,11 +87,11 @@ class ExternalFunction:
             
             # agents are able to see each other
             if entities[tgt_index].e_type==pddl_model.E_TYPE.AGENT:
-                return pddl_model.convertBooltoT_TYPE(True)
+                return pddl_model.convertBooltoPDDL_TERNARY(True)
             else:
                 
                 #extract necessary variables from state
-                return  pddl_model.convertBooltoT_TYPE(state[f"peeking-{agt_index}"]=='t')
+                return  pddl_model.convertBooltoPDDL_TERNARY(state[f"peeking-{agt_index}"]=='t')
             
         #     # extract necessary common constants from given domain
         #     # logger.debug(f"necessary common constants from given domain")
@@ -91,7 +99,7 @@ class ExternalFunction:
             
         #     # agent is able to see anything in the same location
         #     if tgt_x == agt_x and tgt_y == agt_y:
-        #         return model.T_TYPE.TRUE
+        #         return model.PDDL_TERNARY.TRUE
             
         #     # generate two vector
         #     v1 = np.array((tgt_y - agt_y,tgt_x - agt_x))
@@ -105,16 +113,16 @@ class ExternalFunction:
         #     # logger.debug(f'delta angle degree is {round(d_degrees,3)}')
             
         #     if d_degrees <= agt_angle/2.0 and d_degrees >= - agt_angle/2.0:
-        #         inside = model.T_TYPE.TRUE
+        #         inside = model.PDDL_TERNARY.TRUE
         #     else:
-        #         inside =model.T_TYPE.FALSE
+        #         inside =model.PDDL_TERNARY.FALSE
         #     # logger.debug(f'visibility is {inside}')
         #     return inside
         except KeyError:
             self.logger.warning(traceback.format_exc())
             self.logger.warning("variable not found when check visibility")
             # logger.error("error when checking visibility")
-            return pddl_model.T_TYPE.UNKNOWN
+            return PDDL_TERNARY.UNKNOWN
 
     # customise action filters
     # to filter out the irrelevant actions

@@ -1,6 +1,6 @@
 
 (define 
-    (problem sn_01) 
+    (problem sn_06) 
     (:domain sn)
 
     (:agents
@@ -80,10 +80,10 @@
         ; (= (:ontic (= (agent_at a) 2)) 1)
         ; (= (:ontic (= (post p1 a) 1)) 1)
         (= (:epistemic b [a] (= (secret p1) 't')) 1)
-        (= (:epistemic b [b] (= (secret p1) 't')) 0)
+        (= (:epistemic b [b] (= (secret p1) 't')) -1)
         (= (:epistemic b [c] (= (secret p1) 't')) 1)
-        (= (:epistemic b [d] (= (secret p1) 't')) 0)
-        (= (:epistemic b [e] (= (secret p1) 't')) 0)
+        (= (:epistemic b [d] (= (secret p1) 't')) -1)
+        (= (:epistemic b [e] (= (secret p1) 't')) -1)
         ; (= (:epistemic b [c] (= (secret a) 'f')) 1)
         ; (= (:epistemic b [d] (= (secret a) 't')) 0)
         ; (= (:epistemic k [b] k [a] (= (v p) 't')) 0)

@@ -2,6 +2,7 @@
 
 
 import logging
+from enum import Enum
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 
 
@@ -67,12 +68,19 @@ class PriorityQueue:
         else:
             self.push(item, priority)
 
+### PDDL value type
 
-
-
-
-
-
+# PDDL_TERNARY 
+# ternary true value
+class PDDL_TERNARY(Enum):
+    TRUE = 1
+    UNKNOWN = 0
+    FALSE = -1
+    
+    # def __repr__(self): 
+    #     # show when in a dictionary
+        
+    #     return PDDL_TERNARY(self)
 
 
 
