@@ -1,7 +1,7 @@
 
 (define 
-    (problem bbl_01) 
-    (:domain bbl)
+    (problem grapevine_03) 
+    (:domain grapevine)
 
     (:agents
         a b c d

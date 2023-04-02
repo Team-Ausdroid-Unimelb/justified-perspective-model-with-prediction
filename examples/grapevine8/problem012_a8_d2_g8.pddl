@@ -1,7 +1,7 @@
 
 (define 
-    (problem bbl_01) 
-    (:domain bbl)
+    (problem grapevine8_12) 
+    (:domain grapevine8)
 
     (:agents
         a b c d e f g h
@@ -53,13 +53,22 @@
         ; (= (:ontic (= (agent_at a) 2)) 1)
         ; (= (:ontic (= (shared a) 2)) 1)
         (= (:epistemic b [a] (= (secret b) 't')) 1)
-        (= (:epistemic b [b] (= (secret c) 't')) 1)
-        (= (:epistemic b [c] (= (secret d) 't')) 1)
-        (= (:epistemic b [d] (= (secret a) 't')) 1)
+        ; (= (:epistemic b [b] (= (secret c) 't')) 1)
+        ; (= (:epistemic b [c] (= (secret d) 't')) 1)
+        ; (= (:epistemic b [d] (= (secret a) 't')) 1)
         (= (:epistemic b [d] b [a] (= (secret b) 'f')) 1)
-        (= (:epistemic b [c] b [b] (= (secret c) 'f')) 1)
-        (= (:epistemic b [b] b [c] (= (secret d) 'f')) 1)
-        (= (:epistemic b [a] b [d] (= (secret a) 'f')) 1)
+        ; (= (:epistemic b [c] b [b] (= (secret c) 'f')) 1)
+        ; (= (:epistemic b [b] b [c] (= (secret d) 'f')) 1)
+        ; (= (:epistemic b [a] b [d] (= (secret a) 'f')) 1)
+
+        ; (= (:epistemic b [d] b [a] (= (secret b) 't')) 1)
+
+; lie(b,bs), move(d), share(b,bs)
+
+
+; share_lie(x,b) 
+; (agent_at a) = (agent_at d) = (agent_at x)
+
 
         ; (= (:epistemic b [d] (= (secret a) 't')) 0)
         ; (= (:epistemic k [b] k [a] (= (v p) 't')) 0)
