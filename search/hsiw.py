@@ -213,6 +213,14 @@ def _f(node,problem):
     f = g+h
     return f
 
+# 1. greedy: h with tiebreak g
+# 2. novelty (max =2) tiebreak h, g
+# 3. different novelty table for different h value, tiebreak with h/g
+# 4. goal order manually (precondition heuristic)
+ 
+
+
+
 def _gn(node):
     path = node.path
     return len(path)-1

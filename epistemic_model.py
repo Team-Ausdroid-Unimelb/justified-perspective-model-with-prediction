@@ -229,6 +229,13 @@ class EpistemicModel:
         eq = self.generateEpistemicQuery(eq_str) 
         return self.checkingEQ(external, eq, path, state, entities, variables)
 
+    def checkingEQstrP(self,external,eq_str,path:typing.List,state,entities,variables):
+        # logger.debug(f'checking for eq string: {eq_str}')
+        eq = self.generateEpistemicQuery(eq_str) 
+        return self.checkingEQP(external, eq, path, state, entities, variables)
+
+
+
     def checkingEQ(self,external,eq:EpistemicQuery,path:typing.List,state,entities,variables):
         var_list = external.extractVariables(eq)
         # logger.debug(f"checking eq {eq}, {eq.eq_type}")
@@ -271,6 +278,132 @@ class EpistemicModel:
                 eva = self.checkingEQ(external,eq.q_content,new_path,last_state,entities,variables)
             
             return eva
+        # if eq.eq_type == EQ_TYPE.BELIEF:
+            
+        #     logger.debug(f"checking belief for {eq}")
+        #     # generate the state
+        #     # new_observation = getObservations(external,state,eq.q_group,entities,variables)
+        #     new_state = generatePerspective(external,path,eq.q_group,entities,variables)
+        #     logger.debug(f"{eq.q_group}'s perspective {new_state}")
+        #     if len(eq.q_group)>1:
+        #         pass
+        #     eva = 2
+        #     logger.debug(f"checking belief for {eq.q_content}")
+        #     if type(eq.q_content) == str:
+        #         for var_name,value in var_list:
+
+        #             if not var_name in new_state.keys():
+        #                 logger.debug(f"return 0 due to {var_name} {len(var_name)} not in { new_state.keys() }")
+        #                 return 0
+        #             if not new_state[var_name] == value:
+        #                 logger.debug(f"return 0 due to {value} not equal to {new_state[var_name]}")
+        #                 return 0
+        #         eva = external.evaluateS(new_state,eq.q_content)
+        #     else:
+        #         eva = checkingEQ(external,eq.q_content,path,new_state,entities,variables)
+            
+        #     return eva
+
+        elif eq.eq_type == EQ_TYPE.SEEING:
+            
+            self.logger.debug(f"checking seeing for {eq}")
+            # generate the state
+            new_state = self.getObservations(external,state,eq.q_group,entities,variables)
+            self.logger.debug(f"{eq.q_group}'s observation {new_state}")
+            if len(eq.q_group) > 1:
+                # merging observation
+                pass
+            if type(eq.q_content) == str:
+                return external.evaluateS(new_state,eq.q_content)
+            else:
+                for var_name,value in var_list:
+                    if not var_name in new_state.keys():
+                        return 2
+                result = self.checkingEQ(external,eq.q_content,path,new_state,entities,variables)
+                if not result == 2:
+                    return 1
+                else:
+                    return 0
+                # return not checkingEQ(external,eq.q_content,path,state) == 2
+        elif eq.eq_type == EQ_TYPE.KNOWLEDGE:   
+            
+            self.logger.debug(f"checking knowledge for {eq}")
+            # generate the state
+            new_state = self.getObservations(external,state,eq.q_group,entities,variables)
+            self.logger.debug(f"b's observation {new_state}")
+            if len(eq.q_group) > 1:
+                # merging observation
+                pass
+            self.logger.debug(type(eq.q_content))
+            if type(eq.q_content) == str:
+                for var_name,value in var_list:
+                    if not var_name in new_state.keys():
+                        return 0
+                    if not new_state[var_name] == value:
+                        return 0
+                return external.evaluateS(new_state,eq.q_content)
+            else:
+                # for var_name,value in var_list:
+                    # if not var_name in new_state.keys():
+                    #     return 2
+                    # if not new_state[var_name] == value:
+                    #     return 0
+                eqs = EpistemicQuery(eq.q_type,EQ_TYPE.SEEING,eq.q_group,copy.deepcopy(eq.q_content))
+                result = self.checkingEQ(external,eq.q_content,path,state,entities,variables)*self.checkingEQ(external,eqs,path,state,entities,variables)
+                if result >2:
+                    return 2
+                else:
+                    return result
+        else:
+            self.logger.error(f"not found eq_type in the query: {eq}")
+            
+            
+    def checkingEQP(self,external,eq:EpistemicQuery,path:typing.List,state,entities,variables):
+        var_list = external.extractVariables(eq)
+        p_dict = {}
+        self.logger.debug(f"checking eq {eq}, {eq.eq_type}")
+        self.logger.debug(f'current state: {state}')
+        self.logger.debug(f'var_list: {var_list}')
+
+        if eq.eq_type == EQ_TYPE.BELIEF:
+            
+            self.logger.debug(f"checking belief for {eq}")
+            # generate the state
+            # new_observation = getObservations(external,state,eq.q_group,entities,variables)
+            new_path = []
+            for i in range(len(path)):
+                # logger.debug(f'generate perspective from timestamp {i}')
+                # logger.debug(path)
+                state,action = path[i]
+                new_state = self.generatePerspective(external,path[:i+1],eq.q_group,entities,variables)
+                # logger.debug(new_state)
+                new_path.append((new_state,action))
+            # logger.debug(f"{eq.q_group}'s perspective (new path) {new_path}")
+            if len(eq.q_group)>1:
+                pass
+            # logger.debug(f'perspectives:')
+            # for state,action in new_path:
+            #     logger.debug(state)
+            last_state,action = new_path[-1]
+            eva = 2
+            p_dict.update({str(eq.q_group):last_state})
+            # logger.debug(f"checking belief for {eq.q_content}")
+            if type(eq.q_content) == str:
+                for var_name,value in var_list:
+
+                    if not var_name in last_state.keys():
+                        # logger.debug(f"return 0 due to {var_name} {len(var_name)} not in { last_state.keys() }")
+                        return 0,p_dict
+                    if not last_state[var_name] == value:
+                        # logger.debug(f"return 0 due to {value} not equal to {last_state[var_name]}")
+                        return 0,p_dict
+                eva = external.evaluateS(last_state,eq.q_content)
+                p_dict.update({f"f<{eq.q_group}>":last_state})
+            else:
+                eva,temp_p_dict = self.checkingEQP(external,eq.q_content,new_path,last_state,entities,variables)
+                for key,v in temp_p_dict.items():
+                    p_dict.update({f"f<{eq.q_group}>{key}":v})
+            return eva,p_dict
         # if eq.eq_type == EQ_TYPE.BELIEF:
             
         #     logger.debug(f"checking belief for {eq}")
