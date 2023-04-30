@@ -4,6 +4,7 @@ import util
 
 LOGGER_NAME = "search:bfsdcp"
 LOGGER_LEVEL = logging.DEBUG
+LOGGER_LEVEL = logging.INFO
 # logger = logging.getLogger("bfsdc")
 # logger.setLevel(logging.DEBUG)
 
@@ -59,7 +60,7 @@ class Search:
             self.goal_checked += 1
             
             # Goal Check
-            is_goal, temp_p_dict = problem.isGoalP(state,path)
+            is_goal,perspectives_dict,epistemic_dict,goal_dict = problem.isGoal(state,path)
             if is_goal:
                 # self.logger.info(path)
                 actions = [ a  for s,a in path]
@@ -71,20 +72,21 @@ class Search:
                 self._finalise_result(problem)
                 return self.result
             
-            temp_p_dict.update(p_dict)
-            self.logger.debug(p_dict)
-            self.logger.debug(self.visited)
+            perspectives_dict.update(p_dict)
+            
+            # self.logger.debug(p_dict)
+            # self.logger.debug(self.visited)
             # check whether the node has been visited before
             # temp_epistemic_item_set.update(epistemic_item_set)
             # temp_epistemic_item_set.update(state)
             # temp_str = state_to_string(temp_epistemic_item_set)
-            if not temp_p_dict in self.visited:
+            if not perspectives_dict in self.visited:
                 
                 self.expanded +=1
                 # print(expanded)
                 # update the visited list
                 # short_visited.append(temp_str)
-                self.visited.append(temp_p_dict)
+                self.visited.append(perspectives_dict)
                 # self.logger.debug(f"visited: {short_visited}")
                 # self.logger.debug(f"short visited: {short_visited}")
                 # self.logger.debug(f"{temp_epistemic_item_set}")
@@ -96,10 +98,10 @@ class Search:
                 filtered_action_names = filterActionNames(problem,actions)
                 # self.logger.debug(filtered_action_names)
                 for action in filtered_action_names:
-                    pre_flag,temp_p_dict = problem.checkPreconditionsP(state,actions[action],path)
+                    pre_flag,perspectives_dict,epistemic_dict,pre_dict = problem.checkPreconditions(state,actions[action],path)
                     if pre_flag: 
                         succ_state = problem.generateSuccessor(state, actions[action],path)
-                        succ_node = self.SearchNode(succ_state,temp_p_dict,path + [(succ_state,action)])
+                        succ_node = self.SearchNode(succ_state,perspectives_dict,path + [(succ_state,action)])
                         self.generated += 1
                         queue.append(succ_node)
             else:

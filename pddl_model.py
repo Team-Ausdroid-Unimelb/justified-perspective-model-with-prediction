@@ -178,7 +178,7 @@ class Problem:
     #     # adding epistemic checker here
     #     self.logger.debug(f'epistemic_goal: {self.goal_states["epistemic_g"]}')
     #     for eq,value in self.goal_states["epistemic_g"]:
-    #         self.epistemic_calls +=1
+    #        
     #         current_time = datetime.now()
     #         if not self.epistemic_model.checkingEQstr(self.external,eq,path,state,self.entities,self.variables) == value:
     #             self.epistemic_call_time += datetime.now() - current_time
@@ -327,7 +327,6 @@ class Problem:
             
     #     # checking epistemic preconditions
     #     for eq,value in preconditions["epistemic_p"]:
-    #         self.epistemic_calls +=1
     #         current_time = datetime.now()
     #         temp_e_v = self.epistemic_model.checkingEQstr(self.external,eq,path,state,self.entities,self.variables)
     #         self.epistemic_call_time += datetime.now() - current_time
@@ -361,7 +360,6 @@ class Problem:
     #             break
     #     # checking epistemic preconditions
     #     for eq,value in preconditions["epistemic_p"]:
-    #         self.epistemic_calls +=1
     #         current_time = datetime.now()
     #         temp_e_v,temp_p_dict = self.epistemic_model.checkingEQstrP(self.external,eq,path,state,self.entities,self.variables)
     #         self.epistemic_call_time += datetime.now() - current_time
@@ -388,7 +386,7 @@ class Problem:
             
     #     # checking epistemic preconditions
     #     for eq,value in preconditions["epistemic_p"]:
-    #         self.epistemic_calls +=1
+    #         
     #         current_time = datetime.now()
     #         if not self.epistemic_model.checkingEQstr(self.external,eq,path,state,self.entities,self.variables) == value:
     #             self.epistemic_call_time += datetime.now() - current_time

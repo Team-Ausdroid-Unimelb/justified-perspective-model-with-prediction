@@ -67,6 +67,31 @@ class PriorityQueue:
                 break
         else:
             self.push(item, priority)
+            
+            
+import logging
+from enum import Enum
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+
+
+def setup_logger(name, handler, level=logging.INFO):
+    """To setup as many loggers as you want"""
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    logger.addHandler(handler)
+
+    return logger
+
+def setup_log_handler(log_path):
+    handler = logging.FileHandler(log_path)        
+    handler.setFormatter(formatter)
+    return handler
+
+instance_handler = None
+
+
+
+            
 
 ### PDDL value type
 
@@ -81,7 +106,6 @@ class PDDL_TERNARY(Enum):
     #     # show when in a dictionary
         
     #     return PDDL_TERNARY(self)
-
 
 
 

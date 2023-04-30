@@ -49,12 +49,12 @@ import pandas as pd
 
 if __name__ == '__main__':
     options=loadParameter()
-    data_json = []
+    result_json = {}
     # domain_name_list = []
     # with open(options.input, 'r') as f:
     #     domain_name_str = f.readline()
     #     domain_name_list = domain_name_str.split(" ")
-    
+
     
     for dir_name in os.listdir(options.output_path):
         print(dir_name)
@@ -64,13 +64,29 @@ if __name__ == '__main__':
                 if '.json' in file_name:
                     with open(f"{options.output_path}/{dir_name}/{file_name}",'r') as f:
                         json_item = json.load(f)
-                        data_json.append(json_item)
+                        print(json_item)
+                        if "plan" in json_item.keys():
+                            json_item.update({"plan_length":len(json_item['plan'])})
+                        
+                        search_str = json_item["search"] 
+                        if not search_str in result_json.keys():
+                            result_json[search_str]=[]
+                        result_json[search_str].append(json_item)
                 
-    print(data_json)
-    # df_json = pd.read_json(‘DATAFILE.json’)
-    df_json = pd.DataFrame(data_json)
+    print(result_json)
+    
     excel_file_name = options.output_path+options.output_path.replace('\\','_').replace('.','')+".xlsx"
-    print(excel_file_name)
-    df_json.to_excel(excel_file_name)
+    writer = pd.ExcelWriter(excel_file_name, engine='xlsxwriter')
 
+    
+    
+    for key,value in result_json.items():
+
+    # df_json = pd.read_json(‘DATAFILE.json’)
+        df_json = pd.DataFrame(value)
+        df_json.to_excel(writer, sheet_name=key)
+        
+    # print(excel_file_name)
+    # df_json.to_excel(excel_file_name)
+    writer.save()
 

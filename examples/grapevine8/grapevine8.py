@@ -32,21 +32,15 @@ class ExternalFunction:
 
     # # customized evaluation function
 
-    # extract variables from the query
-    def extractVariables(self,eq):
-        # expected output would be a list of (var_name,value)
-        if not type(eq) == epistemic_model.EpistemicQuery:
-            # print(eq)
-            # default is a single pair of var_name and value
-            if not re.search("\([0-9a-z _\-\'\"]*,[0-9a-z _\'\"]*\)",eq) == None:
-                var_name = eq.split(",")[0][1:]
-                value = eq.split(",")[1][:-1]
-                return [(var_name.replace('"','').replace("'",''),value.replace('"','').replace("'",''))]
-            else:
-                # customized function here
-                pass
+    def extractVariable(self,q_content_str):
+        if not re.search("\([0-9a-z _\-\'\"]*,[0-9a-z _\'\"]*\)",q_content_str) == None:
+            var_name = q_content_str.split(",")[0][1:]
+            value = q_content_str.split(",")[1][:-1]
+            return (var_name.replace('"','').replace("'",''),value.replace('"','').replace("'",''))
         else:
-            return self.extractVariables(eq.q_content)
+            # customized function here
+            pass
+
 
     def extractAgents(self,eq):
         if not type(eq) == epistemic_model.EpistemicQuery:
