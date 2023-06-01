@@ -9,7 +9,7 @@ from util import PDDL_TERNARY
 
 LOGGER_NAME = "epistemic_model"
 LOG_LEVEL = logging.INFO
-# LOG_LEVEL = logging.DEBUG
+LOG_LEVEL = logging.DEBUG
 from util import setup_logger
 
 
@@ -84,7 +84,11 @@ class EpistemicModel:
 
 
     def epistemicGoalsHandler(self,epistemic_goals_list, prefix, path):
-        perspectives_dict = {prefix:path[-1][0]}
+        self.logger.debug(f'')
+        self.logger.debug(f'epistemicGoalHandler')
+        self.logger.debug(f'epistemic_goals_list{epistemic_goals_list}')
+        self.logger.debug(f'prefix{prefix}')
+        perspectives_dict = {'':path[-1][0]}
         eq_dict = {}
         result_dict = {}
         
@@ -105,13 +109,16 @@ class EpistemicModel:
                 
                 agents_str = temp_eq.agents_str
                 content = temp_eq.q_content
-                key = f"{temp_eq.header_str} {agents_str}"
+                # key = f"{prefix} {temp_eq.header_str} {agents_str}"
+                key = f"{temp_eq.header_str} {agents_str} "
                 
                 
                 if key in eq_dict.keys():
                     eq_dict[key]['content'].append((content,value))
                 else:
                     eq_dict[key] = {'q_type':temp_eq.q_type,'eq_type':temp_eq.eq_type,'q_group':temp_eq.q_group,'content':[(content,value)]}
+        
+        self.logger.debug(f'eq_dict in goal handler {eq_dict}')
         
         # solving eq by perspectives
         for key,item in eq_dict.items():
@@ -126,11 +133,21 @@ class EpistemicModel:
             #     new_path = self._generateGroupObservations(self,path,item['q_type'],item['q_group'])
             else:
                 assert("wrong eq_type of the epistemic query")
-            perspectives_dict.update({key:new_path[-1][0]})
+            # perspectives_dict.update({key:new_path[-1][0]})
+            self.logger.debug(f"calling local perspective for {key} and content {item['content']}")
             local_perspectives, local_result_dict = self.epistemicGoalsHandler(item['content'],key,new_path)
-            perspectives_dict.update(local_perspectives)
+            self.logger.debug(f"local_perspectives is {local_perspectives}")
+            # perspectives_dict.update(local_perspectives)
+            self.logger.debug(f'perspectives_dict before adding local {perspectives_dict}')
+            for lp_key,lp_value in local_perspectives.items():
+                p_key = key+lp_key
+                perspectives_dict[p_key] = lp_value
+            self.logger.debug(f'perspectives_dict after adding local {perspectives_dict}')
+            
             for result_key,result_value in local_result_dict.items():
-                result_key = key+ " "+ result_key
+                result_key = key + result_key
+                self.logger.debug(f'key is {key}, result_key is {result_key}')
+                # result_key = result_key
                 new_result_value = result_value
                 if eq_type == EQ_TYPE.SEEING:
                     if not self.external.agentsExists(new_path,item['q_group']):
@@ -140,6 +157,8 @@ class EpistemicModel:
                     else:
                         new_result_value = PDDL_TERNARY.TRUE
                 result_dict.update({result_key:new_result_value})
+        self.logger.debug(f'result_dict {result_dict}')
+        self.logger.debug(f'perspectives_dict {perspectives_dict}')
         return perspectives_dict,result_dict
 
     def _evaluateContent(self,path,temp_eq):
