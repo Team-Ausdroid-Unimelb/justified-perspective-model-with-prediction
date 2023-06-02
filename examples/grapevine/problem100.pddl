@@ -1,6 +1,6 @@
 
 (define 
-    (problem grapevine_05) 
+    (problem grapevine_06) 
     (:domain grapevine)
 
     (:agents
@@ -39,19 +39,14 @@
     (:goal (and
         ; (= (:ontic (= (agent_at a) 2)) 1)
         ; (= (:ontic (= (shared a) 2)) 1)
-        (= (:epistemic b [b] (= (secret a) 't')) 1)
-        (= (:epistemic b [d] (= (secret a) 'f')) 1)
-
-        (= (:epistemic b [c] (= (secret b) 't')) 1)
-        (= (:epistemic b [a] (= (secret b) 'f')) 1)
-
-        (= (:epistemic b [d] (= (secret c) 't')) 1)
-        (= (:epistemic b [b] (= (secret c) 'f')) 1)
-
-        (= (:epistemic b [a] (= (secret d) 't')) 1)
-        (= (:epistemic b [c] (= (secret d) 'f')) 1)
-        
-        
+        (= (:epistemic b [a] (= (secret b) 't')) 1)
+        ; (= (:epistemic b [b] (= (secret c) 't')) 1)
+        ; (= (:epistemic b [c] (= (secret d) 't')) 1)
+        ; (= (:epistemic b [d] (= (secret a) 't')) 1)
+        (= (:epistemic b [d] b [a] (= (secret b) 'f')) 1)
+        ; (= (:epistemic b [c] b [b] (= (secret c) 'f')) 1)
+        ; (= (:epistemic b [b] b [c] (= (secret d) 'f')) 1)
+        ; (= (:epistemic b [a] b [d] (= (secret a) 'f')) 1)
 
         ; (= (:epistemic b [d] (= (secret a) 't')) 0)
         ; (= (:epistemic k [b] k [a] (= (v p) 't')) 0)

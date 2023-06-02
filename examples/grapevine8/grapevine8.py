@@ -78,7 +78,7 @@ class ExternalFunction:
         
         # logger.debug(f"checkVisibility(_,_,{agt_index},{var_index})")
         try:
-            # logger.debug(f'checking seeing for agent {agt_index} on {var_index}')
+            self.logger.debug(f'checking seeing for agent {agt_index} on {var_index} in state {state}')
             tgt_index = variables[var_index].v_parent
             
             # check if the agt_index can be found
@@ -87,7 +87,7 @@ class ExternalFunction:
             # if the variable contains shared or secret, then it means checking secret location
             # which mean checking location of shared (agent's own secret can be shared by others)
             # otherwise it checking agent's current location
-            if 'shared' in var_index or 'secret' in var_index:
+            if 'secret' in var_index:
                 tgt_loc = state[f'shared-{tgt_index}']
                 if type(tgt_loc) == str:
                     tgt_loc = int(state[f'shared-{tgt_index}'])
@@ -98,11 +98,27 @@ class ExternalFunction:
                 
                 # if the secret has not been shared
                 if tgt_loc == 0:
-                    
                     return PDDL_TERNARY.FALSE
+                
+                
+            elif 'shared' in var_index:
+                tgt_loc = state[f'shared-{tgt_index}']
+                if type(tgt_loc) == str:
+                    tgt_loc = int(state[f'shared-{tgt_index}'])
+                
+                # agent knows if a secret is not been shared
+                # this is to break the continues effect of a sharing secret
+                if tgt_loc == 0:
+                    return PDDL_TERNARY.TRUE
+                    
+            
             else:
                 # the target is an agent, it has its own location
-                tgt_loc = int(state[f'agent_at-{tgt_index}'])
+                # tgt_loc = int(state[f'agent_at-{tgt_index}'])
+                # Since in Grapevine domain, there is only two rooms
+                # agent will know others location if they are in the same room
+                # agent will also know others location if they are not in the same room
+                return PDDL_TERNARY.TRUE
 
 
 
@@ -167,10 +183,15 @@ class ExternalFunction:
         self.logger.debug(f'relevant variables index: {relevant_variable_parent_index}') 
         # relevant_agent_index += relevant_variable_parent_index
         for name,action in action_dict.items():
-            if "sharing" in name:
+            self.logger.debug(f'action_name: {name}') 
+            if "sharing_" in name:
                 if name.split("-")[2] in relevant_variable_parent_index:
                     action_name_list.append(name)
+            elif "sharing" in name or "lying" in name:
+                if name.split("-")[1] in relevant_variable_parent_index:
+                    action_name_list.append(name)
             elif "move" in name:
+                self.logger.debug(f'agent_in: {name.split("-")[1]}') 
                 if name.split("-")[1] in relevant_agent_index:
                     action_name_list.append(name) 
             else:

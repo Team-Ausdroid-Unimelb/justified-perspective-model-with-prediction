@@ -42,7 +42,7 @@
         )
     )
 
-    (:action sharing
+    (:action sharing_truth
         :parameters (?a - agent, ?s - agent)
         :precondition (and (= (:epistemic b [?a] (= (secret ?s) 't')) 1))
         :effect (and 
@@ -61,10 +61,9 @@
         )
     )
 
-
-    (:action sharing_lie
+    (:action sharing_false
         :parameters (?a - agent, ?s - agent)
-        :precondition (and (= (:epistemic b [?a] (= (secret ?s) 't')) 1))
+        :precondition (and (= (:epistemic b [?a] (= (secret ?s) 'f')) 1))
         :effect (and 
             (= (shared-a) 0)
             (= (shared-b) 0)
@@ -77,8 +76,63 @@
             (= (shared ?s) (agent_at ?a))
             (= (secret ?s) 'f')
             ; (= (sharing ?a) 1)
+            
         )
     )
+
+    (:action sharing
+        :parameters (?a - agent)
+        :precondition (and )
+        :effect (and 
+            (= (shared-a) 0)
+            (= (shared-b) 0)
+            (= (shared-c) 0)
+            (= (shared-d) 0)
+            ; (= (sharing-a) 0)
+            ; (= (sharing-b) 0)
+            ; (= (sharing-c) 0)
+            ; (= (sharing-d) 0)
+            (= (shared ?a) (agent_at ?a))
+            (= (secret ?a) 't')
+            ; (= (sharing ?a) 1)
+        )
+    )
+
+    (:action lying
+        :parameters (?a - agent)
+        :precondition (and )
+        :effect (and 
+            (= (shared-a) 0)
+            (= (shared-b) 0)
+            (= (shared-c) 0)
+            (= (shared-d) 0)
+            ; (= (sharing-a) 0)
+            ; (= (sharing-b) 0)
+            ; (= (sharing-c) 0)
+            ; (= (sharing-d) 0)
+            (= (shared ?a) (agent_at ?a))
+            (= (secret ?a) 'f')
+            ; (= (sharing ?a) 1)
+        )
+    )
+
+    ; (:action lying1
+    ;     :parameters (?a - agent, ?s - agent)
+    ;     :precondition (and (= (:epistemic b [?a] (= (secret ?s) 'f')) 1))
+    ;     :effect (and 
+    ;         (= (shared-a) 0)
+    ;         (= (shared-b) 0)
+    ;         (= (shared-c) 0)
+    ;         (= (shared-d) 0)
+    ;         ; (= (sharing-a) 0)
+    ;         ; (= (sharing-b) 0)
+    ;         ; (= (sharing-c) 0)
+    ;         ; (= (sharing-d) 0)
+    ;         (= (shared ?s) (agent_at ?a))
+    ;         (= (secret ?s) 'f')
+    ;         ; (= (sharing ?a) 1)
+    ;     )
+    ; )
     ; (:action share_bs
     ;     :parameters (?a - agent)
     ;     :precondition (and (= (knows ?a b_s) 1))
