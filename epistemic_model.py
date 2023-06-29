@@ -9,7 +9,7 @@ from util import PDDL_TERNARY
 
 LOGGER_NAME = "epistemic_model"
 LOG_LEVEL = logging.INFO
-LOG_LEVEL = logging.DEBUG
+# LOG_LEVEL = logging.DEBUG
 from util import setup_logger
 
 
@@ -100,6 +100,9 @@ class EpistemicModel:
                 # just need to evaluate the result and return value
                 # key = f"{prefix} {temp_eq}"
                 self.logger.debug(f"query key: {temp_eq}")
+
+                
+                
                 result = self._evaluateContent(path,temp_eq)
                 
                 result_dict.update({temp_eq:result})
@@ -223,7 +226,7 @@ class EpistemicModel:
         
         for i in range(len(path)):
             observation_list.append(self._getOneObservation(path[i][0],agt_id))
-        
+        self.logger.debug(f'observation list is {observation_list}')
         for i in range(len(path)):
             new_state = self._generateOnePerspective(state_template,observation_list[:i+1])
             new_path.append((new_state,path[i][1]))
@@ -235,7 +238,7 @@ class EpistemicModel:
         for v_index,e in state_template.items():
             self.logger.debug(f'\t find history value for {v_index},{e}')
             ts_index = self._identifyLastSeenTimestamp(observation_list,v_index)
-            self.logger.debug(f'\t timestamp index: {ts_index}')
+            self.logger.debug(f'\t last seen timestamp index: {ts_index}')
             value = self._identifyMemorizedValue( observation_list, ts_index,v_index)
             self.logger.debug(f'\t {v_index}"s value is: {value}')
             new_state.update({v_index:value})

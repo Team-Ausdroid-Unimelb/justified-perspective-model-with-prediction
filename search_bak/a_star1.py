@@ -4,7 +4,7 @@ import util
 
 LOGGER_NAME = "search:astar1"
 LOGGER_LEVEL = logging.INFO
-LOGGER_LEVEL = logging.DEBUG
+# LOGGER_LEVEL = logging.DEBUG
 # logger = logging.getLogger("bfsdc")
 # logger.setLevel(logging.DEBUG)
 
@@ -25,7 +25,6 @@ class Search:
     class SearchNode:
         state = None
         epistemic_item_set = set([])
-        remaining_goal = 9999
         path = []
 
         def __init__(self,state,epistemic_item_set,path):
@@ -65,10 +64,9 @@ class Search:
         
         open_list = util.PriorityQueue()
         p,es = self._f(init_node,problem)
-        init_node.remaining_goal =  p-self._gn(init_node)
         init_node.epistemic_item_set.update(es)
         # remaining_g = p-_gn(init_node)
-        open_list.push(item=init_node, priority=self._gn(init_node))
+        open_list.push(item=init_node, priority=p)
         
         
         while not open_list.isEmpty():
@@ -91,8 +89,7 @@ class Search:
             # print(problem.goal_states)
             # remaining_g = current_p - _gn(current_node)
             # print(f"p:{current_p}, g:{ _gn(current_node)}, r:{remaining_g}")
-            # is_goal = self._isGoal(current_p,current_node)
-            is_goal = (0 == current_node.remaining_goal)
+            is_goal = self._isGoal(current_p,current_node)
             if is_goal:
                 # self.logger.info(path)
                 actions = [ a  for s,a in path]
@@ -124,13 +121,7 @@ class Search:
                 action = actions[action_name]
                 ontic_pre_dict.update({action_name:action.a_precondition['ontic_p']})
                 epistemic_pre_dict.update({action_name:action.a_precondition['epistemic_p']})
-            self.logger.debug(f'check all precondition')
-            self.logger.debug(f'epistemic_pre_dict is {epistemic_pre_dict}')
-            self.logger.debug(f'epistemic_pre_dict is {epistemic_pre_dict}')
-            
-            
             flag_dict,p_dict,e_pre_dict,pre_dict = problem.checkAllPreconditions(state,path, ontic_pre_dict,epistemic_pre_dict)
-            self.logger.debug(f'flag_dict {flag_dict}')
             
             
             e_pre_dict.update(state)
@@ -180,8 +171,6 @@ class Search:
                         self.goal_checked += 1
                         succ_node = self.SearchNode(succ_state,{},path + [(succ_state,action_name)])
                         p,ep_dict = self._f(succ_node,problem)
-                        
-                        succ_node.remaining_goal = p - self._gn(succ_node)
                         self.logger.debug(f'ep from goal checking {ep_dict}')
                         succ_node.epistemic_item_set = ep_dict
                             
@@ -189,7 +178,7 @@ class Search:
                         self.logger.debug(f"action = {action_name}")
                         self.logger.debug(f"succ_state = {succ_state}")
                     
-                        open_list.push(item=succ_node, priority=self._gn(succ_node))
+                        open_list.push(item=succ_node, priority=p)
                         temp_successor +=1
                         temp_actions.append(action_name)
 

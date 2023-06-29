@@ -3,7 +3,7 @@
 
 import logging
 from enum import Enum
-formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
 
 
 def setup_logger(name, handler, level=logging.INFO):
@@ -43,7 +43,7 @@ class PriorityQueue:
 
     def pop(self):
         (_, _, item) = heapq.heappop(self.heap)
-        return item
+        return item        
 
     def pop_full(self):
         # (_, _, item) = 
@@ -67,6 +67,8 @@ class PriorityQueue:
                 break
         else:
             self.push(item, priority)
+            
+
             
             
 import logging

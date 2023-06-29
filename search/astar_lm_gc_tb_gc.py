@@ -2,9 +2,9 @@ import logging
 import util
 
 
-LOGGER_NAME = "search:astar1"
+LOGGER_NAME = "search:landmarks"
 LOGGER_LEVEL = logging.INFO
-LOGGER_LEVEL = logging.DEBUG
+# LOGGER_LEVEL = logging.DEBUG
 # logger = logging.getLogger("bfsdc")
 # logger.setLevel(logging.DEBUG)
 
@@ -20,12 +20,10 @@ class Search:
         self.visited = []
         self.short_visited = []
         self.result = dict()
-        self.branch_factors = []
 
     class SearchNode:
         state = None
         epistemic_item_set = set([])
-        remaining_goal = 9999
         path = []
 
         def __init__(self,state,epistemic_item_set,path):
@@ -52,23 +50,19 @@ class Search:
         init_epistemic_item_set = dict()
         
         init_node = Search.SearchNode(init_state,init_epistemic_item_set,init_path)
-        # self.group_eg_dict = self.group_epistemic_goals(problem)
+        self.group_eg_dict = self.group_epistemic_goals(problem)
         
-        # self.landmarks_dict = problem.external.generate_constrain_dict(problem,self.group_eg_dict)
-        # print(landmarks_dict)
-        # exit()
-        # print(constrain_dict)
-        # print(group_eg_dict)
-        # return
+        self.landmarks_dict = problem.external.generate_constrain_dict(problem,self.group_eg_dict)
+
+
         
         
         
         open_list = util.PriorityQueue()
         p,es = self._f(init_node,problem)
-        init_node.remaining_goal =  p-self._gn(init_node)
         init_node.epistemic_item_set.update(es)
         # remaining_g = p-_gn(init_node)
-        open_list.push(item=init_node, priority=self._gn(init_node))
+        open_list.push(item=init_node, priority=p)
         
         
         while not open_list.isEmpty():
@@ -87,12 +81,8 @@ class Search:
             #     return
             # Goal Check
             # is_goal, temp_epistemic_item_set = problem.isGoalN(state,path)
-            # print(temp_epistemic_item_set)
-            # print(problem.goal_states)
-            # remaining_g = current_p - _gn(current_node)
-            # print(f"p:{current_p}, g:{ _gn(current_node)}, r:{remaining_g}")
-            # is_goal = self._isGoal(current_p,current_node)
-            is_goal = (0 == current_node.remaining_goal)
+
+            is_goal = self._isGoal(current_p,current_node)
             if is_goal:
                 # self.logger.info(path)
                 actions = [ a  for s,a in path]
@@ -124,30 +114,22 @@ class Search:
                 action = actions[action_name]
                 ontic_pre_dict.update({action_name:action.a_precondition['ontic_p']})
                 epistemic_pre_dict.update({action_name:action.a_precondition['epistemic_p']})
-            self.logger.debug(f'check all precondition')
-            self.logger.debug(f'epistemic_pre_dict is {epistemic_pre_dict}')
-            self.logger.debug(f'epistemic_pre_dict is {epistemic_pre_dict}')
-            
-            
             flag_dict,p_dict,e_pre_dict,pre_dict = problem.checkAllPreconditions(state,path, ontic_pre_dict,epistemic_pre_dict)
-            self.logger.debug(f'flag_dict {flag_dict}')
             
             
             e_pre_dict.update(state)
             e_pre_dict.update(ep_goal_dict)
             
-            # assert(len(path) <=2)
+            
             ep_state_str = state_to_string(e_pre_dict)
             if not ep_state_str in self.visited:
                 # self.logger.debug(epistemic_item_set)
             # if True:
-                # self.branch_factors.append(flag_dict.values().count(True))
-                
                 
                 self.expanded +=1
                 temp_successor = 0
                 temp_actions = []
-                # print(expanded)
+
                 # update the visited list
                 # self.short_visited.append(temp_str)
                 self.visited.append(ep_state_str)
@@ -161,7 +143,7 @@ class Search:
 
                 # e_pre_dict.update(succ_state)
                 
-                
+                priority_dict = {}
                 for action_name in filtered_action_names:
                     
                     self.logger.debug(f'action generated: {action_name}')
@@ -180,8 +162,6 @@ class Search:
                         self.goal_checked += 1
                         succ_node = self.SearchNode(succ_state,{},path + [(succ_state,action_name)])
                         p,ep_dict = self._f(succ_node,problem)
-                        
-                        succ_node.remaining_goal = p - self._gn(succ_node)
                         self.logger.debug(f'ep from goal checking {ep_dict}')
                         succ_node.epistemic_item_set = ep_dict
                             
@@ -189,7 +169,10 @@ class Search:
                         self.logger.debug(f"action = {action_name}")
                         self.logger.debug(f"succ_state = {succ_state}")
                     
-                        open_list.push(item=succ_node, priority=self._gn(succ_node))
+                        open_list.push(item=succ_node, priority=p)
+                        priority_dict[action_name] = p
+                        
+                        # self.logger.debug
                         temp_successor +=1
                         temp_actions.append(action_name)
 
@@ -199,12 +182,15 @@ class Search:
                 self.logger.debug(f'successor: {temp_successor} with actions {temp_actions}')
             else:
                 self.pruned += 1
+                
+            self.logger.debug(f'current path {path}')
+            sorted_priority_dict = sorted(priority_dict.items(), key=lambda x:x[1])
+            self.logger.debug(f'priority_dict {sorted_priority_dict}')
             
             
         self.logger.info(f'Problem is not solvable')
         self.result.update({'plan':[]})
         self.result.update({'solvable': False})
-        
         self._finalise_result(problem)
         return self.result
 
@@ -231,6 +217,7 @@ class Search:
         self.result.update({'epistemic_call_time':problem.epistemic_call_time.total_seconds()})
 
     def group_epistemic_goals(self,problem):
+
         group_eg_dict = {}
         for eq_str,value in problem.goal_states["epistemic_g"]:
             var_str = eq_str.split(" ")[-1].split(",")[0][2:-1]
@@ -238,6 +225,7 @@ class Search:
                 group_eg_dict[var_str].append((eq_str,value))
             else:
                 group_eg_dict.update({var_str:[(eq_str,value)]})
+
         return group_eg_dict
 
 
@@ -246,11 +234,12 @@ class Search:
         heuristic = self.goal_counting
         g = self._gn(node)
         h,es = heuristic(node,problem)
-        f = g*1+h*1
+        f = g*10+h*11
+
         return f,es
 
     def _isGoal(self,current_p, current_node):
-        return (current_p - self._gn(current_node)*1) == 0
+        return (current_p - self._gn(current_node)*10) == 0
 
     def _gn(self,node):
         path = node.path
@@ -285,16 +274,13 @@ class Search:
         #         remain_goal_number += 1
         for key,value in goal_dict.items():
             if "-1" in key and not value:
-                return 9999,epistemic_dict      
-        return remain_goal_number,epistemic_dict 
-        # print(state)
-        # print(epistemic_item_set)
-        # print(remain_goal_number)
+                return 9999,epistemic_dict       
+
         # {'secret-b': [("b [a] ('secret-b','t')", 1), ("b [d] b [a] ('secret-b','f')", 1)], 
         #  'secret-c': [("b [b] ('secret-c','t')", 1), ("b [c] b [b] ('secret-c','f')", 1)], 
         #  'secret-d': [("b [c] ('secret-d','t')", 1), ("b [b] b [c] ('secret-d','f')", 1)], 
         #  'secret-a': [("b [d] ('secret-a','t')", 1), ("b [a] b [d] ('secret-a','f')", 1)]}
-        # print(goal_dict)
+
         # {"b [a] ('secret-b','t') 1": False, 
         #  "b [b] ('secret-c','t') 1": False, 
         #  "b [c] ('secret-d','t') 1": False, 
@@ -304,9 +290,9 @@ class Search:
         #  "b [b] b [c] ('secret-d','f') 1": False, 
         #  "b [a] b [d] ('secret-a','f') 1": False}
         # exit()
-        heuristic_value = remain_goal_number
+        heuristic_value = remain_goal_number *1.01
         
-        # landmark_constrain = []
+        landmark_constrain = []
         temp_v_name_list = []
         for v_name, ep_goals in self.group_eg_dict.items():
             for ep_str,value in ep_goals:
@@ -344,18 +330,28 @@ class Search:
                 
         
         
-        # if 'secret-a' in temp_v_name_list:
-        #     landmark_constrain.append(('agent_at-b','agent_at-d'))
+        if 'secret-a' in temp_v_name_list:
+            landmark_constrain.append(('agent_at-b','agent_at-d'))
+        elif 'secret-c' in temp_v_name_list:
+            landmark_constrain.append(('agent_at-b','agent_at-d'))
+        if 'secret-b' in temp_v_name_list:
+            landmark_constrain.append(('agent_at-c','agent_at-a'))
+        elif 'secret-d' in temp_v_name_list:
+            landmark_constrain.append(('agent_at-c','agent_at-a'))
+        
+        
+        # if 'secret-d' in temp_v_name_list:
+        #     landmark_constrain.append(('agent_at-b','agent_at-c'))
         # elif 'secret-c' in temp_v_name_list:
-        #     landmark_constrain.append(('agent_at-b','agent_at-d'))
+        #     landmark_constrain.append(('agent_at-b','agent_at-c'))
         # if 'secret-b' in temp_v_name_list:
-        #     landmark_constrain.append(('agent_at-c','agent_at-a'))
-        # elif 'secret-d' in temp_v_name_list:
-        #     landmark_constrain.append(('agent_at-c','agent_at-a'))
+        #     landmark_constrain.append(('agent_at-a','agent_at-d'))
+        # elif 'secret-a' in temp_v_name_list:
+        #     landmark_constrain.append(('agent_at-d','agent_at-a'))
             
-        # for v1,v2 in landmark_constrain:
-        #     if state[v1] == state[v2]:
-        #         heuristic_value +=1
+        for v1,v2 in landmark_constrain:
+            if state[v1] == state[v2]:
+                heuristic_value +=1
         
         # print(f' h is: {heuristic_value}, gc is: {remain_goal_number}')
         # if remain_goal_number == 0:
@@ -368,7 +364,7 @@ class Search:
 
 def state_to_string(dicts):
     output = []
-    # print(dicts)
+
     for key,value in dicts.items():
         output.append(f'{key}:{value}')
     output.sort() 

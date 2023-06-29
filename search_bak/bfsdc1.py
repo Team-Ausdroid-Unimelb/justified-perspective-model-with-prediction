@@ -4,7 +4,7 @@ import util
 
 LOGGER_NAME = "search:astar1"
 LOGGER_LEVEL = logging.INFO
-LOGGER_LEVEL = logging.DEBUG
+# LOGGER_LEVEL = logging.DEBUG
 # logger = logging.getLogger("bfsdc")
 # logger.setLevel(logging.DEBUG)
 
@@ -124,13 +124,7 @@ class Search:
                 action = actions[action_name]
                 ontic_pre_dict.update({action_name:action.a_precondition['ontic_p']})
                 epistemic_pre_dict.update({action_name:action.a_precondition['epistemic_p']})
-            self.logger.debug(f'check all precondition')
-            self.logger.debug(f'epistemic_pre_dict is {epistemic_pre_dict}')
-            self.logger.debug(f'epistemic_pre_dict is {epistemic_pre_dict}')
-            
-            
             flag_dict,p_dict,e_pre_dict,pre_dict = problem.checkAllPreconditions(state,path, ontic_pre_dict,epistemic_pre_dict)
-            self.logger.debug(f'flag_dict {flag_dict}')
             
             
             e_pre_dict.update(state)

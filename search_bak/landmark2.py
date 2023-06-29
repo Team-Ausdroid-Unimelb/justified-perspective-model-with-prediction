@@ -4,7 +4,7 @@ import util
 
 LOGGER_NAME = "search:astar1"
 LOGGER_LEVEL = logging.INFO
-LOGGER_LEVEL = logging.DEBUG
+# LOGGER_LEVEL = logging.DEBUG
 # logger = logging.getLogger("bfsdc")
 # logger.setLevel(logging.DEBUG)
 
@@ -25,7 +25,6 @@ class Search:
     class SearchNode:
         state = None
         epistemic_item_set = set([])
-        remaining_goal = 9999
         path = []
 
         def __init__(self,state,epistemic_item_set,path):
@@ -52,8 +51,9 @@ class Search:
         init_epistemic_item_set = dict()
         
         init_node = Search.SearchNode(init_state,init_epistemic_item_set,init_path)
-        # self.group_eg_dict = self.group_epistemic_goals(problem)
+        self.group_eg_dict = self.group_epistemic_goals(problem)
         
+        self.landmarks_dict = {}
         # self.landmarks_dict = problem.external.generate_constrain_dict(problem,self.group_eg_dict)
         # print(landmarks_dict)
         # exit()
@@ -65,10 +65,9 @@ class Search:
         
         open_list = util.PriorityQueue()
         p,es = self._f(init_node,problem)
-        init_node.remaining_goal =  p-self._gn(init_node)
         init_node.epistemic_item_set.update(es)
         # remaining_g = p-_gn(init_node)
-        open_list.push(item=init_node, priority=self._gn(init_node))
+        open_list.push(item=init_node, priority=p)
         
         
         while not open_list.isEmpty():
@@ -91,8 +90,7 @@ class Search:
             # print(problem.goal_states)
             # remaining_g = current_p - _gn(current_node)
             # print(f"p:{current_p}, g:{ _gn(current_node)}, r:{remaining_g}")
-            # is_goal = self._isGoal(current_p,current_node)
-            is_goal = (0 == current_node.remaining_goal)
+            is_goal = self._isGoal(current_p,current_node)
             if is_goal:
                 # self.logger.info(path)
                 actions = [ a  for s,a in path]
@@ -124,19 +122,13 @@ class Search:
                 action = actions[action_name]
                 ontic_pre_dict.update({action_name:action.a_precondition['ontic_p']})
                 epistemic_pre_dict.update({action_name:action.a_precondition['epistemic_p']})
-            self.logger.debug(f'check all precondition')
-            self.logger.debug(f'epistemic_pre_dict is {epistemic_pre_dict}')
-            self.logger.debug(f'epistemic_pre_dict is {epistemic_pre_dict}')
-            
-            
             flag_dict,p_dict,e_pre_dict,pre_dict = problem.checkAllPreconditions(state,path, ontic_pre_dict,epistemic_pre_dict)
-            self.logger.debug(f'flag_dict {flag_dict}')
             
             
             e_pre_dict.update(state)
             e_pre_dict.update(ep_goal_dict)
             
-            # assert(len(path) <=2)
+            # assert(len(path) <=6)
             ep_state_str = state_to_string(e_pre_dict)
             if not ep_state_str in self.visited:
                 # self.logger.debug(epistemic_item_set)
@@ -180,8 +172,6 @@ class Search:
                         self.goal_checked += 1
                         succ_node = self.SearchNode(succ_state,{},path + [(succ_state,action_name)])
                         p,ep_dict = self._f(succ_node,problem)
-                        
-                        succ_node.remaining_goal = p - self._gn(succ_node)
                         self.logger.debug(f'ep from goal checking {ep_dict}')
                         succ_node.epistemic_item_set = ep_dict
                             
@@ -189,7 +179,7 @@ class Search:
                         self.logger.debug(f"action = {action_name}")
                         self.logger.debug(f"succ_state = {succ_state}")
                     
-                        open_list.push(item=succ_node, priority=self._gn(succ_node))
+                        open_list.push(item=succ_node, priority=p)
                         temp_successor +=1
                         temp_actions.append(action_name)
 
@@ -246,11 +236,11 @@ class Search:
         heuristic = self.goal_counting
         g = self._gn(node)
         h,es = heuristic(node,problem)
-        f = g*1+h*1
+        f = g*0+h*1
         return f,es
 
     def _isGoal(self,current_p, current_node):
-        return (current_p - self._gn(current_node)*1) == 0
+        return (current_p - self._gn(current_node)*0) == 0
 
     def _gn(self,node):
         path = node.path
@@ -286,7 +276,7 @@ class Search:
         for key,value in goal_dict.items():
             if "-1" in key and not value:
                 return 9999,epistemic_dict      
-        return remain_goal_number,epistemic_dict 
+        # return remain_goal_number,epistemic_dict 
         # print(state)
         # print(epistemic_item_set)
         # print(remain_goal_number)
@@ -304,9 +294,9 @@ class Search:
         #  "b [b] b [c] ('secret-d','f') 1": False, 
         #  "b [a] b [d] ('secret-a','f') 1": False}
         # exit()
-        heuristic_value = remain_goal_number
+        heuristic_value = remain_goal_number*1.01
         
-        # landmark_constrain = []
+        landmark_constrain = []
         temp_v_name_list = []
         for v_name, ep_goals in self.group_eg_dict.items():
             for ep_str,value in ep_goals:
@@ -323,20 +313,20 @@ class Search:
         #         ep_header = format_ep(ep_value,value)
         temp_landmark = set()
                 
-        for temp_v_name in temp_v_name_list:
-            # flag = True
-            for temp_state in self.landmarks_dict[temp_v_name]:
-                if not str(sorted(temp_state)) in temp_landmark:
-                    temp_flag = True
-                    for key,value in temp_state.items():
-                        if key in state.keys():
-                            if not state[key]==value:
-                                temp_flag = False
-                                break
-                    if temp_flag:
-                        heuristic_value +=1
-                        temp_landmark.add(str(sorted(temp_state)))
-                        break
+        # for temp_v_name in temp_v_name_list:
+        #     # flag = True
+        #     for temp_state in self.landmarks_dict[temp_v_name]:
+        #         if not str(sorted(temp_state)) in temp_landmark:
+        #             temp_flag = True
+        #             for key,value in temp_state.items():
+        #                 if key in state.keys():
+        #                     if not state[key]==value:
+        #                         temp_flag = False
+        #                         break
+        #             if temp_flag:
+        #                 heuristic_value +=1
+        #                 temp_landmark.add(str(sorted(temp_state)))
+        #                 break
                 
             # if flag:
             #     heuristic_value +=1
@@ -344,18 +334,20 @@ class Search:
                 
         
         
-        # if 'secret-a' in temp_v_name_list:
-        #     landmark_constrain.append(('agent_at-b','agent_at-d'))
-        # elif 'secret-c' in temp_v_name_list:
-        #     landmark_constrain.append(('agent_at-b','agent_at-d'))
-        # if 'secret-b' in temp_v_name_list:
-        #     landmark_constrain.append(('agent_at-c','agent_at-a'))
-        # elif 'secret-d' in temp_v_name_list:
-        #     landmark_constrain.append(('agent_at-c','agent_at-a'))
-            
-        # for v1,v2 in landmark_constrain:
-        #     if state[v1] == state[v2]:
-        #         heuristic_value +=1
+        if 'secret-a' in temp_v_name_list:
+            landmark_constrain.append(('agent_at-b','agent_at-d'))
+        elif 'secret-c' in temp_v_name_list:
+            landmark_constrain.append(('agent_at-b','agent_at-d'))
+        if 'secret-b' in temp_v_name_list:
+            landmark_constrain.append(('agent_at-c','agent_at-a'))
+        elif 'secret-d' in temp_v_name_list:
+            landmark_constrain.append(('agent_at-c','agent_at-a'))
+        
+        
+        self.logger.debug(f'landmark constrain {landmark_constrain}')
+        for v1,v2 in landmark_constrain:
+            if state[v1] == state[v2]:
+                heuristic_value += 1
         
         # print(f' h is: {heuristic_value}, gc is: {remain_goal_number}')
         # if remain_goal_number == 0:

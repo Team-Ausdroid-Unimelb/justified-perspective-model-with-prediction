@@ -45,6 +45,7 @@
     (:action sharing_truth
         :parameters (?a - agent, ?s - agent)
         :precondition (and (= (:epistemic b [?a] (= (secret ?s) 't')) 1))
+        
         :effect (and 
             (= (shared-a) 0)
             (= (shared-b) 0)
