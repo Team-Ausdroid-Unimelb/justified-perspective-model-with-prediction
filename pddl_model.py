@@ -5,7 +5,7 @@ import copy
 import re
 from typing import List
 from epistemic_model import EpistemicModel
-
+from forward_epistemic_model import EpistemicModel
 
 LOGGER_NAME = "pddl_model"
 LOG_LEVEL = logging.INFO
@@ -108,6 +108,38 @@ class Problem:
         self.external = external
         self.epistemic_model = EpistemicModel(logger_handler,self.entities,self.variables,external)
     
+    def isGoalP(self,state,path,p_path):
+        is_goal=True
+        goal_dict = {}
+        self.logger.debug(f"checking goal for state: {state} with path: {path}")
+        actions = [ a  for s,a in path]
+        actions = actions[1:]
+        self.logger.debug(f'plan is: {actions}')
+        self.logger.debug(f'ontic_goal: {self.goal_states["ontic_g"]}')
+        for k,v in self.goal_states["ontic_g"]:
+            if not state[k] == v:
+                is_goal = False
+                goal_dict.update({k+" "+str(v):False})
+            else:
+                goal_dict.update({k+" "+str(v):True})
+            
+        # adding epistemic checker here
+        self.logger.debug(f'epistemic_goal: {self.goal_states["epistemic_g"]}')
+        current_time = datetime.now()
+        self.epistemic_calls +=1
+        p_path,epistemic_dict = self.epistemic_model.epistemicGoalsHandlerP(self.goal_states["epistemic_g"],"",path,p_path)
+        self.epistemic_call_time += datetime.now() - current_time
+        
+        for k,v in self.goal_states["epistemic_g"]:
+            if not epistemic_dict[k].value == v:
+                is_goal = False
+                goal_dict.update({k+" "+str(v):False})
+            else:
+                goal_dict.update({k+" "+str(v):True})
+        self.logger.debug(f"goal {self.goal_states['epistemic_g']}")
+        self.logger.debug(f"epistemic_dict {epistemic_dict}")
+        self.logger.debug(f"perspectives_path {p_path}")
+        return is_goal,p_path,epistemic_dict,goal_dict
         
     def isGoal(self,state,path):
         is_goal=True
@@ -331,6 +363,72 @@ class Problem:
         
         return flag_dict,perspectives_dict,epistemic_dict,pre_dict    
 
+    def checkAllPreconditionsP(self,state,path,ontic_pre_dict,epistemic_pre_dict,p_path):
+        self.logger.debug(f'function checkAllPreconditions')
+        self.logger.debug(f'checking precondition for state: {state}')
+        # preconditions = action.a_precondition
+
+        pre_dict = {}
+        flag_dict = {}
+        
+        # checking ontic preconditions
+        self.logger.debug(f'checking all ontic preconditions')
+        for action_name,ontic_pre in ontic_pre_dict.items():
+            pre_dict[action_name] = {}
+            flag_dict[action_name] = True
+            self.logger.debug(f'checking ontic precondition {ontic_pre} for action {action_name}')
+            for k,e in ontic_pre:
+                try:
+                    if k in state.keys():
+                        if e in state.keys():
+                            if not state[k] == state[e]:
+                                flag_dict[action_name] = False
+                                pre_dict[action_name].update({k+":"+str(e):False})
+                            else:
+                                pre_dict[action_name].update({k+":"+str(e):True})
+                        elif not state[k] == e:
+                            flag_dict[action_name] = False
+                            pre_dict[action_name].update({k+":"+str(e):False})
+                        else:
+                            pre_dict[action_name].update({k+":"+str(e):True})
+                    else:
+                        self.logger.error(f'variable {k} not in state {state}')
+                        
+                except:
+                    self.logger.error("Error when checking precondition: {}\n with state: {}")
+                    
+                    flag_dict[action_name] = False
+        self.logger.debug(f'pre_dict {pre_dict}')
+            
+        # adding epistemic checker here
+        # self.logger.debug(f'epistemic_pre: {preconditions["epistemic_p"]}')
+
+        self.logger.debug(f'checking all epistemic preconditions')
+        # get all ep_pre into one list
+        temp_ep_list = []
+        for action_name,ep_pre in epistemic_pre_dict.items():
+            temp_ep_list += ep_pre
+            
+        self.logger.debug(f'epistemic preconditions list {temp_ep_list}')    
+        current_time = datetime.now()
+        self.epistemic_calls +=1
+        perspectives_dict,epistemic_dict = self.epistemic_model.epistemicGoalsHandlerP(temp_ep_list,"",path,p_path)
+        self.epistemic_call_time += datetime.now() - current_time
+
+        ep_dict = {}
+        for action_name,ep_pre in epistemic_pre_dict.items():
+            ep_dict[action_name] = {}
+            for k,v in ep_pre:
+                if not epistemic_dict[k].value == v:
+                    flag_dict[action_name] = False
+                    pre_dict[action_name].update({k+":"+str(e):False})
+                    # pre_flag = False
+                    # pre_dict.update({k+" "+str(v):False})
+                else:
+                    pre_dict[action_name].update({k+":"+str(e):True})
+        self.logger.debug(f"pre_dict: {pre_dict}")
+        
+        return flag_dict,perspectives_dict,epistemic_dict,pre_dict
 
     def checkPreconditions(self,state,action,path):
         self.logger.debug(f'checking precondition for action: {action}')
