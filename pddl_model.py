@@ -111,11 +111,11 @@ class Problem:
     def isGoalP(self,state,path,p_path):
         is_goal=True
         goal_dict = {}
-        self.logger.debug(f"checking goal for state: {state} with path: {path}")
+        # self.logger.debug(f"checking goal for state: {state} with path: {path}")
         actions = [ a  for s,a in path]
         actions = actions[1:]
-        self.logger.debug(f'plan is: {actions}')
-        self.logger.debug(f'ontic_goal: {self.goal_states["ontic_g"]}')
+        # self.logger.debug(f'plan is: {actions}')
+        # self.logger.debug(f'ontic_goal: {self.goal_states["ontic_g"]}')
         for k,v in self.goal_states["ontic_g"]:
             if not state[k] == v:
                 is_goal = False
@@ -124,31 +124,46 @@ class Problem:
                 goal_dict.update({k+" "+str(v):True})
             
         # adding epistemic checker here
-        self.logger.debug(f'epistemic_goal: {self.goal_states["epistemic_g"]}')
+        
+        # self.logger.debug(f'epistemic_goal: {self.goal_states["epistemic_g"]}')
         current_time = datetime.now()
         self.epistemic_calls +=1
-        p_path,epistemic_dict = self.epistemic_model.epistemicGoalsHandlerP(self.goal_states["epistemic_g"],"",path,p_path)
+        # self.logger.setLevel(logging.DEBUG)
+        # self.logger.debug(f"p_path before epistemicGoalsHandler {p_path}")
+        epistemic_dict = self.epistemic_model.epistemicGoalsHandlerP(self.goal_states["epistemic_g"],"",path,p_path)
+        # self.logger.debug(f"p_path after epistemicGoalsHandler {p_path}")
         self.epistemic_call_time += datetime.now() - current_time
+        # self.logger.setLevel(logging.INFO)
+        self._update_goal_dict_in_goalP(self.goal_states["epistemic_g"],epistemic_dict,goal_dict)
+        # for k,v in self.goal_states["epistemic_g"]:
+        #     if not epistemic_dict[k].value == v:
+        #         is_goal = False
+        #         goal_dict.update({k+" "+str(v):False})
+        #     else:
+        #         goal_dict.update({k+" "+str(v):True})
+        # self.logger.debug(f"goal {self.goal_states['epistemic_g']}")
+        # self.logger.debug(f"epistemic_dict {epistemic_dict}")
+        # self.logger.debug(f"perspectives_path {p_path}")
+        return is_goal,epistemic_dict,goal_dict
         
-        for k,v in self.goal_states["epistemic_g"]:
-            if not epistemic_dict[k].value == v:
+
+    def _update_goal_dict_in_goalP(self,ep_goal_dict,ep_dict,goal_dict):
+
+        for k,v in ep_goal_dict:
+            if not ep_dict[k].value == v:
                 is_goal = False
                 goal_dict.update({k+" "+str(v):False})
             else:
                 goal_dict.update({k+" "+str(v):True})
-        self.logger.debug(f"goal {self.goal_states['epistemic_g']}")
-        self.logger.debug(f"epistemic_dict {epistemic_dict}")
-        self.logger.debug(f"perspectives_path {p_path}")
-        return is_goal,p_path,epistemic_dict,goal_dict
-        
+
     def isGoal(self,state,path):
         is_goal=True
         goal_dict = {}
-        self.logger.debug(f"checking goal for state: {state} with path: {path}")
+        # self.logger.debug(f"checking goal for state: {state} with path: {path}")
         actions = [ a  for s,a in path]
         actions = actions[1:]
-        self.logger.debug(f'plan is: {actions}')
-        self.logger.debug(f'ontic_goal: {self.goal_states["ontic_g"]}')
+        # self.logger.debug(f'plan is: {actions}')
+        # self.logger.debug(f'ontic_goal: {self.goal_states["ontic_g"]}')
         for k,v in self.goal_states["ontic_g"]:
             if not state[k] == v:
                 is_goal = False
@@ -157,7 +172,7 @@ class Problem:
                 goal_dict.update({k+" "+str(v):True})
             
         # adding epistemic checker here
-        self.logger.debug(f'epistemic_goal: {self.goal_states["epistemic_g"]}')
+        # self.logger.debug(f'epistemic_goal: {self.goal_states["epistemic_g"]}')
         current_time = datetime.now()
         self.epistemic_calls +=1
         perspectives_dict,epistemic_dict = self.epistemic_model.epistemicGoalsHandler(self.goal_states["epistemic_g"],"",path)
@@ -169,9 +184,10 @@ class Problem:
                 goal_dict.update({k+" "+str(v):False})
             else:
                 goal_dict.update({k+" "+str(v):True})
-        self.logger.debug(f"goal {self.goal_states['epistemic_g']}")
-        self.logger.debug(f"epistemic_dict {epistemic_dict}")
-        self.logger.debug(f"perspectives_dict {perspectives_dict}")
+                
+        # self.logger.debug(f"goal {self.goal_states['epistemic_g']}")
+        # self.logger.debug(f"epistemic_dict {epistemic_dict}")
+        # self.logger.debug(f"perspectives_dict {perspectives_dict}")
         return is_goal,perspectives_dict,epistemic_dict,goal_dict
     
     # def isGoalP(self,state,path):
@@ -412,7 +428,7 @@ class Problem:
         self.logger.debug(f'epistemic preconditions list {temp_ep_list}')    
         current_time = datetime.now()
         self.epistemic_calls +=1
-        perspectives_dict,epistemic_dict = self.epistemic_model.epistemicGoalsHandlerP(temp_ep_list,"",path,p_path)
+        epistemic_dict = self.epistemic_model.epistemicGoalsHandlerP(temp_ep_list,"",path,p_path)
         self.epistemic_call_time += datetime.now() - current_time
 
         ep_dict = {}
@@ -428,7 +444,7 @@ class Problem:
                     pre_dict[action_name].update({k+":"+str(e):True})
         self.logger.debug(f"pre_dict: {pre_dict}")
         
-        return flag_dict,perspectives_dict,epistemic_dict,pre_dict
+        return flag_dict,epistemic_dict,pre_dict
 
     def checkPreconditions(self,state,action,path):
         self.logger.debug(f'checking precondition for action: {action}')

@@ -85,10 +85,10 @@ class EpistemicModel:
 
     def allPerspectiveKeys(self, epistemic_goals_list,prefix):
         keys = []
-        self.logger.debug(f'')
-        self.logger.debug(f'allPerspectiveKeys')
-        self.logger.debug(f'epistemic_goals_list{epistemic_goals_list}')
-        self.logger.debug(f'prefix{prefix}')
+        # self.logger.debug(f'')
+        # self.logger.debug(f'allPerspectiveKeys')
+        # self.logger.debug(f'epistemic_goals_list{epistemic_goals_list}')
+        # self.logger.debug(f'prefix{prefix}')
         eq_dict = {}
         perspective_name_list = set([''])
         for epistemic_goal_str,value in epistemic_goals_list:
@@ -112,42 +112,42 @@ class EpistemicModel:
                 else:
                     eq_dict[key] = {'q_type':temp_eq.q_type,'eq_type':temp_eq.eq_type,'q_group':temp_eq.q_group,'content':[(content,value)]}
                     
-        self.logger.debug(f'eq_dict in allPerspectiveKeys {eq_dict}')       
+        # self.logger.debug(f'eq_dict in allPerspectiveKeys {eq_dict}')       
         
         for key,item in eq_dict.items():
             # generate perspectives
             new_path = []
             eq_type = item['eq_type']
-            self.logger.debug(f"calling local perspective for {key} and content {item['content']}")
+            # self.logger.debug(f"calling local perspective for {key} and content {item['content']}")
             local_p_keys_list = self.allPerspectiveKeys(item['content'],key)
-            self.logger.debug(f"local_p_keys_list is {local_p_keys_list}")
+            # self.logger.debug(f"local_p_keys_list is {local_p_keys_list}")
             # perspectives_dict.update(local_perspectives)
-            self.logger.debug(f'perspectives_dict before adding local {perspective_name_list}')
+            # self.logger.debug(f'perspectives_dict before adding local {perspective_name_list}')
             for lp_key in local_p_keys_list:
                 p_key = key+lp_key
                 perspective_name_list.add(p_key)
-            self.logger.debug(f'perspectives_dict after adding local {perspective_name_list}')
+            # self.logger.debug(f'perspectives_dict after adding local {perspective_name_list}')
         
         perspective_name_list = sorted(perspective_name_list, key=len)
-        self.logger.debug(f'returned {perspective_name_list}')
+        # self.logger.debug(f'returned {perspective_name_list}')
         return perspective_name_list
         
 
 
     def epistemicGoalsHandlerP(self,epistemic_goals_list, prefix, path, p_path):
 
-        self.logger.debug(f'')
-        self.logger.debug(f'epistemicGoalHandler')
-        self.logger.debug(f'epistemic_goals_list{epistemic_goals_list}')
-        self.logger.debug(f'prefix{prefix}')
+        # self.logger.debug(f'')
+        # self.logger.debug(f'epistemicGoalHandler')
+        # self.logger.debug(f'epistemic_goals_list{epistemic_goals_list}')
+        # self.logger.debug(f'prefix{prefix}')
         # perspectives_dict = {'':path[-1][0]}
         actions_name = str([a for s,a in path])
         previous_actions_name = "None"
         
         if len(path) > 1:
             previous_actions_name = str([a for s,a in path[:-1]])
-        self.logger.debug(f'actions_name {actions_name}')
-        self.logger.debug(f'previous_action_names {previous_actions_name}')
+        # self.logger.debug(f'actions_name {actions_name}')
+        # self.logger.debug(f'previous_action_names {previous_actions_name}')
         
         all_p_keys = self.allPerspectiveKeys(epistemic_goals_list,prefix)
 
@@ -182,10 +182,10 @@ class EpistemicModel:
                         parent_key_index = key[:key[:key.rfind(" ")].rfind(" ")].rfind(' ')
                         parent_key = key[:parent_key_index+1]
                         current_key = key[parent_key_index+1:]
-                        self.logger.debug(f"parent_key_index is {parent_key_index}")
-                        self.logger.debug(f"key is {key}")
-                        self.logger.debug(f"parent_key is {parent_key}")
-                        self.logger.debug(f"current_key is {current_key}")
+                        # self.logger.debug(f"parent_key_index is {parent_key_index}")
+                        # self.logger.debug(f"key is {key}")
+                        # self.logger.debug(f"parent_key is {parent_key}")
+                        # self.logger.debug(f"current_key is {current_key}")
                     else:
                         parent_key = ''
                         current_key = key
@@ -242,10 +242,10 @@ class EpistemicModel:
                         parent_key_index = key[:key[:key.rfind(" ")].rfind(" ")].rfind(' ')
                         parent_key = key[:parent_key_index+1]
                         current_key = key[parent_key_index+1:]
-                        self.logger.debug(f"parent_key_index is {parent_key_index}")
-                        self.logger.debug(f"key is {key}")
-                        self.logger.debug(f"parent_key is {parent_key}")
-                        self.logger.debug(f"current_key is {current_key}")
+                        # self.logger.debug(f"parent_key_index is {parent_key_index}")
+                        # self.logger.debug(f"key is {key}")
+                        # self.logger.debug(f"parent_key is {parent_key}")
+                        # self.logger.debug(f"current_key is {current_key}")
                     else:
                         parent_key = ''
                         current_key = key
@@ -272,8 +272,8 @@ class EpistemicModel:
                     p_path[actions_name][key]['states'] = p_path[previous_actions_name][key]['states'] +[state]
                     p_path[actions_name][key]['updates'] = p_path[previous_actions_name][key]['updates']+[updating]
 
-        self.logger.debug(f"p_path is {p_path}")
-        self.logger.debug(f'epistemic goals {epistemic_goals_list}')
+        # self.logger.debug(f"p_path is {p_path}")
+        # self.logger.debug(f'epistemic goals {epistemic_goals_list}')
         
         for eq_str, value in epistemic_goals_list:
             p_str = eq_str[:eq_str.rfind(' ')+1]
@@ -290,7 +290,7 @@ class EpistemicModel:
             else:
                 result_dict[eq_str] = PDDL_TERNARY.UNKNOWN
                 
-        return p_path,result_dict
+        return result_dict
         # exit()
         # # solving eq by perspectives
         # for key,item in eq_dict.items():
