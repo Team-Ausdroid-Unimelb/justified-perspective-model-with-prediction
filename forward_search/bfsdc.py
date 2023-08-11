@@ -4,7 +4,7 @@ import util
 
 LOGGER_NAME = "search:astar1"
 LOGGER_LEVEL = logging.INFO
-LOGGER_LEVEL = logging.DEBUG
+# LOGGER_LEVEL = logging.DEBUG
 # logger = logging.getLogger("bfsdc")
 # logger.setLevel(logging.DEBUG)
 
