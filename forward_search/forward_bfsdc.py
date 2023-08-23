@@ -2,7 +2,7 @@ import logging
 import util
 
 
-LOGGER_NAME = "search:astar1"
+LOGGER_NAME = "forward_search:bfsdc"
 LOGGER_LEVEL = logging.INFO
 # LOGGER_LEVEL = logging.DEBUG
 # logger = logging.getLogger("bfsdc")
@@ -42,10 +42,10 @@ class Search:
     def searching(self,problem, filterActionNames = None):
         
         
-        self.logger.info(f'starting searching using heuristic_search')
-        self.logger.info(f'the initial is {problem.initial_state}')
-        self.logger.info(f'the variables are {problem.variables}')
-        self.logger.info(f'the domains are {problem.domains}')
+        self.logger.info(f'starting searching using {LOGGER_NAME}')
+        # self.logger.info(f'the initial is {problem.initial_state}')
+        # self.logger.info(f'the variables are {problem.variables}')
+        # self.logger.info(f'the domains are {problem.domains}')
         
         # check whether the initial state is the goal state
         init_state = problem.initial_state

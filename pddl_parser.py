@@ -87,7 +87,8 @@ class PDDLParser:
             try:
                 found = re.search('\(problem [0-9a-z_]*\)',str).group(0)
                 p_name = found[9:-1:]
-                self.logger.debug(p_name)
+                self.logger.info(f"parsing problem: [{p_name}]")
+                # self.logger.debug(p_name)
             except AttributeError:
                 self.logger.error("error when extract problem name")
                 exit()
@@ -273,7 +274,8 @@ class PDDLParser:
             try:
                 found = re.search('\(domain [0-9a-z_]*\)',str).group(0)
                 d_name = found[8:-1:]
-                self.logger.debug(d_name)
+                self.logger.info(f"parsing domain: [{d_name}]")
+                # self.logger.debug(d_name)
             except AttributeError:
                 self.logger.error("error when extract domain name")
                 exit()  

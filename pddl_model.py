@@ -53,7 +53,7 @@ class Problem:
         self.epistemic_call_time = timedelta(0)
         self.logger = None
         self.logger = setup_logger(LOGGER_NAME,logger_handler,LOG_LEVEL)
-        self.logger.info("initialize entities")
+        self.logger.debug("initialize entities")
         self.entities = {}
         for i in agent_index:
             e_temp = Entity(i,E_TYPE.AGENT)
@@ -102,7 +102,7 @@ class Problem:
         self.logger.debug(self.domains)
         
         self.goal_states = g_states
-        self.logger.info(self.goal_states)
+        self.logger.debug(self.goal_states)
         self.initial_state = i_state
         self.logger.debug(self.initial_state)
         self.external = external

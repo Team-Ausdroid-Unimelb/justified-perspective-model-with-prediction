@@ -59,6 +59,10 @@ class Instance:
         self.domain_path = domain_path
         self.external_function = external_function
         self.search = search
+        self.c_handler = logging.StreamHandler()
+        self.c_handler.setLevel(logging.INFO)
+        self.f_handler = None
+        # self.pddl_parser = PDDLParser(self.c_handler)
 
     def solve(self,timeout=300,log_debug = False, output_path = '', time_debug =False ):
         
@@ -70,21 +74,42 @@ class Instance:
         if not os.path.isdir(output_path):
             os.makedirs(output_path)
         
-        if log_debug:
-            debug_level = logging.DEBUG
-        else:
-            debug_level = logging.INFO
+
         
         # Set up root logger, and add a file handler to root logger
         # logging.basicConfig(filename = f'{output_path}/{self.instance_name}.log',
         #                     level = debug_level,
         #                     format = '%(asctime)s:%(levelname)s:%(name)s:%(message)s')
+        print(self.instance_name)
+        # logger_handler = setup_log_handler(f'{output_path}/{self.instance_name}.log')
+        # logger = setup_logger(LOGGER_NAME,logger_handler,debug_level) 
+        # logger = logging.getLogger(LOGGER_NAME)
+        logger = logging.getLogger(LOGGER_NAME)
+        print(logger.handlers)
+        self.f_handler = logging.FileHandler(f'{output_path}/{self.instance_name}.log')
 
-        logger_handler = setup_log_handler(f'{output_path}/{self.instance_name}.log')
-        logger = setup_logger(LOGGER_NAME,logger_handler,debug_level) 
-        
+        c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+        f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        self.c_handler.setFormatter(c_format)
+        self.f_handler.setFormatter(f_format)  
+
+        if log_debug:
+            self.f_handler.setLevel(logging.DEBUG)
+            self.c_handler.setLevel(logging.DEBUG)
+        else:
+            self.f_handler.setLevel(logging.INFO)
+            self.c_handler.setLevel(logging.INFO)
+
+        # if the logger exist, it does not create a new one
+        logger.handlers = []
+        logger.addHandler(self.c_handler)
+        logger.addHandler(self.f_handler)
+
         # read the pddl files
-        pddl_parser = PDDLParser(logger_handler)
+        # the pddl_parser exists, it does not create a new one
+        pddl_parser = PDDLParser(self.c_handler)
+        pddl_parser.logger.handlers = logger.handlers
+
         logger.info(f"loading problem file: {self.problem_path}")
         variable_domains,i_state,g_states,agent_index,obj_index,variables,vd_name,p_name= pddl_parser.problemParser(self.problem_path)
         logger.info(f"finish loading problem file: {p_name}")
@@ -118,7 +143,9 @@ class Instance:
             external_path = external_path.replace('.py','').replace('\\','.').replace('/','.').replace('..','')
             try:
                 external_module = importlib.import_module(external_path)
-                self.external_function = external_module.ExternalFunction(logger_handler)
+                self.external_function = external_module.ExternalFunction(self.c_handler)
+                self.external_function.logger.handlers = logger.handlers
+                
                 logger.info(f"finish loading external function")
             except (NameError, ImportError, IOError):
                 traceback.print_exc()
@@ -127,23 +154,27 @@ class Instance:
                 traceback.print_exc()
                 exit()
         else:
+            self.external_function.logger.handlers = logger.handlers
             logger.info(f"External function exists")
             
             
         logger.info(f'Initialize problem')
-        problem = pddl_model.Problem(variable_domains,i_state,g_states,agent_index,obj_index,variables,actions,self.external_function,logger_handler)
-            
+        problem = pddl_model.Problem(variable_domains,i_state,g_states,agent_index,obj_index,variables,actions,self.external_function,self.c_handler)
+        problem.logger.handlers = logger.handlers
+
         logger.info(f'starting search')
         start_search_time = datetime.datetime.now().astimezone(TIMEZONE)
         import func_timeout
         
         if time_debug:
-            search_algorithm = self.search.Search(logger_handler)
+            search_algorithm = self.search.Search(self.c_handler)
+            search_algorithm.logger.handlers = logger.handlers
             result = search_algorithm.searching(problem,self.external_function.filterActionNames)
         else:
             
             try:
-                search_algorithm = self.search.Search(logger_handler)
+                search_algorithm = self.search.Search(self.c_handler)
+                search_algorithm.logger.handlers = logger.handlers
                 result = func_timeout.func_timeout(timeout, search_algorithm.searching,args=(problem,self.external_function.filterActionNames))
             except func_timeout.FunctionTimedOut:
                 result.update({"running": f"timeout after {timeout}"})
@@ -264,53 +295,5 @@ if __name__ == '__main__':
     else:
         ins = Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search= search)
         ins.solve(timeout=options.timeout,log_debug = options.log_debug, output_path = output_path, time_debug= options.time_debug)
-    
-    
-    
 
-    
-    # print(problem)
-    
-    # import search
-
-    # print(problem.domains)
-    # print(problem.initial_state)
-    # print(problem.goal_states)
-    # print(problem.entities)
-    # print(problem.variables)
-    # print(problem.actions)
-    
-    # import bbl
-    
-    # bbl.checkVisibility(problem,problem.initial_state,'a','v-p')
-    
-    # import coin
-    
-    
-    # eq_list = []
-    # for eq_str,value in problem.goal_states["epistemic_g"]:
-    #     eq_list.append((epistemic_model.generateEpistemicQuery(eq_str),value))
-    
-    
-    # for eq,value in eq_list:
-    #     # print(eq)
-    #     print(util.displayEQuery(eq))
-    #     # s_0 = {'dir-a': 'sw', 'dir-b': 'sw', 'x-a': 3, 'x-b': 2, 'x-p': 1, 'y-a': 3, 'y-b': 2, 'y-p': 1, 'v-p': 't'}
-    #     # s_1 = {'dir-a': 'sw', 'dir-b': 'n', 'x-a': 3, 'x-b': 2, 'x-p': 1, 'y-a': 3, 'y-b': 2, 'y-p': 1, 'v-p': 't'}
-    #     # print(model.checkingEQ(problem,eq,[({'dir-a': 'sw', 'dir-b': 'sw', 'x-a': 3, 'x-b': 2, 'x-p': 1, 'y-a': 3, 'y-b': 2, 'y-p': 1, 'v-p': 't'},""),(problem.initial_state,"a1")],problem.initial_state))
-    #     # print(model.checkingEQ(problem,eq,[(s_0,"")],s_0))
-        
-    #     s_0 = {'peeking-a': 'f','peeking-b': 'f', 'face-c': 'head'}
-    #     s_1 = {'peeking-a': 't','peeking-b': 'f', 'face-c': 'head'}
-    #     s_2 = {'peeking-a': 'f','peeking-b': 't', 'face-c': 'head'}
-    #     s_3 = {'peeking-a': 'f','peeking-b': 'f', 'face-c': 'head'}
-    #     s_4 = {'peeking-a': 'f','peeking-b': 't', 'face-c': 'tail'}
-    #     # s_5 = {'peeking-a': 'f','peeking-b': 'f', 'face-c': 'tail'}
-        
-        
-    #     print(epistemic_model.checkingEQ(problem.external,eq,[(s_0,""),(s_1,""),(s_2,""),(s_3,""),(s_4,"")],s_4,problem.entities,problem.variables))
-        
-        
-        
-        
         

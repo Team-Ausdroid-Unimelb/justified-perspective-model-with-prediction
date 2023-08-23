@@ -374,7 +374,8 @@ class EpistemicModel:
 
     def _generateGroupObservations(self,q_type,q_group,parent_state,p_path):
         # initial perspectives 
-        new_state,new_update = self._getOneObservation(parent_state[-1],q_group[0])
+        # print(parent_state)
+        new_state,new_update = self._getOneObservation(parent_state,q_group[0])
         
         if len(q_group) == 1:
             return new_state,new_update

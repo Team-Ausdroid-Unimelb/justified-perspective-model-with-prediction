@@ -29,7 +29,7 @@ def loadParameter():
     # parser.add_option('-s', '--search', dest="search_path", help='the name of the search algorithm', default='bfs')
     # parser.add_option('-d','--debug', dest="enable_debug", action='store_true', help='enable logging level to debug', default=False)
     # parser.add_option('-i','--input', dest="input_path", help='input directory for the experiments (default: examples/*)',default='examples')
-    parser.add_option('-i','--input', dest="input_domain_names", help='input for the experiment config (default: examples/*)',default='examples/CONFIG')
+    # parser.add_option('-i','--input', dest="input_domain_names", help='input for the experiment config (default: examples/*)',default='examples/CONFIG')
     parser.add_option('-o','--output', dest="output_path", help='output_folder_path',default=None)
     # parser.add_option('-s','--savefiles', action='store_true', help='keep the student repos', default=False)
     # parser.add_option('--tag', help='the tag for submission', default='submission')
@@ -75,7 +75,8 @@ if __name__ == '__main__':
                 
     print(result_json)
     
-    excel_file_name = options.output_path+options.output_path.replace('\\','_').replace('.','')+".xlsx"
+    excel_file_name = options.output_path+options.output_path.replace('\\','_').replace('/','_').replace('.','')+".xlsx"
+
     writer = pd.ExcelWriter(excel_file_name, engine='xlsxwriter')
 
     
@@ -88,5 +89,5 @@ if __name__ == '__main__':
         
     # print(excel_file_name)
     # df_json.to_excel(excel_file_name)
-    writer.save()
+    writer.close()
 
