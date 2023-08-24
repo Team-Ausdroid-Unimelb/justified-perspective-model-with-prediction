@@ -19,8 +19,9 @@ from util import setup_logger
 
 class PDDLParser:
     logger = None
-    def __init__(self,handler):
-        self.logger = setup_logger(LOGGER_NAME,handler,LOGGER_LEVEL) 
+    def __init__(self,handlers):
+        self.logger = setup_logger(LOGGER_NAME,handlers) 
+        self.logger.setLevel(LOGGER_LEVEL)
     
     def formatDocument(self,str):
         # . match anything but the endline

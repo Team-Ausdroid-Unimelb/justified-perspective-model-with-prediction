@@ -40,8 +40,9 @@ common_constants = {
 class ExternalFunction:
     logger = None
     
-    def __init__(self, logger_handler):
-        self.logger = setup_logger(LOGGER_NAME,logger_handler,LOGGER_LEVEL) 
+    def __init__(self, handlers):
+        self.logger = setup_logger(LOGGER_NAME,handlers) 
+        self.logger.setLevel(LOGGER_LEVEL)
 
 
     # # customized evaluation function

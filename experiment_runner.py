@@ -29,7 +29,7 @@ import pytz
 
 
 import logging
-import util
+from util import setup_logger_handlers,setup_logger
 import instance_runner
 
 TIMEZONE = pytz.timezone('Australia/Melbourne')
@@ -88,18 +88,17 @@ if __name__ == '__main__':
         os.makedirs(output_path)
     
     if options.log_debug:
-        debug_level = logging.DEBUG
+        log_level = logging.DEBUG
     else:
-        debug_level = logging.INFO    
+        log_level = logging.INFO    
     
     # Set up root logger, and add a file handler to root logger
     # logging.basicConfig(filename = f'{output_path}/main.log',
     #                     level = debug_level,
     #                     format = '%(asctime)s:%(levelname)s:%(name)s:%(message)s')
     # logger = logging.getLogger(LOGGER_NAME)
-    handler = util.setup_log_handler(f'{output_path}/main.log')
-    print(handler)
-    logger = util.setup_logger(LOGGER_NAME,handler,debug_level)
+    handlers = setup_logger_handlers(f'{output_path}/main.log',log_level= log_level)
+    logger = setup_logger(LOGGER_NAME,handlers)
     
     
     # loading search algorithm

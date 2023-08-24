@@ -9,8 +9,8 @@ from util import EpistemicQuery,EQ_TYPE,Q_TYPE
 
 
 LOGGER_NAME = "forward_epistemic_model"
-LOG_LEVEL = logging.INFO
-# LOG_LEVEL = logging.DEBUG
+LOGGER_LEVEL = logging.INFO
+# LOGGER_LEVEL = logging.DEBUG
 from util import setup_logger
 
 class EpistemicModel:
@@ -20,8 +20,9 @@ class EpistemicModel:
     variables = {}
     
     
-    def __init__(self, handler, entities, variables, external):
-        self.logger = setup_logger(LOGGER_NAME,handler,LOG_LEVEL) 
+    def __init__(self, handlers, entities, variables, external):
+        self.logger = setup_logger(LOGGER_NAME,handlers) 
+        self.logger.setLevel(LOGGER_LEVEL)
         self.entities = entities
         self.variables = variables
         self.external = external

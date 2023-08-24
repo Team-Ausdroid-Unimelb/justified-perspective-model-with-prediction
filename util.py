@@ -6,20 +6,28 @@ from enum import Enum
 formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
 
 
-def setup_logger(name, handler, level=logging.INFO):
+def setup_logger_handlers(log_filename, c_display = False, log_level= logging.INFO):
+
+    f_handler = logging.FileHandler(log_filename)
+    c_handler = logging.StreamHandler()
+    c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+    f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    c_handler.setFormatter(c_format)
+    f_handler.setFormatter(f_format)  
+    c_handler.setLevel(log_level)
+    f_handler.setLevel(log_level)
+
+    # if the logger exist, it does not create a new one
+    handlers = [f_handler]
+    if c_display:
+        handlers.append(c_handler)
+    return handlers
+
+def setup_logger(name, handlers=[]):
     """To setup as many loggers as you want"""
     logger = logging.getLogger(name)
-    logger.setLevel(level)
-    logger.addHandler(handler)
-
+    logger.handlers = handlers
     return logger
-
-def setup_log_handler(log_path):
-    handler = logging.FileHandler(log_path)        
-    handler.setFormatter(formatter)
-    return handler
-
-instance_handler = None
 
 import heapq
 class PriorityQueue:
@@ -69,31 +77,6 @@ class PriorityQueue:
             self.push(item, priority)
             
 
-            
-            
-import logging
-from enum import Enum
-formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-
-
-def setup_logger(name, handler, level=logging.INFO):
-    """To setup as many loggers as you want"""
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
-    logger.addHandler(handler)
-
-    return logger
-
-def setup_log_handler(log_path):
-    handler = logging.FileHandler(log_path)        
-    handler.setFormatter(formatter)
-    return handler
-
-instance_handler = None
-
-
-
-            
 
 ### PDDL value type
 

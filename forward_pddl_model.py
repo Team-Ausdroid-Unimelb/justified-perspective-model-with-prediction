@@ -8,8 +8,8 @@ from epistemic_model import EpistemicModel
 from forward_epistemic_model import EpistemicModel
 
 LOGGER_NAME = "pddl_model"
-LOG_LEVEL = logging.INFO
-# LOG_LEVEL = logging.DEBUG
+LOGGER_LEVEL = logging.INFO
+# LOGGER_LEVEL = logging.DEBUG
 
 from util import setup_logger,PDDL_TERNARY
 
@@ -33,7 +33,7 @@ class Problem:
     epistemic_model = None
     logger = None
 
-    def __init__(self, domains,i_state,g_states,agent_index,obj_index,variables, actions, external=None,logger_handler=None):
+    def __init__(self, domains,i_state,g_states,agent_index,obj_index,variables, actions, external=None,handlers=None):
         self.initial_state = {}
         self.abstract_actions = {} 
         self.entities = {} # agent indicators, should be unique
@@ -44,7 +44,8 @@ class Problem:
         self.epistemic_calls = 0
         self.epistemic_call_time = timedelta(0)
         self.logger = None
-        self.logger = setup_logger(LOGGER_NAME,logger_handler,LOG_LEVEL)
+        self.logger = setup_logger(LOGGER_NAME,handlers) 
+        self.logger.setLevel(LOGGER_LEVEL)
         self.logger.debug("initialize entities")
         self.entities = {}
         for i in agent_index:
@@ -100,7 +101,7 @@ class Problem:
         self.initial_state = i_state
         self.logger.debug(self.initial_state)
         self.external = external
-        self.epistemic_model = EpistemicModel(logger_handler,self.entities,self.variables,external)
+        self.epistemic_model = EpistemicModel(handlers,self.entities,self.variables,external)
     
     def isGoalP(self,state,path,p_path):
         is_goal=True
@@ -183,8 +184,8 @@ class Problem:
             if abstract_a.a_parameters == []:
                 a_temp_name = a_name
                 a_temp_parameters = copy.deepcopy(abstract_a.a_parameters)
-                a_temp_precondition = copy.deepcopy(abstract_a.a_preconditions)
-                a_temp_pre_dict = {'ontic_p':a_temp_precondition.ontic_dict,'epistemic_p':a_temp_precondition.epistemic_dict}
+                a_temp_pre = copy.deepcopy(abstract_a.a_preconditions)
+                a_temp_pre_dict = {'ontic_p':a_temp_pre.ontic_dict,'epistemic_p':a_temp_pre.epistemic_dict}
                 # a_temp_ontic_p = copy.deepcopy(list(abstract_a.a_precondition.ontic_dict))
                 # a_temp_epistemic_p = copy.deepcopy(list(abstract_a.a_precondition.epistemic_dict))
                 a_temp_effects = copy.deepcopy(abstract_a.a_effects)

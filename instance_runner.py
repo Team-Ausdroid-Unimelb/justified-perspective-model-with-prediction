@@ -12,11 +12,11 @@ import pytz
 
 import logging
 import forward_pddl_model as pddl_model
-import pddl_model as pddl_model
+# import pddl_model as pddl_model
 
 from pddl_parser import PDDLParser
 # import util
-from util import setup_log_handler,setup_logger
+from util import setup_logger_handlers,setup_logger
 
 TIMEZONE = pytz.timezone('Australia/Melbourne')
 DATE_FORMAT = '%d-%m-%Y_%H-%M-%S'
@@ -42,12 +42,9 @@ class Instance:
         self.domain_path = domain_path
         self.external_function = external_function
         self.search = search
-        self.c_handler = logging.StreamHandler()
-        self.c_handler.setLevel(logging.INFO)
-        self.f_handler = None
-        # self.pddl_parser = PDDLParser(self.c_handler)
 
-    def solve(self,timeout=300,log_debug = False, output_path = '', time_debug =False ):
+
+    def solve(self,timeout=300,log_debug = False, output_path = '', time_debug =False):
         
         start_time = datetime.datetime.now().astimezone(TIMEZONE)
         result = dict()
@@ -57,39 +54,24 @@ class Instance:
         if not os.path.isdir(output_path):
             os.makedirs(output_path)
         
-
+        if log_debug:
+            log_level = logging.DEBUG
+        else:
+            log_level = logging.INFO  
         
         # Set up root logger, and add a file handler to root logger
         # logging.basicConfig(filename = f'{output_path}/{self.instance_name}.log',
         #                     level = debug_level,
         #                     format = '%(asctime)s:%(levelname)s:%(name)s:%(message)s')
-        # logger_handler = setup_log_handler(f'{output_path}/{self.instance_name}.log')
-        # logger = setup_logger(LOGGER_NAME,logger_handler,debug_level) 
-        # logger = logging.getLogger(LOGGER_NAME)
-        logger = logging.getLogger(LOGGER_NAME)
-        self.f_handler = logging.FileHandler(f'{output_path}/{self.instance_name}.log')
+        logger_handlers = setup_logger_handlers(f'{output_path}/{self.instance_name}.log',log_level=log_level)
+        logger = setup_logger(LOGGER_NAME,logger_handlers) 
 
-        c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
-        f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        self.c_handler.setFormatter(c_format)
-        self.f_handler.setFormatter(f_format)  
 
-        if log_debug:
-            self.f_handler.setLevel(logging.DEBUG)
-            self.c_handler.setLevel(logging.DEBUG)
-        else:
-            self.f_handler.setLevel(logging.INFO)
-            self.c_handler.setLevel(logging.INFO)
 
-        # if the logger exist, it does not create a new one
-        logger.handlers = []
-        logger.addHandler(self.c_handler)
-        logger.addHandler(self.f_handler)
 
         # read the pddl files
-        # the pddl_parser exists, it does not create a new one
-        pddl_parser = PDDLParser(self.c_handler)
-        pddl_parser.logger.handlers = logger.handlers
+        pddl_parser = PDDLParser(logger_handlers)
+
 
         logger.info(f"loading problem file: {self.problem_path}")
         variable_domains,i_state,g_states,agent_index,obj_index,variables,vd_name,p_name= pddl_parser.problemParser(self.problem_path)
@@ -124,8 +106,7 @@ class Instance:
             external_path = external_path.replace('.py','').replace('\\','.').replace('/','.').replace('..','')
             try:
                 external_module = importlib.import_module(external_path)
-                self.external_function = external_module.ExternalFunction(self.c_handler)
-                self.external_function.logger.handlers = logger.handlers
+                self.external_function = external_module.ExternalFunction(logger_handlers)
                 
                 logger.info(f"finish loading external function")
             except (NameError, ImportError, IOError):
@@ -140,7 +121,7 @@ class Instance:
             
             
         logger.info(f'Initialize problem')
-        problem = pddl_model.Problem(variable_domains,i_state,g_states,agent_index,obj_index,variables,actions,self.external_function,self.c_handler)
+        problem = pddl_model.Problem(variable_domains,i_state,g_states,agent_index,obj_index,variables,actions,self.external_function,handlers=logger_handlers)
         problem.logger.handlers = logger.handlers
 
         logger.info(f'starting search')
@@ -148,14 +129,13 @@ class Instance:
         import func_timeout
         
         if time_debug:
-            search_algorithm = self.search.Search(self.c_handler)
-            search_algorithm.logger.handlers = logger.handlers
+            search_algorithm = self.search.Search(logger_handlers)
+
             result = search_algorithm.searching(problem,self.external_function.filterActionNames)
         else:
             
             try:
-                search_algorithm = self.search.Search(self.c_handler)
-                search_algorithm.logger.handlers = logger.handlers
+                search_algorithm = self.search.Search(logger_handlers)
                 result = func_timeout.func_timeout(timeout, search_algorithm.searching,args=(problem,self.external_function.filterActionNames))
             except func_timeout.FunctionTimedOut:
                 result.update({"running": f"timeout after {timeout}"})
@@ -204,8 +184,8 @@ def loadParameter():
     parser.add_option('-e', '--external', dest="external_path", help='path to the external function file', default='')
     parser.add_option('-o', '--output', dest="output_path", help='output directory for the running results (default: output/timestamp)',default='')
     parser.add_option('-s', '--search', dest="search_path", help='the name of the search algorithm', default='bfs')
-    parser.add_option('--log_debug', dest="log_debug", action='store_true', help='enable logging level to debug', default=False)
-    parser.add_option('--time_debug', dest="time_debug", action='store_true', help='enable logging level to debug', default=False)
+    parser.add_option('--log_debug', dest="log_debug", action='store_true', help='enable logging level to debug', default=True)
+    parser.add_option('--time_debug', dest="time_debug", action='store_true', help='enable cProfile', default=False)
     parser.add_option('-t', '--timeout', dest="timeout", help='timeout, default 300s', type='int', default=300)
     
     options, otherjunk = parser.parse_args(sys.argv[1:] )
