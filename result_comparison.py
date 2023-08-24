@@ -60,7 +60,7 @@ if __name__ == '__main__':
         print(dir_name)
         print(os.path.isdir(f"{options.output_path}/{dir_name}"))
         if os.path.isdir(f"{options.output_path}/{dir_name}"):
-            for file_name in os.listdir(f"{options.output_path}/{dir_name}"):
+            for file_name in sorted( os.listdir(f"{options.output_path}/{dir_name}")):
                 if '.json' in file_name:
                     with open(f"{options.output_path}/{dir_name}/{file_name}",'r') as f:
                         json_item = json.load(f)
