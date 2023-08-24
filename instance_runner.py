@@ -1,36 +1,19 @@
 
-
-
-
-
-
-
-
-
-
-
-
-
-# This file is created by Guang Hu for running the tournament with cluster manager
-
-import copy
 import datetime
 import importlib
 import json
 import os
 
 import sys
-import time
 import traceback
 from optparse import OptionParser
 import pytz
 
 
-
-
 import logging
-import pddl_model
-import epistemic_model
+import forward_pddl_model as pddl_model
+import pddl_model as pddl_model
+
 from pddl_parser import PDDLParser
 # import util
 from util import setup_log_handler,setup_logger

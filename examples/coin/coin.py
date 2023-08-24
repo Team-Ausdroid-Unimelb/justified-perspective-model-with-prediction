@@ -6,13 +6,12 @@ import numpy as np
 import traceback
 # import model
 import re
-import pddl_model
-import epistemic_model
-from util import PDDL_TERNARY
+
+from util import PDDL_TERNARY,convertBooltoPDDL_TERNARY
+from util import EpistemicQuery,E_TYPE
+
+
 AGENT_ID_PREFIX = "peeking_"
-
-
-# logger = logging.getLogger("coin")
 
 
 
@@ -83,15 +82,15 @@ class ExternalFunction:
         try:
             tgt_index = variables[var_index].v_parent
             # check if the agt_index can be found
-            assert(entities[agt_index].e_type==pddl_model.E_TYPE.AGENT)
+            assert(entities[agt_index].e_type==E_TYPE.AGENT)
             
             # agents are able to see each other
-            if entities[tgt_index].e_type==pddl_model.E_TYPE.AGENT:
-                return pddl_model.convertBooltoPDDL_TERNARY(True)
+            if entities[tgt_index].e_type==E_TYPE.AGENT:
+                return convertBooltoPDDL_TERNARY(True)
             else:
-                
+                # this might be needed to change to UNKNOWN
                 #extract necessary variables from state
-                return  pddl_model.convertBooltoPDDL_TERNARY(state[f"peeking-{agt_index}"]=='t')
+                return  convertBooltoPDDL_TERNARY(state[f"peeking-{agt_index}"]=='t')
             
         #     # extract necessary common constants from given domain
         #     # logger.debug(f"necessary common constants from given domain")

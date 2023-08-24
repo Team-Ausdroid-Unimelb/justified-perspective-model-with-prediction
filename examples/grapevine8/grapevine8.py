@@ -6,13 +6,13 @@ import numpy as np
 import traceback
 
 import re
-import pddl_model
-import epistemic_model
+
+
 from util import PDDL_TERNARY
-AGENT_ID_PREFIX = "agent_at"
-
-# logger = logging.getLogger("bbl")
-
+from util import EpistemicQuery,E_TYPE
+AGENT_ID_PREFIX = "agent_at-"
+AGENT_LOC_PREFIX = 'agent_at-'
+OBJ_LOC_PREFIX = 'shared-s'
 
 LOGGER_NAME = "grapevine8"
 LOGGER_LEVEL = logging.INFO
@@ -43,7 +43,7 @@ class ExternalFunction:
 
 
     def extractAgents(self,eq):
-        if not type(eq) == epistemic_model.EpistemicQuery:
+        if not type(eq) == EpistemicQuery:
             return []
         else:
             
@@ -82,7 +82,7 @@ class ExternalFunction:
             tgt_index = variables[var_index].v_parent
             
             # check if the agt_index can be found
-            assert(entities[agt_index].e_type==pddl_model.E_TYPE.AGENT)
+            assert(entities[agt_index].e_type==E_TYPE.AGENT)
             
             # if the variable contains shared or secret, then it means checking secret location
             # which mean checking location of shared (agent's own secret can be shared by others)
@@ -131,11 +131,6 @@ class ExternalFunction:
             # logger.debug(f'checking seeing with agent location: {agt_loc} and target location: {tgt_loc}')
             # agent is able to see anything in the same location
             if tgt_loc == agt_loc:
-                return PDDL_TERNARY.TRUE
-
-
-            # seeing relation for corridor is in the same room or adjuscent room
-            if False:
                 return PDDL_TERNARY.TRUE
             else:
                 return PDDL_TERNARY.FALSE

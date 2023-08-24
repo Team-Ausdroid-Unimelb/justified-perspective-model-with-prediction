@@ -6,9 +6,12 @@ import numpy as np
 import traceback
 
 import re
-import pddl_model
-import epistemic_model
+
 from util import PDDL_TERNARY
+from util import EpistemicQuery,E_TYPE
+AGENT_ID_PREFIX = "agent_at-"
+AGENT_LOC_PREFIX = 'agent_at-'
+OBJ_LOC_PREFIX = 'shared-s'
 
 AGENT_ID_PREFIX = "post_p1_"
 
@@ -33,7 +36,7 @@ class ExternalFunction:
     # extract variables from the query
     def extractVariables(self,eq):
         # expected output would be a list of (var_name,value)
-        if not type(eq) == epistemic_model.EpistemicQuery:
+        if not type(eq) == EpistemicQuery:
             # print(eq)
             # default is a single pair of var_name and value
             if not re.search("\([0-9a-z _\-\'\"]*,[0-9a-z _\'\"]*\)",eq) == None:
@@ -47,7 +50,7 @@ class ExternalFunction:
             return self.extractVariables(eq.q_content)
 
     def extractAgents(self,eq):
-        if not type(eq) == epistemic_model.EpistemicQuery:
+        if not type(eq) == EpistemicQuery:
             return []
         else:
             
@@ -86,9 +89,9 @@ class ExternalFunction:
             tgt_index = variables[var_index].v_parent
             
             # check if the agt_index can be found
-            assert(entities[agt_index].e_type==pddl_model.E_TYPE.AGENT)
+            assert(entities[agt_index].e_type==E_TYPE.AGENT)
             
-            if entities[tgt_index].e_type==pddl_model.E_TYPE.AGENT:
+            if entities[tgt_index].e_type==E_TYPE.AGENT:
                 if state[f'friended-{agt_index}-{tgt_index}'] ==1:
                     return PDDL_TERNARY.TRUE
                 else:
@@ -96,7 +99,7 @@ class ExternalFunction:
             else:
                 # print(entities)
                 for name,entity in entities.items():
-                    if entity.e_type == pddl_model.E_TYPE.AGENT:
+                    if entity.e_type == E_TYPE.AGENT:
                         if state[f'post-{tgt_index}-{name}'] == 1:
                             if state[f'friended-{agt_index}-{name}'] ==1:
                                 return PDDL_TERNARY.TRUE

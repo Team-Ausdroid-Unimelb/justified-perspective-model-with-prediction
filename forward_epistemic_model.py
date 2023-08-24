@@ -5,69 +5,13 @@ import re
 import logging
 import copy
 from util import PDDL_TERNARY
+from util import EpistemicQuery,EQ_TYPE,Q_TYPE
 
 
-LOGGER_NAME = "epistemic_model"
+LOGGER_NAME = "forward_epistemic_model"
 LOG_LEVEL = logging.INFO
 # LOG_LEVEL = logging.DEBUG
 from util import setup_logger
-
-
-class Q_TYPE(enum.Enum):
-    MUTUAL = 0
-    DISTRIBUTION = -1
-    COMMON = 1
-    
-class EQ_TYPE(enum.Enum):
-    KNOWLEDGE = 1
-    SEEING = 0
-    BELIEF = 2
-    
-class EpistemicQuery:
-    q_type = None
-    q_content = None
-    eq_type = None
-    header_str = ""
-    agents_str = ""
-    q_group = []
-    mapping = {
-        'k': (Q_TYPE.MUTUAL, EQ_TYPE.KNOWLEDGE),
-        'ek': (Q_TYPE.MUTUAL, EQ_TYPE.KNOWLEDGE),
-        'dk': (Q_TYPE.DISTRIBUTION ,EQ_TYPE.KNOWLEDGE),
-        'ck': (Q_TYPE.COMMON, EQ_TYPE.KNOWLEDGE),
-        's': (Q_TYPE.MUTUAL, EQ_TYPE.SEEING),
-        'es': (Q_TYPE.MUTUAL, EQ_TYPE.SEEING),
-        'ds': (Q_TYPE.DISTRIBUTION, EQ_TYPE.SEEING),
-        'cs': (Q_TYPE.COMMON, EQ_TYPE.SEEING),
-        'b': (Q_TYPE.MUTUAL, EQ_TYPE.BELIEF),
-        'eb': (Q_TYPE.MUTUAL, EQ_TYPE.BELIEF),
-        'db': (Q_TYPE.DISTRIBUTION, EQ_TYPE.BELIEF),
-        'cb': (Q_TYPE.COMMON, EQ_TYPE.BELIEF),
-    }
-    
-    def __init__(self,header_str,agents_str,content):
-        
-        self.q_type,self.eq_type = self.mapping[header_str]
-        self.header_str = header_str
-        self.agents_str = agents_str
-        self.q_group = agents_str[1:-1].split(",")
-        self.q_content = content
-        
-    def show(self):
-        # for debug purpose
-        output = f"<epistemic: q_type: {self.q_type}; eq_type: {self.eq_type}; q_group: {self.q_group}; q_content: {self.q_content} >"
-        return output
-        
-    def __str__(self): 
-        # show only in the print(object)
-        output = f"{self.header_str} {self.agents_str} {self.q_content}"
-        return output
-
-    def __repr__(self): 
-        # show when in a dictionary
-        output = f"{self.header_str} {self.agents_str} {self.q_content}"
-        return output
-
 
 class EpistemicModel:
     logger = None

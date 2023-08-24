@@ -41,7 +41,7 @@ class Search:
     def searching(self,problem, filterActionNames = None):
         
         
-        self.logger.info(f'starting searching using {LOGGER_NAME}')
+        self.logger.info(f'starting searching using heuristic_search')
         # self.logger.info(f'the initial is {problem.initial_state}')
         # self.logger.info(f'the variables are {problem.variables}')
         # self.logger.info(f'the domains are {problem.domains}')
