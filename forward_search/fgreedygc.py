@@ -4,7 +4,7 @@ from util import setup_logger, PriorityQueue, PDDL_TERNARY
 # import util
 
 
-LOGGER_NAME = "forward_search:bfsdc"
+LOGGER_NAME = "forward_search:greedy_gc"
 LOGGER_LEVEL = logging.INFO
 # LOGGER_LEVEL = logging.DEBUG
 # logger = logging.getLogger("bfsdc")
@@ -13,8 +13,9 @@ LOGGER_LEVEL = logging.INFO
 SPLIT_KEY_WORD = "@"
 
 class Search:
-    def __init__(self,handler):
-        self.logger = setup_logger(LOGGER_NAME,handler,LOGGER_LEVEL) 
+    def __init__(self,handlers):
+        self.logger = setup_logger(LOGGER_NAME,handlers) 
+        self.logger.setLevel(LOGGER_LEVEL)
         self.expanded = 0
         self.goal_checked = 0
         self.generated = 0
@@ -74,7 +75,7 @@ class Search:
         init_node.remaining_goal =  p-self._gn(init_node)
         init_node.epistemic_item_set.update(es)
         # remaining_g = p-_gn(init_node)
-        open_list.push(item=init_node, priority=self._gn(init_node))
+        open_list.push(item=init_node, priority=p)
         
         
         while not open_list.isEmpty():
@@ -182,7 +183,7 @@ class Search:
                         succ_node = self.SearchNode(succ_state,{},path + [(succ_state,action_name)])
                         p,ep_dict = self._f(succ_node,problem,self.p_path)
                         
-                        succ_node.remaining_goal = p - self._gn(succ_node)
+                        succ_node.remaining_goal = p #- self._gn(succ_node)
                         if succ_node.remaining_goal <= max_goal_num:
                             self.logger.debug(f'ep from goal checking {ep_dict}')
                             succ_node.epistemic_item_set = ep_dict
@@ -191,7 +192,7 @@ class Search:
                             self.logger.debug(f"action = {action_name}")
                             self.logger.debug(f"succ_state = {succ_state}")
                         
-                            open_list.push(item=succ_node, priority=self._gn(succ_node))
+                            open_list.push(item=succ_node, priority=p)
                             temp_successor +=1
                             temp_actions.append(action_name)
                         else:
@@ -256,7 +257,7 @@ class Search:
         heuristic = self.goal_counting
         g = self._gn(node)
         h,es = heuristic(node,problem,p_path)
-        f = g*1+h*1
+        f = g*0+h*1
         return f,es
 
     def _isGoal(self,current_p, current_node):
@@ -276,6 +277,7 @@ class Search:
         self.logger.debug(f'epistemic_dict in heuristic {epistemic_dict}')
         
         remain_goal_number = list(goal_dict.values()).count(False)
+        self.logger.debug(f"remain_goal_number {remain_goal_number}")
         self.logger.debug(f"goal_dict {goal_dict}")
 
         for key,value in goal_dict.items():
