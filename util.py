@@ -158,20 +158,20 @@ class Entity():
 class Action():
     a_name = None
     a_parameters = []
-    a_precondition = None
+    a_preconditions = None
     a_effects = None
     
-    def __init__(self,a_name, a_parameters, a_precondition, a_effects):
+    def __init__(self,a_name, a_parameters, a_preconditions, a_effects):
         self.a_name = a_name
         self.a_parameters = a_parameters
-        self.a_precondition = a_precondition
+        self.a_preconditions = Conditions(a_preconditions['ontic_p'],a_preconditions['epistemic_p'])
         self.a_effects = a_effects
 
     def __str__(self): # show only in the print(object)
-        return f"<Action: {self.a_name}; parameters: {self.a_parameters}; precondition: {self.a_precondition}; effects: {self.a_effects}>\n"
+        return f"<Action: {self.a_name}; parameters: {self.a_parameters}; precondition: {self.a_preconditions}; effects: {self.a_effects}>\n"
 
     def __repr__(self): # show when in a dictionary
-        return f"<Action: {self.a_name}; parameters: {self.a_parameters}; precondition: {self.a_precondition}; effects: {self.a_effects}>\n"
+        return f"<Action: {self.a_name}; parameters: {self.a_parameters}; precondition: {self.a_preconditions}; effects: {self.a_effects}>\n"
     
 class Variable():
     v_name = None
@@ -217,7 +217,16 @@ class Domain():
     def isAgent(self):
         return self.agency
 
+class Conditions():
+    ontic_dict = {}
+    epistemic_dict = {}
 
+    def __init__(self,ontic_dict,epistemic_dict) -> None:
+        self.ontic_dict = ontic_dict
+        self.epistemic_dict = epistemic_dict
+
+    def __str__(self) -> str:
+        return f"Conditions: \n Ontic: {self.ontic_dict} \n Epistemic: {self.epistemic_dict}"
 # the following classes are for epistemic model
 
 

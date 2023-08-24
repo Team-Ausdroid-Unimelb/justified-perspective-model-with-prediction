@@ -101,12 +101,12 @@ class ExternalFunction:
                 return False
         return True
     
-    def checkVisibility(self,state,agt_index,var_index,entities,variables):
+    def checkVisibility(self,state,agt_index,var_name,entities,variables):
         
-        # logger.debug(f"checkVisibility(_,_,{agt_index},{var_index})")
+        self.logger.debug(f"checkVisibility(_,_,{agt_index},{var_name})")
         try:
-            self.logger.debug(f'checking seeing for agent {agt_index} on {var_index} in state {state}')
-            tgt_index = variables[var_index].v_parent
+            self.logger.debug(f'checking seeing for agent {agt_index} on {var_name} in state {state}')
+            tgt_index = variables[var_name].v_parent
             
             # check if the agt_index can be found
             assert(entities[agt_index].e_type==E_TYPE.AGENT)
@@ -114,8 +114,8 @@ class ExternalFunction:
             # if the variable contains shared or secret, then it means checking secret location
             # which mean checking location of shared (agent's own secret can be shared by others)
             # otherwise it checking agent's current location
-            # if 'shared' in var_index or 'secret' in var_index:
-            if 'secret' in var_index:
+            # if 'shared' in var_name or 'secret' in var_name:
+            if 'secret' in var_name:
                 tgt_loc = state[f'shared-{tgt_index}']
                 if type(tgt_loc) == str:
                     tgt_loc = int(state[f'shared-{tgt_index}'])
@@ -129,7 +129,7 @@ class ExternalFunction:
                     return PDDL_TERNARY.FALSE
                 
                 
-            elif 'shared' in var_index:
+            elif 'shared' in var_name:
                 tgt_loc = state[f'shared-{tgt_index}']
                 if type(tgt_loc) == str:
                     tgt_loc = int(state[f'shared-{tgt_index}'])
@@ -149,8 +149,11 @@ class ExternalFunction:
                 return PDDL_TERNARY.TRUE
 
 
-
-            agt_loc = int(state[f'agent_at-{agt_index}'])
+            agt_loc_str = AGENT_LOC_PREFIX+agt_index
+            if agt_loc_str not in state.keys() or state[agt_loc_str] == None:
+                return PDDL_TERNARY.UNKNOWN
+            else:
+                agt_loc = int(state[agt_loc_str])
 
             
             # extract necessary common constants from given domain
@@ -183,7 +186,7 @@ class ExternalFunction:
         relevant_agent_index = []
         
 
-        for eq_str,value in problem.goal_states["epistemic_g"]:
+        for eq_str,value in problem.goals.epistemic_dict.items():
             
             match = re.search("[edc]?[ksb] \[[0-9a-z_,]*\] ",eq_str)
             while not match == None:

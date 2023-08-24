@@ -16,16 +16,17 @@ from util import setup_logger,PDDL_TERNARY
 from util import Variable,Action
 from util import Domain,D_TYPE,dTypeConvert
 from util import Entity,E_TYPE,eTypeConvert
+from util import Conditions
 
 # Class of the problem
 class Problem:
     initial_state = {}
-    actions = {} 
+    abstract_actions = {} 
     entities = {} # agent indicators, should be unique
     variables = {} #variable
     domains = {}
     initial_state = {}
-    goal_states = {}
+    goals = {}
     external = None
     epistemic_calls = 0
     epistemic_call_time = timedelta(0)
@@ -34,12 +35,12 @@ class Problem:
 
     def __init__(self, domains,i_state,g_states,agent_index,obj_index,variables,actions, external=None,logger_handler=None):
         self.initial_state = {}
-        self.actions = {} 
+        self.abstract_actions = {} 
         self.entities = {} # agent indicators, should be unique
         self.variables = {} #variable
         self.domains = {}
         self.initial_state = {}
-        self.goal_states = {}
+        self.goals = {}
         self.epistemic_calls = 0
         self.epistemic_call_time = timedelta(0)
         self.logger = None
@@ -75,8 +76,8 @@ class Problem:
             
             p = [ (i,eTypeConvert(self.logger,t))for i,t in parts['parameters']]
             a_temp = Action(a_name, p,parts['precondition'], parts['effect'])
-            self.actions.update({a_name:a_temp})
-        # self.logger.debug(self.actions)
+            self.abstract_actions.update({a_name:a_temp})
+        self.logger.debug(self.abstract_actions)
         
         # self.logger.debug("initialize domains")
         self.domains = {}
@@ -92,8 +93,9 @@ class Problem:
             self.domains.update({d_name:domain_temp})
         # self.logger.debug(self.domains)
         
-        self.goal_states = g_states
-        self.logger.info(self.goal_states)
+        # self.goals = g_states
+        self.goals = Conditions(g_states['ontic_g'],g_states['epistemic_g'])
+        self.logger.info(self.goals)
         self.initial_state = i_state
         # self.logger.debug(self.initial_state)
         self.external = external
@@ -107,8 +109,8 @@ class Problem:
         actions = [ a  for s,a in path]
         actions = actions[1:]
         # self.logger.debug(f'plan is: {actions}')
-        # self.logger.debug(f'ontic_goal: {self.goal_states["ontic_g"]}')
-        for k,v in self.goal_states["ontic_g"]:
+
+        for k,v in self.goals.ontic_dict.items():
             if not state[k] == v:
                 is_goal = False
                 goal_dict.update({k+" "+str(v):False})
@@ -116,97 +118,77 @@ class Problem:
                 goal_dict.update({k+" "+str(v):True})
             
         # adding epistemic checker here
-        # self.logger.debug(f'epistemic_goal: {self.goal_states["epistemic_g"]}')
         current_time = datetime.now()
         self.epistemic_calls +=1
-        perspectives_dict,epistemic_dict = self.epistemic_model.epistemicGoalsHandler(self.goal_states["epistemic_g"],"",path)
+        perspectives_dict,epistemic_dict = self.epistemic_model.epistemicGoalsHandler(self.goals.epistemic_dict,"",path)
         self.epistemic_call_time += datetime.now() - current_time
         
-        for k,v in self.goal_states["epistemic_g"]:
+        for k,v in self.goals.epistemic_dict.items():
             if not epistemic_dict[k].value == v:
                 is_goal = False
                 goal_dict.update({k+" "+str(v):False})
             else:
                 goal_dict.update({k+" "+str(v):True})
-        # self.logger.debug(f"goal {self.goal_states['epistemic_g']}")
         # self.logger.debug(f"epistemic_dict {epistemic_dict}")
         # self.logger.debug(f"perspectives_dict {perspectives_dict}")
         return is_goal,perspectives_dict,epistemic_dict,goal_dict
     
-    # def isGoalP(self,state,path):
-    #     is_goal=True
-    #     # let's keep iw1 version and extend it later
-    #     epistemic_items_set = {}
-    #     p_dict = {}
-    #     # self.logger.debug(f"checking goal for state: {state} with path: {path}")
-    #     actions = [ a  for s,a in path]
-    #     actions = actions[1:]
-    #     # self.logger.debug(f'plan is: {actions}')
-    #     # self.logger.debug(f'ontic_goal: {self.goal_states["ontic_g"]}')
-    #     for k,i in self.goal_states["ontic_g"].items():
-    #         if not state[k] == i:
-    #             is_goal = False
-    #             break
+    def isGoalP(self,state,path):
+        is_goal=True
+        # let's keep iw1 version and extend it later
+        epistemic_items_set = {}
+        p_dict = {}
+        # self.logger.debug(f"checking goal for state: {state} with path: {path}")
+        actions = [ a  for s,a in path]
+        actions = actions[1:]
+        # self.logger.debug(f'plan is: {actions}')
+        # self.logger.debug(f'ontic_goal: {self.goals.ontic_dict}')
+        for k,i in self.goals.ontic_dict.items():
+            if not state[k] == i:
+                is_goal = False
+                break
             
-    #     # adding epistemic checker here
-    #     # self.logger.debug(f'epistemic_goal: {self.goal_states["epistemic_g"]}')
-    #     for eq,value in self.goal_states["epistemic_g"]:
-    #         self.epistemic_calls +=1
-    #         current_time = datetime.now()
-    #         temp_e_v, temp_p_dict = self.epistemic_model.checkingEQstrP(self.external,eq,path,state,self.entities,self.variables)
-    #         self.epistemic_call_time += datetime.now() - current_time
-    #         if not temp_e_v == value:
-    #             is_goal=False
-    #         p_dict.update(temp_p_dict)
-    #     return is_goal,p_dict    
-    
-    # def isGoal(self,state,path):
-    #     # self.logger.debug(f"checking goal for state: {state} with path: {path}")
-    #     actions = [ a  for s,a in path]
-    #     actions = actions[1:]
-    #     # self.logger.debug(f'plan is: {actions}')
-    #     # self.logger.debug(f'ontic_goal: {self.goal_states["ontic_g"]}')
-    #     for k,i in self.goal_states["ontic_g"].items():
-    #         if not state[k] == i:
-    #             return False
-            
-    #     # adding epistemic checker here
-    #     # self.logger.debug(f'epistemic_goal: {self.goal_states["epistemic_g"]}')
-    #     for eq,value in self.goal_states["epistemic_g"]:
-    #        
-    #         current_time = datetime.now()
-    #         if not self.epistemic_model.checkingEQstr(self.external,eq,path,state,self.entities,self.variables) == value:
-    #             self.epistemic_call_time += datetime.now() - current_time
-    #             return False
-    #         self.epistemic_call_time += datetime.now() - current_time
-    #     return True
-    
+        # adding epistemic checker here
+        # self.logger.debug(f'epistemic_goal: {self.goals.epistemic_dict}')
+        for eq,value in self.goals.epistemic_dict:
+            self.epistemic_calls +=1
+            current_time = datetime.now()
+            temp_e_v, temp_p_dict = self.epistemic_model.checkingEQstrP(self.external,eq,path,state,self.entities,self.variables)
+            self.epistemic_call_time += datetime.now() - current_time
+            if not temp_e_v == value:
+                is_goal=False
+            p_dict.update(temp_p_dict)
+        return is_goal,p_dict    
     
     def getAllActions(self,state,path):
         legal_actions = {}
         
         # get all type of actions
-        for a_name, a in self.actions.items():
+        for a_name, abstract_a in self.abstract_actions.items():
             # # self.logger.debug(f'action: {a} ')
             
             
             # generate all possible combination parameters for each type of action
             # # self.logger.debug(f'all params: {self._generateParams(a.a_parameters)}')
 
-            if a.a_parameters == []:
+            if abstract_a.a_parameters == []:
                 a_temp_name = a_name
-                a_temp_parameters = copy.deepcopy(a.a_parameters)
-                a_temp_precondition = copy.deepcopy(a.a_precondition)
-                a_temp_effects = copy.deepcopy(a.a_effects)
+                a_temp_parameters = copy.deepcopy(abstract_a.a_parameters)
+                a_temp_pre = copy.deepcopy(abstract_a.a_preconditions)
+                a_temp_pre_dict = {'ontic_p':a_temp_pre.ontic_dict,'epistemic_p':a_temp_pre.epistemic_dict}
+                # a_temp_ontic_p = copy.deepcopy(list(abstract_a.a_precondition.ontic_dict))
+                # a_temp_epistemic_p = copy.deepcopy(list(abstract_a.a_precondition.epistemic_dict))
+                a_temp_effects = copy.deepcopy(abstract_a.a_effects)
                 # if self._checkPreconditions(state,a_temp_precondition,path):
-                legal_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_precondition,a_temp_effects)})
+                legal_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_pre_dict,a_temp_effects)})
                     # # self.logger.debug(f'legal action after single precondition check: {legal_actions}') 
             else:
-                for params in self._generateParams(a.a_parameters):
+                for params in self._generateParams(abstract_a.a_parameters):
                     a_temp_name = a_name
-                    a_temp_parameters = copy.deepcopy(a.a_parameters)
-                    a_temp_precondition = copy.deepcopy(a.a_precondition)
-                    a_temp_effects = copy.deepcopy(a.a_effects)
+                    a_temp_parameters = copy.deepcopy(abstract_a.a_parameters)
+                    a_temp_ontic_p_list = copy.deepcopy(list(abstract_a.a_preconditions.ontic_dict))
+                    a_temp_epistemic_p_list = copy.deepcopy(list(abstract_a.a_precondition.sepistemic_dict))
+                    a_temp_effects = copy.deepcopy(abstract_a.a_effects)
                     # # self.logger.debug(f'works on params: {params}')
                     for i,v in params:
                         # a_temp_name = a_name
@@ -220,20 +202,20 @@ class Problem:
                             a_temp_parameters[j] = (v_name,v_effects)
                         
                         # update parameters in the ontic precondition
-                        for j in range(len(a_temp_precondition['ontic_p'])):
-                            v_name, v_effects = a_temp_precondition['ontic_p'][j]
+                        for j in range(len(a_temp_ontic_p_list)):
+                            v_name, v_effects = a_temp_ontic_p_list[j]
                             v_name = v_name.replace(f'{i}',f'-{v}')
                             if type(v_effects) == str:
                                 v_effects = v_effects.replace(f'{i}',f'-{v}')
-                            a_temp_precondition['ontic_p'][j] = (v_name,v_effects)
+                            a_temp_ontic_p_list[j] = (v_name,v_effects)
 
                         # update parameters in the epistemic precondition
-                        for j in range(len(a_temp_precondition['epistemic_p'])):
-                            v_name, v_effects = a_temp_precondition['epistemic_p'][j]
+                        for j in range(len(a_temp_epistemic_p_list)):
+                            v_name, v_effects = a_temp_epistemic_p_list[j]
                             v_name = v_name.replace(f'{i}',f'-{v}').replace('[-','[').replace(',-',',')
                             # precondition effect of epistemic is only going to be int
                             # v_effects = v_effects.replace(f'{i}',f'-{v}')
-                            a_temp_precondition['epistemic_p'][j] = (v_name,v_effects)                            
+                            a_temp_epistemic_p_list[j] = (v_name,v_effects)                            
                         
                         # update parameters in the effects
                         for j in range(len(a_temp_effects)):
@@ -250,7 +232,9 @@ class Problem:
                     # if self._checkPreconditions(state,a_temp_precondition,path):
                     #     legal_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_precondition,a_temp_effects)})
                     # # self.logger.debug(f'legal action after precondition check: {legal_actions}') 
-                    legal_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_precondition,a_temp_effects)})
+                    a_temp_pre_dict = {'ontic_p':dict(a_temp_ontic_p_list),'epistemic_p':dict(a_temp_epistemic_p_list)}
+                    
+                    legal_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_pre_dict,a_temp_effects)})
                     # # self.logger.debug(f'legal action before precondition check: {legal_actions}') 
         # self.logger.debug(f'legal actions: {legal_actions.keys()}') 
         return legal_actions
@@ -269,7 +253,7 @@ class Problem:
             pre_dict[action_name] = {}
             flag_dict[action_name] = True
             # self.logger.debug(f'checking ontic precondition {ontic_pre} for action {action_name}')
-            for k,e in ontic_pre:
+            for k,e in ontic_pre.items():
                 try:
                     if k in state.keys():
                         if e in state.keys():
@@ -297,20 +281,23 @@ class Problem:
 
         # self.logger.debug(f'checking all epistemic preconditions')
         # get all ep_pre into one list
-        temp_ep_list = []
+        temp_ep_dict = {}
+        # this part need to be changed
+        self.logger.debug(f"epistemic_pre_dict: {epistemic_pre_dict}")
         for action_name,ep_pre in epistemic_pre_dict.items():
-            temp_ep_list += ep_pre
+            # for ep in ep_pre.items():
+            temp_ep_dict.update(ep_pre) 
             
         # self.logger.debug(f'epistemic preconditions list {temp_ep_list}')    
         current_time = datetime.now()
         self.epistemic_calls +=1
-        perspectives_dict,epistemic_dict = self.epistemic_model.epistemicGoalsHandler(temp_ep_list,"",path)
+        perspectives_dict,epistemic_dict = self.epistemic_model.epistemicGoalsHandler(temp_ep_dict,"",path)
         self.epistemic_call_time += datetime.now() - current_time
 
         ep_dict = {}
         for action_name,ep_pre in epistemic_pre_dict.items():
             ep_dict[action_name] = {}
-            for k,v in ep_pre:
+            for k,v in ep_pre.items():
                 if not epistemic_dict[k].value == v:
                     flag_dict[action_name] = False
                     pre_dict[action_name].update({k+":"+str(e):False})
@@ -323,45 +310,45 @@ class Problem:
         return flag_dict,perspectives_dict,epistemic_dict,pre_dict    
 
 
-    def checkPreconditions(self,state,action,path):
-        # self.logger.debug(f'checking precondition for action: {action}')
-        preconditions = action.a_precondition
-        pre_flag = True
-        pre_dict = {}
-        # checking ontic preconditions
-        # # self.logger.debug(f'ontic_p: {preconditions["ontic_p"]}')
-        for k,e in preconditions['ontic_p']:
-            try:
-                if e in state.keys():
-                    e = state[e]
-                if not state[k] == e:
-                    pre_flag = False
-                    pre_dict.update({k+" "+str(e):False})
-                else:
-                    pre_dict.update({k+" "+str(e):True})
-            except:
-                self.logger.error("Error when checking precondition: {}\n with state: {}")
+    # def checkPreconditions(self,state,action,path):
+    #     # self.logger.debug(f'checking precondition for action: {action}')
+    #     preconditions = action.a_precondition
+    #     pre_flag = True
+    #     pre_dict = {}
+    #     # checking ontic preconditions
+    #     # # self.logger.debug(f'ontic_p: {preconditions["ontic_p"]}')
+    #     for k,e in preconditions['ontic_p']:
+    #         try:
+    #             if e in state.keys():
+    #                 e = state[e]
+    #             if not state[k] == e:
+    #                 pre_flag = False
+    #                 pre_dict.update({k+" "+str(e):False})
+    #             else:
+    #                 pre_dict.update({k+" "+str(e):True})
+    #         except:
+    #             self.logger.error("Error when checking precondition: {}\n with state: {}")
                 
-                pre_flag = False
+    #             pre_flag = False
 
             
-        # adding epistemic checker here
-        # # self.logger.debug(f'epistemic_pre: {preconditions["epistemic_p"]}')
-        current_time = datetime.now()
-        self.epistemic_calls +=1
-        perspectives_dict,epistemic_dict = self.epistemic_model.epistemicGoalsHandler(preconditions["epistemic_p"],"",path)
-        self.epistemic_call_time += datetime.now() - current_time
-        for k,v in preconditions["epistemic_p"]:
+    #     # adding epistemic checker here
+    #     # # self.logger.debug(f'epistemic_pre: {preconditions["epistemic_p"]}')
+    #     current_time = datetime.now()
+    #     self.epistemic_calls +=1
+    #     perspectives_dict,epistemic_dict = self.epistemic_model.epistemicGoalsHandler(preconditions["epistemic_p"],"",path)
+    #     self.epistemic_call_time += datetime.now() - current_time
+    #     for k,v in preconditions["epistemic_p"]:
 
-            if not epistemic_dict[k].value == v:
-                pre_flag = False
-                pre_dict.update({k+" "+str(v):False})
-            else:
-                pre_dict.update({k+" "+str(v):True})
+    #         if not epistemic_dict[k].value == v:
+    #             pre_flag = False
+    #             pre_dict.update({k+" "+str(v):False})
+    #         else:
+    #             pre_dict.update({k+" "+str(v):True})
 
-        # self.logger.debug(f"pre_dict: {pre_dict}")
+    #     # self.logger.debug(f"pre_dict: {pre_dict}")
         
-        return pre_flag,perspectives_dict,epistemic_dict,pre_dict    
+    #     return pre_flag,perspectives_dict,epistemic_dict,pre_dict    
 
     # def checkPreconditionsN(self,state,action,path):
     #     # # self.logger.debug(f'checking precondition for action: {action}')
@@ -582,7 +569,7 @@ class Problem:
         
     
     def __str__(self):
-        return f"Problem: \n\t entities: {self.entities}\n\t variables: {self.variables}\n\t actions: {self.actions}\n\t domains: {self.domains}\n\t initial_state: {self.initial_state}\n\t goal_states: {self.goal_states}\n"
+        return f"Problem: \n\t entities: {self.entities}\n\t variables: {self.variables}\n\t abstract_actions: {self.abstract_actions}\n\t domains: {self.domains}\n\t initial_state: {self.initial_state}\n\t goals: {self.goals}\n"
 
 
     

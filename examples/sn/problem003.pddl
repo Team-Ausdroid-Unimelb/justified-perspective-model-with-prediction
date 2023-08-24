@@ -79,7 +79,7 @@
     (:goal (and
         ; (= (:ontic (= (agent_at a) 2)) 1)
         ; (= (:ontic (= (post p1 a) 1)) 1)
-        (= (:epistemic b [d] (= (secret p1) 't')) -1)
+        (= (:epistemic b [d] (= (secret p1) 't')) 0)
         (= (:epistemic b [c] (= (secret p1) 't')) 1)
         
         ; (= (:epistemic b [c] (= (secret a) 'f')) 1)

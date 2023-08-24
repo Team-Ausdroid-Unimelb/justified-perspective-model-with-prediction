@@ -27,15 +27,14 @@ class EpistemicModel:
         self.external = external
 
 
-    def allPerspectiveKeys(self, epistemic_goals_list,prefix):
+    def allPerspectiveKeys(self, epistemic_goals_dict,prefix):
         keys = []
         # self.logger.debug(f'')
         # self.logger.debug(f'allPerspectiveKeys')
-        # self.logger.debug(f'epistemic_goals_list{epistemic_goals_list}')
         # self.logger.debug(f'prefix{prefix}')
         eq_dict = {}
         perspective_name_list = set([''])
-        for epistemic_goal_str,value in epistemic_goals_list:
+        for epistemic_goal_str,value in epistemic_goals_dict.items():
             temp_eq = self.partially_converting_to_eq(epistemic_goal_str)
             if type(temp_eq) == str:
                 # this is the end of eq
@@ -52,9 +51,9 @@ class EpistemicModel:
                 # key = f"{prefix} {temp_eq.header_str} {agents_str}"
                 key = f"{temp_eq.header_str} {agents_str} "
                 if key in eq_dict.keys():
-                    eq_dict[key]['content'].append((content,value))
+                    eq_dict[key]['content'].update({content:value})
                 else:
-                    eq_dict[key] = {'q_type':temp_eq.q_type,'eq_type':temp_eq.eq_type,'q_group':temp_eq.q_group,'content':[(content,value)]}
+                    eq_dict[key] = {'q_type':temp_eq.q_type,'eq_type':temp_eq.eq_type,'q_group':temp_eq.q_group,'content':{content:value}}
                     
         # self.logger.debug(f'eq_dict in allPerspectiveKeys {eq_dict}')       
         
@@ -78,11 +77,10 @@ class EpistemicModel:
         
 
 
-    def epistemicGoalsHandlerP(self,epistemic_goals_list, prefix, path, p_path):
+    def epistemicGoalsHandlerP(self,epistemic_goals_dict, prefix, path, p_path):
 
         # self.logger.debug(f'')
         # self.logger.debug(f'epistemicGoalHandler')
-        # self.logger.debug(f'epistemic_goals_list{epistemic_goals_list}')
         # self.logger.debug(f'prefix{prefix}')
         # perspectives_dict = {'':path[-1][0]}
         actions_name = str([a for s,a in path])
@@ -93,7 +91,7 @@ class EpistemicModel:
         # self.logger.debug(f'actions_name {actions_name}')
         # self.logger.debug(f'previous_action_names {previous_actions_name}')
         
-        all_p_keys = self.allPerspectiveKeys(epistemic_goals_list,prefix)
+        all_p_keys = self.allPerspectiveKeys(epistemic_goals_dict,prefix)
 
         eq_dict = {}
         result_dict = {} 
@@ -147,11 +145,7 @@ class EpistemicModel:
                     initial_p_path['updates'] = [empty_updates]
                     # ignoring group beliefs for now
                     if 'b' in eq_type_str:
-                        # print(p_path)
-                        # print(f"parent_key [{parent_key}]")
-                        # print(p_path["None"][parent_key]['states'][-1])
-                        # print(self._generateGroupPerspectives("",agent_str,p_path["None"][parent_key]['states'][-1],initial_p_path))
-                        # print("\n\n\n")
+
                         state,updating = self._generateGroupPerspectives("",agent_str,p_path["None"][parent_key]['states'][-1],initial_p_path)
                         
                     elif 's' in eq_type_str:
@@ -217,9 +211,9 @@ class EpistemicModel:
                     p_path[actions_name][key]['updates'] = p_path[previous_actions_name][key]['updates']+[updating]
 
         # self.logger.debug(f"p_path is {p_path}")
-        # self.logger.debug(f'epistemic goals {epistemic_goals_list}')
         
-        for eq_str, value in epistemic_goals_list:
+        for eq_str, value in epistemic_goals_dict.items():
+
             p_str = eq_str[:eq_str.rfind(' ')+1]
             eqv_str = eq_str[eq_str.rfind(' ')+1:][1:-1]
             v_name = eqv_str.split(',')[0][1:-1]
@@ -318,7 +312,7 @@ class EpistemicModel:
 
     def _generateGroupObservations(self,q_type,q_group,parent_state,p_path):
         # initial perspectives 
-        # print(parent_state)
+
         new_state,new_update = self._getOneObservation(parent_state,q_group[0])
         
         if len(q_group) == 1:

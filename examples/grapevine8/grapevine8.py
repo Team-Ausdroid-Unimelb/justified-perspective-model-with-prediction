@@ -122,7 +122,11 @@ class ExternalFunction:
 
 
 
-            agt_loc = int(state[f'agent_at-{agt_index}'])
+            agt_loc_str = AGENT_LOC_PREFIX+agt_index
+            if agt_loc_str not in state.keys() or state[agt_loc_str] == None:
+                return PDDL_TERNARY.UNKNOWN
+            else:
+                agt_loc = int(state[agt_loc_str])
 
             
             # extract necessary common constants from given domain
@@ -159,7 +163,7 @@ class ExternalFunction:
         
         
         
-        for eq_str,value in problem.goal_states["epistemic_g"]:
+        for eq_str,value in problem.goals.epistemic_dict.items():
             
             match = re.search("[edc]?[ksb] \[[0-9a-z_,]*\] ",eq_str)
             while not match == None:

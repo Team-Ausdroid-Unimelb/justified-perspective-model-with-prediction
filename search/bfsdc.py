@@ -82,16 +82,7 @@ class Search:
             actions = [ a  for s,a in path]
             actions = actions[1:]
             self.logger.debug(f"path: {actions}")
-            # self.goal_checked += 1
-            # if len(path) >3:
-            #     return
-            # Goal Check
-            # is_goal, temp_epistemic_item_set = problem.isGoalN(state,path)
-            # print(temp_epistemic_item_set)
-            # print(problem.goal_states)
-            # remaining_g = current_p - _gn(current_node)
-            # print(f"p:{current_p}, g:{ _gn(current_node)}, r:{remaining_g}")
-            # is_goal = self._isGoal(current_p,current_node)
+
             is_goal = (0 == current_node.remaining_goal)
             if is_goal:
                 # self.logger.info(path)
@@ -232,7 +223,7 @@ class Search:
 
     def group_epistemic_goals(self,problem):
         group_eg_dict = {}
-        for eq_str,value in problem.goal_states["epistemic_g"]:
+        for eq_str,value in problem.goals.epistemic_dict.items():
             var_str = eq_str.split(" ")[-1].split(",")[0][2:-1]
             if var_str in group_eg_dict:
                 group_eg_dict[var_str].append((eq_str,value))
@@ -259,9 +250,7 @@ class Search:
     # it is not admissible
     def goal_counting(self,node,problem):
         remain_goal_number = 0
-        goal_states = problem.goal_states
-        ontic_goal_states = goal_states['ontic_g']
-        epistemic_goal_states = goal_states['epistemic_g']
+        goals = problem.goals
         state = node.state
         path = node.path
         
@@ -269,20 +258,7 @@ class Search:
         self.logger.debug(f'epistemic_dict in heuristic {epistemic_dict}')
         
         remain_goal_number = list(goal_dict.values()).count(False)
-        # for goal,value in ontic_goal_states:
-        #     if goal in state:
-        #         if not state[goal] == value:
-        #             remain_goal_number += 1
-        #     else:
-        #         remain_goal_number += 1    
-        # return remain_goal_number,goal_dict
-        
-        # for goal,value in epistemic_goal_states:
-        #     if goal in epistemic_item_set:
-        #         if not epistemic_item_set[goal] == value:
-        #             remain_goal_number += 1
-        #     else:
-        #         remain_goal_number += 1
+
         for key,value in goal_dict.items():
             if "-1" in key and not value:
                 return 9999,epistemic_dict      

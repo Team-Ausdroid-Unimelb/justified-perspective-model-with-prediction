@@ -36,7 +36,7 @@ class EpistemicModel:
         eq_dict = {}
         result_dict = {}
         
-        for epistemic_goal_str,value in epistemic_goals_list:
+        for epistemic_goal_str,value in epistemic_goals_list.items():
             temp_eq = self.partially_converting_to_eq(epistemic_goal_str)
             if type(temp_eq) == str:
                 # this is the end of eq
@@ -63,7 +63,7 @@ class EpistemicModel:
                 if key in eq_dict.keys():
                     eq_dict[key]['content'].append((content,value))
                 else:
-                    eq_dict[key] = {'q_type':temp_eq.q_type,'eq_type':temp_eq.eq_type,'q_group':temp_eq.q_group,'content':[(content,value)]}
+                    eq_dict[key] = {'q_type':temp_eq.q_type,'eq_type':temp_eq.eq_type,'q_group':temp_eq.q_group,'content':{content:value}}
         
         self.logger.debug(f'eq_dict in goal handler {eq_dict}')
         

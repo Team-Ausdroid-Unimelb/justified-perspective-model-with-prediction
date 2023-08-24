@@ -195,7 +195,7 @@ class PDDLParser:
                 
                 # loading epismetic goals
                 self.logger.debug("extract epistemic goal propositions")
-                g_states.update({"epistemic_g":[]})   
+                g_states.update({"epistemic_g":{}})   
                 epistemic_goal_list = re.findall('\(= \(:epistemic[ 0-9a-z_\[\],]*\(= \([ 0-9a-z_]*\) [0-9a-z_\'\"]*\)\) [0-9a-z_\'\"\-]*\)',found[10:-1:].replace(")-1)",") -1)"))  
                 self.logger.debug(epistemic_goal_list)
                 for goal_str in epistemic_goal_list:
@@ -211,7 +211,7 @@ class PDDLParser:
                     var = new_str[m+1:n-1].replace(" ","-")
                     value = new_str[n+1:]
                     query = f"{query}('{var}',{value})"
-                    g_states["epistemic_g"].append((query,value1))
+                    g_states["epistemic_g"].update({query:value1})
                 self.logger.debug(g_states)
             except AttributeError:
                 self.logger.error("error when extract goal")
@@ -312,7 +312,7 @@ class PDDLParser:
                         
                         # loading ontic precondition
                         self.logger.debug("extract ontic preconditions propositions")
-                        preconditions.update({"ontic_p":[]})
+                        preconditions.update({"ontic_p":{}})
                         
                         # ontic_goal_list = re.findall('\(= \([0-9a-z_ ]*\) [0-9a-z_\'\"]*\)',found[10:-1:])
                         # (= (:ontic (= (agent_at-a) (secret_at ?s))) 1)
@@ -335,11 +335,11 @@ class PDDLParser:
                             else:
                                 value =int(value)
                             # print(value)
-                            preconditions["ontic_p"].append((variable,value))
+                            preconditions["ontic_p"].update({variable:value})
                         
                         # loading epismetic goals
                         self.logger.debug("extract epistemic precondition propositions")
-                        preconditions.update({"epistemic_p":[]})   
+                        preconditions.update({"epistemic_p":{}})   
                         epistemic_preconditions_list = re.findall('\(= \(:epistemic[\? 0-9a-z_\[\],]*\(= \([ 0-9a-z_\? ]*\) [0-9a-z_\'\"\]*\)\) [0-9a-z_\'\"\-]*\)',preconditions_str)  
                         self.logger.debug(epistemic_preconditions_list)
                         for pre_str in epistemic_preconditions_list:
@@ -359,7 +359,7 @@ class PDDLParser:
                             var = new_str[m+1:n-1].replace(" ?","?").replace(' ','-')
                             value = new_str[n+1:]
                             query = f"{query}('{var}',{value})"
-                            preconditions["epistemic_p"].append((query,value1))
+                            preconditions["epistemic_p"].update({query:value1})
                         self.logger.debug(preconditions)
                     except AttributeError:
                         self.logger.error("error when extract precondition")
