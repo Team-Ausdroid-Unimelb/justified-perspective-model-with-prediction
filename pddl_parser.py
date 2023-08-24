@@ -54,7 +54,7 @@ class PDDLParser:
         return str      
 
     def problemParser(self,file_path):
-        domains = {'agent':{'basic_type':'','values':[]},}
+        domains = {'agent':{'basic_type':'agent','values':[]},}
         i_state = {}
         g_states = {}
         agent_index = []

@@ -777,6 +777,7 @@ def convertBooltoPDDL_TERNARY(bool):
 class D_TYPE(Enum):
     ENUMERATE = 1
     INTEGER = 2 
+    AGENT = 3
 
 def dTypeConvert(logger,str):
     logger.debug(f"converting D_TYPE for {str}")
@@ -784,6 +785,8 @@ def dTypeConvert(logger,str):
         return D_TYPE.ENUMERATE
     elif str == "integer":
         return D_TYPE.INTEGER
+    elif str == "agent":
+        return D_TYPE.AGENT
     else:
         logger.error(f"D_TYPE not found for {str}")
 

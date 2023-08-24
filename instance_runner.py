@@ -80,12 +80,10 @@ class Instance:
         # logging.basicConfig(filename = f'{output_path}/{self.instance_name}.log',
         #                     level = debug_level,
         #                     format = '%(asctime)s:%(levelname)s:%(name)s:%(message)s')
-        print(self.instance_name)
         # logger_handler = setup_log_handler(f'{output_path}/{self.instance_name}.log')
         # logger = setup_logger(LOGGER_NAME,logger_handler,debug_level) 
         # logger = logging.getLogger(LOGGER_NAME)
         logger = logging.getLogger(LOGGER_NAME)
-        print(logger.handlers)
         self.f_handler = logging.FileHandler(f'{output_path}/{self.instance_name}.log')
 
         c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
@@ -296,4 +294,3 @@ if __name__ == '__main__':
         ins = Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search= search)
         ins.solve(timeout=options.timeout,log_debug = options.log_debug, output_path = output_path, time_debug= options.time_debug)
 
-        

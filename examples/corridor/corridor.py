@@ -10,6 +10,8 @@ import pddl_model
 import epistemic_model
 from util import PDDL_TERNARY
 AGENT_ID_PREFIX = "agent_at-"
+AGENT_LOC_PREFIX = 'agent_at-'
+OBJ_LOC_PREFIX = 'shared-s'
 
 # logger = logging.getLogger("bbl")
 
@@ -73,42 +75,61 @@ class ExternalFunction:
         return True
 
 
+    # customised function for each domain
     def checkVisibility(self,state,agt_index,var_index,entities,variables):
         
         # logger.debug(f"checkVisibility(_,_,{agt_index},{var_index})")
         try:
-            tgt_index = variables[var_index].v_parent
+            target_index = variables[var_index].v_parent
 
-            # if the target index is object, which mean it is the secret
-            # then the location is same as the location that (shared-s)
-            if entities[tgt_index].e_type == pddl_model.E_TYPE.OBJECT:
-
-                tgt_loc = int(state['shared-s'])
-
-                if tgt_loc == 0:
-                    # if the sercret has not been shared
-                    return PDDL_TERNARY.FALSE
+            # if the target index is object, 
+            # which mean it is the secret in corridor domain
+            # then its location is same as the location that (shared-s)
+            if entities[target_index].e_type == pddl_model.E_TYPE.OBJECT:
+                # there is only one secret in corridor
+                obj_loc_str = OBJ_LOC_PREFIX + "" 
+                if obj_loc_str not in state.keys() or state[obj_loc_str] == None:
+                    self.logger.debug(f'current perspective does not have {obj_loc_str}')
+                    return PDDL_TERNARY.UNKNOWN
+                
+                target_loc = int(state[obj_loc_str])
+                
+                if target_loc == 0:
+                    self.logger.debug('secret has not been shared')
+                    # if the secret has not been shared
+                    # but agent might not know
+                    return PDDL_TERNARY.UNKNOWN
+                
             else:
-                # the target is an agent, it has its own location
-                tgt_loc = int(state[f'agent_at-{tgt_index}'])
+            # the target is an agent, it has its own location
+                target_agent_loc_str = AGENT_LOC_PREFIX+target_index
+                if target_agent_loc_str not in state.keys() or state[target_agent_loc_str] == None:
+                    self.logger.debug(f'current perspective does not have {target_agent_loc_str}')
+                    return PDDL_TERNARY.UNKNOWN
+                
+                target_loc = int(state[target_agent_loc_str])
 
             # check if the agt_index can be found
             assert(entities[agt_index].e_type==pddl_model.E_TYPE.AGENT)
 
-            agt_loc = int(state[f'agent_at-{agt_index}'])
+            agent_loc_str = AGENT_LOC_PREFIX+agt_index
+            if agent_loc_str not in state.keys() or state[agent_loc_str] == None:
+                self.logger.debug(f'current perspective does not have {agent_loc_str}')
+                return PDDL_TERNARY.UNKNOWN
+
+            agt_loc = int(state[agent_loc_str])
 
             
             # extract necessary common constants from given domain
             # logger.debug(f"necessary common constants from given domain")
 
-            self.logger.debug(f'checking seeing with agent location: {agt_loc} and target location: {tgt_loc}')
-            # agent is able to see anything in the same location
-            if tgt_loc == agt_loc:
-                return PDDL_TERNARY.TRUE
+            self.logger.debug(f'checking seeing with agent location: {agt_loc} and target location: {target_loc}')
+            # # agent is able to see anything in the same location
+            # if target_loc == agt_loc:
+            #     return PDDL_TERNARY.TRUE
 
-
-            # seeing relation for corridor is in the same room or adjuscent room
-            if abs(tgt_loc-agt_loc) <=1:
+            # agent is able to see anything in the same or adjacent rooms
+            if abs(target_loc-agt_loc) <=1:
                 return PDDL_TERNARY.TRUE
             else:
                 return PDDL_TERNARY.FALSE
