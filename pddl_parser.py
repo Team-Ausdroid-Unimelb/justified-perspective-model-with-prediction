@@ -76,9 +76,11 @@ class PDDLParser:
             
             if not str.startswith("(define"):
                 self.logger.error("the problem file does not start with '(define'")
+                self.logger.error(traceback.format_exc())
                 exit()
             elif not str.endswith(")"):
                 self.logger.error("the problem file does not end with ')'")
+                self.logger.error(traceback.format_exc())
                 exit()
             str = str[7:-1:]
             self.logger.debug(repr(str))
@@ -92,6 +94,7 @@ class PDDLParser:
                 # self.logger.debug(p_name)
             except AttributeError:
                 self.logger.error("error when extract problem name")
+                self.logger.error(traceback.format_exc())
                 exit()
                 
             self.logger.debug("extract d_name")
@@ -101,6 +104,7 @@ class PDDLParser:
                 self.logger.debug(d_name)
             except AttributeError:
                 self.logger.error("error when extract domain name")
+                self.logger.error(traceback.format_exc())
                 exit()            
 
             self.logger.debug("extract agents")
@@ -110,6 +114,7 @@ class PDDLParser:
                 self.logger.debug(agent_index)
             except AttributeError:
                 self.logger.error("error when extract agents")
+                self.logger.error(traceback.format_exc())
                 exit()
 
             self.logger.debug("extract objects")
@@ -119,12 +124,13 @@ class PDDLParser:
                 self.logger.debug(obj_index)
             except AttributeError:
                 self.logger.error("error when extract objects")
+                self.logger.error(traceback.format_exc())
                 exit()
 
             self.logger.debug("extract variables")
             try:
                 found = re.search('\(:variables([(][0-9a-z_ \[\],]*[)])*\)',str).group(0)
-                self.logger.debug(found)
+                self.logger.debug( found)
                 vars_list = re.findall('\([0-9a-z_ \[\],]*\)',found[10:-1:])
                 self.logger.debug(vars_list)
                 for var_str in vars_list:
@@ -138,12 +144,13 @@ class PDDLParser:
                 self.logger.debug(variables)
             except AttributeError:
                 self.logger.error("error when extract variables")
+                self.logger.error(traceback.format_exc())
                 exit()
                 
             self.logger.debug("extract init")
             try:
                 found = re.search("\(:init(\(= \([0-9a-z_ ]*\) [0-9a-z_\'\"]*\))*\)",str).group(0)
-                self.logger.debug(found)
+                self.logger.debug( found)
                 init_list = re.findall('\(= \([0-9a-z_ ]*\) [0-9a-z_\'\"]*\)',found[6:-1:])
                 self.logger.debug(init_list)
                 for init_str in init_list:
@@ -163,13 +170,14 @@ class PDDLParser:
                 self.logger.debug(i_state)
             except AttributeError:
                 self.logger.error("error when extract init")
+                self.logger.error(traceback.format_exc())
                 exit()            
 
             self.logger.debug("extract goal")
             try:
                 
                 found = re.search("\(:goal\(and\(= \([:0-9a-z_ \- \[\],]*(\(.*\)\)|\))[0-9a-z_ \"\'\-]*\)*\)\)",str).group(0)
-                self.logger.debug(found)
+                self.logger.debug( found)
                 
                 # loading ontic goals
                 self.logger.debug("extract ontic goal propositions")
@@ -177,10 +185,10 @@ class PDDLParser:
                 # ontic_goal_list = re.findall('\(= \([0-9a-z_ ]*\) [0-9a-z_\'\"]*\)',found[10:-1:])
                 ontic_goal_list = re.findall('\(= \(:ontic[ 0-9a-z_\[\],]*\(= \([ 0-9a-z_]*\) [0-9a-z_\'\"]*\)\) [0-9a-z_\'\"]*\)',found[10:-1:])  
 
-                self.logger.debug(f'ontic goal list: {ontic_goal_list}')
+                self.logger.debug('ontic goal list: {}',ontic_goal_list)
                 for goal_str in ontic_goal_list:
                     goal_str = goal_str[15:-5:]
-                    self.logger.debug(f'single goal_str {goal_str}')
+                    self.logger.debug('single goal_str {}',goal_str)
                     
                     goal_list = goal_str.split(') ')
                     variable = goal_list[0].replace(' ','-')
@@ -221,10 +229,10 @@ class PDDLParser:
                             
             self.logger.debug("extract domains")
             try:
-                self.logger.debug(f"{str}")
+                self.logger.debug(str)
                 
                 found = re.search('\(:domains(\([0-9a-z_ \[\],\'\"]*\))*\)',str).group(0)
-                self.logger.debug(found)
+                self.logger.debug( found)
                 domains_list = re.findall('\([0-9a-z_ \[\],\'\"]*\)',found[9:-1:])
                 self.logger.debug(domains_list)
                 for domain_str in domains_list:
@@ -242,7 +250,9 @@ class PDDLParser:
                         domains.update({domain_str[0]:{"basic_type":domain_str[1],"values":value}})
                 self.logger.debug(domains)
             except AttributeError:
+                
                 self.logger.error("error when extract domains")
+                self.logger.error(traceback.format_exc())
                 exit()
                 
             return domains,i_state,g_states,agent_index,obj_index,variables,d_name,p_name
@@ -278,7 +288,9 @@ class PDDLParser:
                 self.logger.info(f"parsing domain: [{d_name}]")
                 # self.logger.debug(d_name)
             except AttributeError:
+                
                 self.logger.error("error when extract domain name")
+                self.logger.error(traceback.format_exc())
                 exit()  
             
             
@@ -295,14 +307,14 @@ class PDDLParser:
                     
                     # decode parameters
                     parameters_str = re.search(':parameters\(.*\):precondition',action_str).group()
-                    self.logger.debug(f'parameters_str: {parameters_str}')
+                    self.logger.debug('parameters_str: {}',parameters_str)
                     for p_str in parameters_str[12:-14:].split(","):
                         if p_str == '':
                             continue
-                        self.logger.debug(f'single parameters_str: {p_str}')
+                        self.logger.debug('single parameters_str: {}',p_str)
                         p = p_str.split("-")
                         parameters.append((p[0],p[1]))
-                    self.logger.debug(f'parameters: {parameters}')
+                    self.logger.debug('parameters: {}',parameters)
                     
                     self.logger.debug("extract preconditions")
                     try:
@@ -319,10 +331,10 @@ class PDDLParser:
                         # (= (:ontic (= (agent_at-a) (secret_at ?s))) 1)
                         ontic_preconditions_list = re.findall('\(= \(:ontic[ 0-9a-z_\[\],]*\(= \([ 0-9a-z_\-\?]*\) [\(\)\?0-9a-z_\'\" ]*\)\) [0-9a-z_\'\"]*\)',preconditions_str)  
 
-                        self.logger.debug(f'ontic preconditions list: {ontic_preconditions_list}')
+                        self.logger.debug('ontic preconditions list: {}',ontic_preconditions_list)
                         for pre_str in ontic_preconditions_list:
                             pre_str = pre_str[15:-5:]
-                            self.logger.debug(f'single precondition_str {pre_str}')
+                            self.logger.debug('single precondition_str {}',pre_str)
                             
                             precondition_list = pre_str.split(') ')
                             variable = precondition_list[0].replace(' ?','?').replace(' ','-')
@@ -345,16 +357,16 @@ class PDDLParser:
                         self.logger.debug(epistemic_preconditions_list)
                         for pre_str in epistemic_preconditions_list:
                             pre_str = pre_str[15:-1:]
-                            self.logger.debug(f"pre str: {pre_str}")
+                            self.logger.debug("pre str: {}",pre_str)
                             i,j = re.search('\)\) .*',pre_str).span()
-                            self.logger.debug(f'i: {i}, j: {j}')
+                            self.logger.debug('i: {}, j: {}',i,j)
                             value1 = int(pre_str[i+3:j:])
-                            self.logger.debug(f'value for epistemic query: {value1}')
+                            self.logger.debug('value for epistemic query: {}',value1)
                             query = pre_str[:i+2:]
-                            self.logger.debug(f'query str: {query}')
+                            self.logger.debug('query str: {}',query)
                             p,q = re.search('\(= \([0-9a-z _\?]*\) [0-9a-z _\'\"]*\)',query).span()
                             new_str = query[p+3:q-1]
-                            self.logger.debug(f'value string in epistemic query: {new_str}')
+                            self.logger.debug('value string in epistemic query: {}',new_str)
                             query = query[:p]
                             m,n = re.search('\([0-9a-z _\?]*\)',new_str).span()
                             var = new_str[m+1:n-1].replace(" ?","?").replace(' ','-')
@@ -363,41 +375,29 @@ class PDDLParser:
                             preconditions["epistemic_p"].update({query:value1})
                         self.logger.debug(preconditions)
                     except AttributeError:
+                        
                         self.logger.error("error when extract precondition")
-                        exit()   
-                    
-                    
-                    
-                    #decode precondition
-                    # preconditions_str = re.search(':precondition\(and.*\):effect', action_str).group()
-                    # self.logger.debug(f'preconditions_str: {preconditions_str}')  
-                    # for p_str in preconditions_str[18:-9:].split('(= '):
-                    #     if p_str == '':
-                    #         continue
-                    #     self.logger.debug(f'single precondition_str: {p_str}')
-                    #     p_list = p_str[1:].split(") ")
-                    #     # if len(p_list) == 1:
-                    #     #     p_list = p_list[0].split(" ")
-                    #     preconditions.append((p_list[0].replace(" ","").replace("(","").replace(")",""),p_list[1].replace(" ","").replace("(","").replace(")","").replace('"','').replace("'",'')))
-                    # self.logger.debug(f'preconditions: {preconditions}')
+                        self.logger.error(traceback.format_exc())
+                        exit() 
                     
                     #decode effects
                     effects_str = re.search(':effect\(and\(.*\)\)',action_str).group()
-                    self.logger.debug(f'effects_str: {effects_str}')  
+                    self.logger.debug('effects_str: {}',effects_str)  
                     for e_str in effects_str[11:-2:].split("(= "):
                         if e_str == '':
                             continue
-                        self.logger.debug(f'single effect_str: {e_str}')
+                        self.logger.debug('single effect_str: {}',e_str)
                         e_list = e_str[1:].split(") ")
                         # if len(e_list) == 1:
                         #     e_list = e_list[0].split(" ")
                         effects.append((e_list[0].replace(" ?","?").replace(" ","-").replace("(","").replace(")",""),e_list[1].replace(" ","").replace("(","").replace(")","").replace('"','').replace("'",'')))
-                    self.logger.debug(f'effects: {effects}')
+                    self.logger.debug('effects: {}',effects)
                     
                     actions.update({action_name: {"parameters":parameters,"precondition":preconditions,"effect":effects}})
                 self.logger.debug(actions)
             except AttributeError:
                 self.logger.error("error when extract actions")
+                self.logger.error(traceback.format_exc())
                 exit()          
             return actions,d_name
     
