@@ -21,18 +21,17 @@ class EpistemicModel:
     
     
     def __init__(self, handlers, entities, variables, external):
-        self.logger = setup_logger(LOGGER_NAME,handlers) 
-        self.logger.setLevel(LOGGER_LEVEL)
+        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=LOGGER_LEVEL) 
         self.entities = entities
         self.variables = variables
         self.external = external
 
 
     def epistemicGoalsHandler(self,epistemic_goals_list, prefix, path):
-        self.logger.debug(f'')
-        self.logger.debug(f'epistemicGoalHandler')
-        self.logger.debug(f'epistemic_goals_list{epistemic_goals_list}')
-        self.logger.debug(f'prefix{prefix}')
+        self.logger.debug('')
+        self.logger.debug('epistemicGoalHandler')
+        self.logger.debug('epistemic_goals_list[%s]',epistemic_goals_list)
+        self.logger.debug('prefix[%s]',prefix)
         perspectives_dict = {'':path[-1][0]}
         eq_dict = {}
         result_dict = {}
@@ -44,7 +43,7 @@ class EpistemicModel:
                 # no need to generate perspectives
                 # just need to evaluate the result and return value
                 # key = f"{prefix} {temp_eq}"
-                self.logger.debug(f"query key: {temp_eq}")
+                self.logger.debug("query key: [%s]",temp_eq)
 
                 
                 
@@ -66,7 +65,7 @@ class EpistemicModel:
                 else:
                     eq_dict[key] = {'q_type':temp_eq.q_type,'eq_type':temp_eq.eq_type,'q_group':temp_eq.q_group,'content':{content:value}}
         
-        self.logger.debug(f'eq_dict in goal handler {eq_dict}')
+        self.logger.debug('eq_dict in goal handler [%s]',eq_dict)
         
         # solving eq by perspectives
         for key,item in eq_dict.items():
@@ -82,19 +81,19 @@ class EpistemicModel:
             else:
                 assert("wrong eq_type of the epistemic query")
             # perspectives_dict.update({key:new_path[-1][0]})
-            self.logger.debug(f"calling local perspective for {key} and content {item['content']}")
+            self.logger.debug("calling local perspective for [%s] and content [%s]",key,item['content'])
             local_perspectives, local_result_dict = self.epistemicGoalsHandler(item['content'],key,new_path)
-            self.logger.debug(f"local_perspectives is {local_perspectives}")
+            self.logger.debug("local_perspectives is [%s]",local_perspectives)
             # perspectives_dict.update(local_perspectives)
-            self.logger.debug(f'perspectives_dict before adding local {perspectives_dict}')
+            self.logger.debug('perspectives_dict before adding local [%s]',perspectives_dict)
             for lp_key,lp_value in local_perspectives.items():
                 p_key = key+lp_key
                 perspectives_dict[p_key] = lp_value
-            self.logger.debug(f'perspectives_dict after adding local {perspectives_dict}')
+            self.logger.debug('perspectives_dict after adding local [%s]',perspectives_dict)
             
             for result_key,result_value in local_result_dict.items():
                 result_key = key + result_key
-                self.logger.debug(f'key is {key}, result_key is {result_key}')
+                self.logger.debug('key is [%s], result_key is [%s]',key,result_key)
                 # result_key = result_key
                 new_result_value = result_value
                 if eq_type == EQ_TYPE.SEEING:
@@ -105,8 +104,8 @@ class EpistemicModel:
                     else:
                         new_result_value = PDDL_TERNARY.TRUE
                 result_dict.update({result_key:new_result_value})
-        self.logger.debug(f'result_dict {result_dict}')
-        self.logger.debug(f'perspectives_dict {perspectives_dict}')
+        self.logger.debug('result_dict [%s]',result_dict)
+        self.logger.debug('perspectives_dict [%s]',perspectives_dict)
         return perspectives_dict,result_dict
 
     def _evaluateContent(self,path,temp_eq):
@@ -171,7 +170,7 @@ class EpistemicModel:
         
         for i in range(len(path)):
             observation_list.append(self._getOneObservation(path[i][0],agt_id))
-        self.logger.debug(f'observation list is {observation_list}')
+        self.logger.debug('observation list is [%s]',observation_list)
         for i in range(len(path)):
             new_state = self._generateOnePerspective(state_template,observation_list[:i+1])
             new_path.append((new_state,path[i][1]))
@@ -181,11 +180,11 @@ class EpistemicModel:
     def _generateOnePerspective(self,state_template,observation_list):
         new_state = {}
         for v_index,e in state_template.items():
-            self.logger.debug(f'\t find history value for {v_index},{e}')
+            self.logger.debug('\t find history value for [%s],[%s]',v_index,e)
             ts_index = self._identifyLastSeenTimestamp(observation_list,v_index)
-            self.logger.debug(f'\t last seen timestamp index: {ts_index}')
+            self.logger.debug('\t last seen timestamp index: [%s]',ts_index)
             value = self._identifyMemorizedValue( observation_list, ts_index,v_index)
-            self.logger.debug(f'\t {v_index}"s value is: {value}')
+            self.logger.debug('\t [%s]"s value is: [%s]',v_index,value)
             new_state.update({v_index:value})
         return new_state 
     
@@ -241,7 +240,7 @@ class EpistemicModel:
     def partially_converting_to_eq(self,eq_str):
         match = re.search("[edc]?[ksb] \[[0-9a-z_,]*\] ",eq_str)
         if match == None:
-            self.logger.debug(f"return eq string {eq_str}")
+            self.logger.debug("return eq string [%s]",eq_str)
             return eq_str
         else:
             eq_list = eq_str.split(" ")

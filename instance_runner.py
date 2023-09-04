@@ -63,10 +63,11 @@ class Instance:
         # logging.basicConfig(filename = f'{output_path}/{self.instance_name}.log',
         #                     level = debug_level,
         #                     format = '%(asctime)s:%(levelname)s:%(name)s:%(message)s')
-        logger_handlers = setup_logger_handlers(f'{output_path}/{self.instance_name}.log',log_level=log_level)
+        logger_handlers = setup_logger_handlers(f'{output_path}/{self.instance_name}.log', c_display=True)
+        # print(logger_handlers)
         logger = setup_logger(LOGGER_NAME,logger_handlers) 
-
-
+        logger.setLevel(logging.INFO)
+        logger.debug("This is debug message")
 
 
         # read the pddl files
@@ -184,7 +185,7 @@ def loadParameter():
     parser.add_option('-e', '--external', dest="external_path", help='path to the external function file', default='')
     parser.add_option('-o', '--output', dest="output_path", help='output directory for the running results (default: output/timestamp)',default='')
     parser.add_option('-s', '--search', dest="search_path", help='the name of the search algorithm', default='bfs')
-    parser.add_option('--log_debug', dest="log_debug", action='store_true', help='enable logging level to debug', default=True)
+    parser.add_option('--log_debug', dest="log_debug", action='store_true', help='enable logging level to debug', default=False)
     parser.add_option('--time_debug', dest="time_debug", action='store_true', help='enable cProfile', default=False)
     parser.add_option('-t', '--timeout', dest="timeout", help='timeout, default 300s', type='int', default=300)
     

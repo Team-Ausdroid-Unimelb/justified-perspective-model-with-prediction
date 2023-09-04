@@ -6,16 +6,19 @@ from enum import Enum
 formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
 
 
-def setup_logger_handlers(log_filename, c_display = False, log_level= logging.INFO):
+def setup_logger_handlers(log_filename, c_display = False):
 
     f_handler = logging.FileHandler(log_filename)
     c_handler = logging.StreamHandler()
     c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
     f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    # f_format = logging.Formatter('%(levelname)s - %(message)s')
     c_handler.setFormatter(c_format)
     f_handler.setFormatter(f_format)  
-    c_handler.setLevel(log_level)
-    f_handler.setLevel(log_level)
+    # default handler level are info for terminal output
+    # and debug for the log output
+    c_handler.setLevel(logging.INFO)
+    f_handler.setLevel(logging.DEBUG)
 
     # if the logger exist, it does not create a new one
     handlers = [f_handler]
@@ -23,10 +26,11 @@ def setup_logger_handlers(log_filename, c_display = False, log_level= logging.IN
         handlers.append(c_handler)
     return handlers
 
-def setup_logger(name, handlers=[]):
+def setup_logger(name, handlers=[],logger_level=logging.INFO):
     """To setup as many loggers as you want"""
     logger = logging.getLogger(name)
     logger.handlers = handlers
+    logger.setLevel(logger_level)
     return logger
 
 import heapq
@@ -156,6 +160,11 @@ class Action():
     def __repr__(self): # show when in a dictionary
         return f"<Action: {self.a_name}; parameters: {self.a_parameters}; precondition: {self.a_preconditions}; effects: {self.a_effects}>\n"
     
+class EP_VALUE(Enum):
+    HAVENT_SEEN = 1
+    NOT_SEEING = 2
+    CONFLICT = 3
+
 class Variable():
     v_name = None
     v_domain_name = None

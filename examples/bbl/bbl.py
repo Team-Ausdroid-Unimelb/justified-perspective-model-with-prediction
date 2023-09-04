@@ -43,8 +43,7 @@ class ExternalFunction:
     logger = None
     
     def __init__(self, handlers):
-        self.logger = setup_logger(LOGGER_NAME,handlers) 
-        self.logger.setLevel(LOGGER_LEVEL)
+        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=logging.INFO) 
 
 
     def extractVariables(self,eq):
@@ -64,25 +63,25 @@ class ExternalFunction:
             
     # customized evaluation function
     def evaluateS(self,world,statement):
-        self.logger.debug(f"evaluate seeing: {statement} in the world: {world}, {type(statement)}, {len(statement)}")
+
         #default evaluation for variables
         if world == {}:
-            self.logger.debug(f"unknown due to the world is empty")
+            self.logger.debug("unknown due to the world is empty")
             return 2
         if not re.search("\([0-9a-z _\-\'\"]*,[0-9a-z _\'\"]*\)",statement) == None:
             var_name = statement.split(",")[0][1:].replace("'",'').replace('"','')
             value = statement.split(",")[1][:-1].replace("'",'').replace('"','')
             
-            self.logger.debug(f"var_name is {var_name} in the world {world}")
+            self.logger.debug("var_name is {} in the world {}",var_name,world)
             if var_name in world:
-                self.logger.debug(f"True")
+                self.logger.debug("True")
                 return 1
             else:
-                self.logger.debug(f"False")
+                self.logger.debug("False")
                 return 0
         else:
             self.logger.warning("the evaluation of the seeing equation has not defined")
-            self.logger.debug(f"Undefined, return 0. unknown due to the world is empty")
+            self.logger.debug("Undefined, return 0. unknown due to the world is empty")
             return 0
 
     def agentsExists(self,path,g_group_index):
@@ -139,13 +138,13 @@ class ExternalFunction:
             # logger.warning(f"variable {agt_index} not found when check visibility in state {state}")
             # logging.error("error when checking visibility")
             self.logger.debug(traceback.format_exc())
-            self.logger.debug(f"variable {agt_index} not found when check visibility in state {state}")
+            self.logger.debug("variable {} not found when check visibility in state {}",agt_index,state)
             return PDDL_TERNARY.UNKNOWN
         except TypeError:
             # logger.warning(traceback.format_exc())
             # logger.warning("variable is None d when check visibility in state {state}")
             self.logger.debug(traceback.format_exc())
-            self.logger.debug(f"variable {agt_index} not found when check visibility in state {state}")
+            self.logger.debug("variable {} not found when check visibility in state {}",agt_index,state)
             # logging.error("error when checking visibility")
             return PDDL_TERNARY.UNKNOWN
 

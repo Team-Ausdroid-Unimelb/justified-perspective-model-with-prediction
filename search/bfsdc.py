@@ -12,8 +12,7 @@ SPLIT_KEY_WORD = "@"
 
 class Search:
     def __init__(self,handlers):
-        self.logger = setup_logger(LOGGER_NAME,handlers) 
-        self.logger.setLevel(LOGGER_LEVEL)
+        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=logging.INFO) 
         self.expanded = 0
         self.goal_checked = 0
         self.generated = 0
@@ -52,7 +51,7 @@ class Search:
         
         # check whether the initial state is the goal state
         init_state = problem.initial_state
-        init_path = [(problem.initial_state,'None')]
+        init_path = [(problem.initial_state,'')]
         init_epistemic_item_set = dict()
         
         init_node = Search.SearchNode(init_state,init_epistemic_item_set,init_path)
@@ -76,16 +75,16 @@ class Search:
         
         
         while not open_list.isEmpty():
-            # logger.debug(f"queue length {len(queue)}")
+
             current_p , _, current_node = open_list.pop_full()
-            # self.logger.debug(f"current_p: {current_p}-{self._gn(current_node)}, current_node {current_node}")
+
 
             state = current_node.state
             ep_goal_dict = current_node.epistemic_item_set
             path = current_node.path
             actions = [ a  for s,a in path]
             actions = actions[1:]
-            self.logger.debug(f"path: {actions}")
+            self.logger.debug("path: [%s]",actions)
 
             is_goal = (0 == current_node.remaining_goal)
             if is_goal:
@@ -100,21 +99,20 @@ class Search:
                 return self.result
             
             actions = problem.getAllActions(state,path)
-            # self.logger.debug(actions)
             filtered_action_names = filterActionNames(problem,actions)
-            # self.logger.debug(filtered_action_names)
+
             ontic_pre_dict = {}
             epistemic_pre_dict = {}
             for action_name in filtered_action_names:
                 action = actions[action_name]
                 ontic_pre_dict.update({action_name:action.a_preconditions.ontic_dict})
                 epistemic_pre_dict.update({action_name:action.a_preconditions.epistemic_dict})
-            self.logger.debug(f'check all precondition')
-            self.logger.debug(f'epistemic_pre_dict is {epistemic_pre_dict}')
+            self.logger.debug('check all precondition')
+            self.logger.debug('epistemic_pre_dict is [%s]',epistemic_pre_dict)
             
             
             flag_dict,p_dict,e_pre_dict,pre_dict = problem.checkAllPreconditions(state,path, ontic_pre_dict,epistemic_pre_dict)
-            # self.logger.debug(f'flag_dict {flag_dict}')
+            self.logger.debug('flag_dict [%s]',flag_dict)
             
             
             e_pre_dict.update(state)
@@ -135,45 +133,32 @@ class Search:
                 # update the visited list
                 # self.short_visited.append(temp_str)
                 self.visited.append(ep_state_str)
-                # self.logger.debug(f'self.visited: {self.visited}')
-                # self.logger.debug(f"visited: {short_visited}")
-                # self.logger.debug(f"short visited: {short_visited}")
-                # self.logger.debug(f"{temp_epistemic_item_set}")
-                # self.logger.debug(f"{state_to_string(temp_epistemic_item_set)}")
                 
                 # self.logger.debug("finding legal actions:")
 
                 # e_pre_dict.update(succ_state)
-                self.logger.debug(f"pre dict {flag_dict}")
+                self.logger.debug("pre dict [%s]",flag_dict)
                 
                 for action_name in filtered_action_names:
-                    self.logger.debug(f"current state: {state}")
-                    self.logger.debug(f"action generated: {action_name}")
-                    # 
-                    # # pre_flag,temp_epistemic_item_set = problem.checkPreconditionsN(state,actions[action],path)
-                    # pre_flag,p_dict,e_dict,pre_dict = problem.checkPreconditions(state,action,path)
-                    # self.logger.debug(f'ep from pre checking {e_dict}')
-                    # # self.logger.debug(f'pre_dict is {pre_dict}')
-                    # # self.logger.debug(f'e_dict is {e_dict}')
+                    self.logger.debug("current state: [%s]",state)
+                    self.logger.debug("action generated: [%s]",action_name)
+
                     if flag_dict[action_name]: 
                         action = actions[action_name]
-                        self.logger.debug(f'action passed precondition: {action_name}')
+                        self.logger.debug('action passed precondition: [%s]',action_name)
                         # passed the precondition
                         succ_state = problem.generateSuccessor(state, action,path)
-                        # self.visited.append(e_dict)
+
                         self.goal_checked += 1
                         succ_node = self.SearchNode(succ_state,{},path + [(succ_state,action_name)])
                         p,ep_dict = self._f(succ_node,problem)
                         
                         succ_node.remaining_goal = p - self._gn(succ_node)
                         if succ_node.remaining_goal <= max_goal_num:
-                            self.logger.debug(f'ep from goal checking {ep_dict}')
+                            self.logger.debug('sorted ep_dict list from goal checking [%s]',sorted(ep_dict.items()))
                             succ_node.epistemic_item_set = ep_dict
                                 
                             self.generated += 1
-                            self.logger.debug(f"action = {action_name}")
-                            self.logger.debug(f"succ_state = {succ_state}")
-                        
                             open_list.push(item=succ_node, priority=self._gn(succ_node))
                             temp_successor +=1
                             temp_actions.append(action_name)
@@ -181,8 +166,8 @@ class Search:
                             self.pruned_by_unknown +=1
 
                     else:
-                        self.logger.debug(f'action {action_name} not generated in state {state} due to not pass precondition')
-                self.logger.debug(f'successor: {temp_successor} with actions {temp_actions}')
+                        self.logger.debug('action [%s] not generated in state [%s] due to not pass precondition',action_name,state)
+                self.logger.debug('successor: [%s] with actions [%s]',temp_successor,temp_actions)
             else:
                 self.pruned_by_visited += 1
             
@@ -257,7 +242,6 @@ class Search:
         path = node.path
         
         is_goal,perspectives_dict,epistemic_dict,goal_dict = problem.isGoal(state,path)
-        # self.logger.debug(f'epistemic_dict in heuristic {epistemic_dict}')
         
         remain_goal_number = list(goal_dict.values()).count(False)
 

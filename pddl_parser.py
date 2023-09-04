@@ -12,16 +12,15 @@ timestamp = datetime.datetime.now().astimezone(TIMEZONE).strftime(DATE_FORMAT)
 
 
 LOGGER_NAME = "pddl_parser"
-LOGGER_LEVEL = logging.INFO
-# LOGGER_LEVEL = logging.DEBUG
 from util import setup_logger
-# self.logger = setup_self.logger(LOGGER_NAME,instance_handler,logging.INFO) 
 
 class PDDLParser:
     logger = None
     def __init__(self,handlers):
-        self.logger = setup_logger(LOGGER_NAME,handlers) 
-        self.logger.setLevel(LOGGER_LEVEL)
+        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=logging.INFO) 
+        self.logger.debug("PDDL PARSER initialized")
+        print(self.logger.handlers)
+        print(self.logger.level)
     
     def formatDocument(self,str):
         # . match anything but the endline
@@ -185,10 +184,10 @@ class PDDLParser:
                 # ontic_goal_list = re.findall('\(= \([0-9a-z_ ]*\) [0-9a-z_\'\"]*\)',found[10:-1:])
                 ontic_goal_list = re.findall('\(= \(:ontic[ 0-9a-z_\[\],]*\(= \([ 0-9a-z_]*\) [0-9a-z_\'\"]*\)\) [0-9a-z_\'\"]*\)',found[10:-1:])  
 
-                self.logger.debug('ontic goal list: {}',ontic_goal_list)
+                self.logger.debug('ontic goal list: [%s]',ontic_goal_list)
                 for goal_str in ontic_goal_list:
                     goal_str = goal_str[15:-5:]
-                    self.logger.debug('single goal_str {}',goal_str)
+                    self.logger.debug('single goal_str [%s]',goal_str)
                     
                     goal_list = goal_str.split(') ')
                     variable = goal_list[0].replace(' ','-')
@@ -307,14 +306,14 @@ class PDDLParser:
                     
                     # decode parameters
                     parameters_str = re.search(':parameters\(.*\):precondition',action_str).group()
-                    self.logger.debug('parameters_str: {}',parameters_str)
+                    self.logger.debug('parameters_str: [%s]',parameters_str)
                     for p_str in parameters_str[12:-14:].split(","):
                         if p_str == '':
                             continue
-                        self.logger.debug('single parameters_str: {}',p_str)
+                        self.logger.debug('single parameters_str: [%s]',p_str)
                         p = p_str.split("-")
                         parameters.append((p[0],p[1]))
-                    self.logger.debug('parameters: {}',parameters)
+                    self.logger.debug('parameters: [%s]',parameters)
                     
                     self.logger.debug("extract preconditions")
                     try:
@@ -331,10 +330,10 @@ class PDDLParser:
                         # (= (:ontic (= (agent_at-a) (secret_at ?s))) 1)
                         ontic_preconditions_list = re.findall('\(= \(:ontic[ 0-9a-z_\[\],]*\(= \([ 0-9a-z_\-\?]*\) [\(\)\?0-9a-z_\'\" ]*\)\) [0-9a-z_\'\"]*\)',preconditions_str)  
 
-                        self.logger.debug('ontic preconditions list: {}',ontic_preconditions_list)
+                        self.logger.debug('ontic preconditions list: [%s]',ontic_preconditions_list)
                         for pre_str in ontic_preconditions_list:
                             pre_str = pre_str[15:-5:]
-                            self.logger.debug('single precondition_str {}',pre_str)
+                            self.logger.debug('single precondition_str [%s]',pre_str)
                             
                             precondition_list = pre_str.split(') ')
                             variable = precondition_list[0].replace(' ?','?').replace(' ','-')
@@ -357,16 +356,16 @@ class PDDLParser:
                         self.logger.debug(epistemic_preconditions_list)
                         for pre_str in epistemic_preconditions_list:
                             pre_str = pre_str[15:-1:]
-                            self.logger.debug("pre str: {}",pre_str)
+                            self.logger.debug("pre str: [%s]",pre_str)
                             i,j = re.search('\)\) .*',pre_str).span()
-                            self.logger.debug('i: {}, j: {}',i,j)
+                            self.logger.debug('i: [%s], j: [%s]',i,j)
                             value1 = int(pre_str[i+3:j:])
-                            self.logger.debug('value for epistemic query: {}',value1)
+                            self.logger.debug('value for epistemic query: [%s]',value1)
                             query = pre_str[:i+2:]
-                            self.logger.debug('query str: {}',query)
+                            self.logger.debug('query str: [%s]',query)
                             p,q = re.search('\(= \([0-9a-z _\?]*\) [0-9a-z _\'\"]*\)',query).span()
                             new_str = query[p+3:q-1]
-                            self.logger.debug('value string in epistemic query: {}',new_str)
+                            self.logger.debug('value string in epistemic query: [%s]',new_str)
                             query = query[:p]
                             m,n = re.search('\([0-9a-z _\?]*\)',new_str).span()
                             var = new_str[m+1:n-1].replace(" ?","?").replace(' ','-')
@@ -382,16 +381,16 @@ class PDDLParser:
                     
                     #decode effects
                     effects_str = re.search(':effect\(and\(.*\)\)',action_str).group()
-                    self.logger.debug('effects_str: {}',effects_str)  
+                    self.logger.debug('effects_str: [%s]',effects_str)  
                     for e_str in effects_str[11:-2:].split("(= "):
                         if e_str == '':
                             continue
-                        self.logger.debug('single effect_str: {}',e_str)
+                        self.logger.debug('single effect_str: [%s]',e_str)
                         e_list = e_str[1:].split(") ")
                         # if len(e_list) == 1:
                         #     e_list = e_list[0].split(" ")
                         effects.append((e_list[0].replace(" ?","?").replace(" ","-").replace("(","").replace(")",""),e_list[1].replace(" ","").replace("(","").replace(")","").replace('"','').replace("'",'')))
-                    self.logger.debug('effects: {}',effects)
+                    self.logger.debug('effects: [%s]',effects)
                     
                     actions.update({action_name: {"parameters":parameters,"precondition":preconditions,"effect":effects}})
                 self.logger.debug(actions)

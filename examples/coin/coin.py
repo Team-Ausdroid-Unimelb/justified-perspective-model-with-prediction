@@ -28,8 +28,7 @@ class ExternalFunction:
     logger = None
     
     def __init__(self, handlers):
-        self.logger = setup_logger(LOGGER_NAME,handlers) 
-        self.logger.setLevel(LOGGER_LEVEL)
+        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=logging.INFO) 
 
 
     # extract variables from the query
@@ -52,7 +51,6 @@ class ExternalFunction:
             
     # customized evaluation function
     def evaluateS(self,world,statement):
-        self.logger.debug(f"evalute seeing: {statement} in the world: {world}, {type(statement)}, {len(statement)}")
         #default evaluation for variables
         if world == {}:
             return 2
@@ -79,7 +77,7 @@ class ExternalFunction:
 
     def checkVisibility(self,state,agt_index,var_index,entities,variables):
         
-        self.logger.debug(f"checkVisibility(_,{state},{agt_index},{var_index})")
+        self.logger.debug("checkVisibility(_,{},{},{})",state,agt_index,var_index)
         try:
             tgt_index = variables[var_index].v_parent
             # check if the agt_index can be found

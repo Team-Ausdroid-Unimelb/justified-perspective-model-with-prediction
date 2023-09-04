@@ -29,8 +29,7 @@ class ExternalFunction:
     logger = None
     
     def __init__(self, handlers):
-        self.logger = setup_logger(LOGGER_NAME,handlers) 
-        self.logger.setLevel(LOGGER_LEVEL)
+        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=logging.INFO) 
 
     # # customized evaluation function
 
@@ -59,7 +58,7 @@ class ExternalFunction:
 
     # customized evaluation function
     def evaluateS(self,world,statement):
-        self.logger.debug(f"evaluate seeing: {statement} in the world: {world}, {type(statement)}, {len(statement)}")
+        self.logger.debug("evaluate seeing: {} in the world: {}, {}, {}",statement,world,type(statement),len(statement))
         #default evaluation for variables
         if world == {}:
             return 2
@@ -84,9 +83,9 @@ class ExternalFunction:
 
     def checkVisibility(self,state,agt_index,var_index,entities,variables):
         
-        self.logger.debug(f"checkVisibility(_,_,{agt_index},{var_index})")
+        self.logger.debug("checkVisibility(_,_,{},{})",agt_index,var_index)
         try:
-            self.logger.debug(f'checking seeing for agent {agt_index} on {var_index}')
+            self.logger.debug('checking seeing for agent {} on {}',agt_index,var_index)
             tgt_index = variables[var_index].v_parent
             
             # check if the agt_index can be found
@@ -157,32 +156,3 @@ class ExternalFunction:
     # to filter out the irrelevant actions
     def filterActionNames(self,problem,action_dict):
         return action_dict.keys()
-        self.logger.debug(f'action names before filter: {action_dict.keys()}')   
-        action_name_list = []
-        relevant_variable_parent_index = []
-        relevant_agent_index = []
-        for eq_str,value in problem.goal_states["epistemic_g"]:
-            eq = problem.epistemic_model.generateEpistemicQuery(eq_str)
-            relevant_agent_index += self.extractAgents(eq)
-            for variable_name,value in self.extractVariables(eq):
-                relevant_variable_parent_index.append(problem.variables[variable_name].v_parent)
-        self.logger.debug(f'relevant agent index: {relevant_variable_parent_index}') 
-        # relevant_agent_index += relevant_variable_parent_index
-        for name,action in action_dict.items():
-            if "sharing" in name:
-                if name.split("-")[2] in relevant_variable_parent_index:
-                    action_name_list.append(name)
-            elif "move" in name:
-                if name.split("-")[1] in relevant_agent_index:
-                    action_name_list.append(name) 
-            else:
-                action_name_list.append(name)
-        self.logger.debug(f'action names after filter: {action_name_list}')   
-        return action_name_list
-
-    # if __name__ == "__main__":
-        
-    #     pass
-        
-
-        

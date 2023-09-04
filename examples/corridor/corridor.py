@@ -25,8 +25,7 @@ class ExternalFunction:
     logger = None
     
     def __init__(self, handlers):
-        self.logger = setup_logger(LOGGER_NAME,handlers) 
-        self.logger.setLevel(LOGGER_LEVEL)
+        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=logging.INFO) 
 
 
 # # customized evaluation function
@@ -49,7 +48,6 @@ class ExternalFunction:
             
     # customized evaluation function
     def evaluateS(self,world,statement):
-        self.logger.debug(f"evaluate seeing: {statement} in the world: {world}, {type(statement)}, {len(statement)}")
         #default evaluation for variables
         if world == {}:
             return 2
@@ -86,7 +84,7 @@ class ExternalFunction:
                 # there is only one secret in corridor
                 obj_loc_str = OBJ_LOC_PREFIX + "" 
                 if obj_loc_str not in state.keys() or state[obj_loc_str] == None:
-                    self.logger.debug(f'current perspective does not have {obj_loc_str}')
+                    self.logger.debug('current perspective does not have {}',obj_loc_str)
                     return PDDL_TERNARY.UNKNOWN
                 
                 target_loc = int(state[obj_loc_str])
@@ -101,7 +99,7 @@ class ExternalFunction:
             # the target is an agent, it has its own location
                 target_agent_loc_str = AGENT_LOC_PREFIX+target_index
                 if target_agent_loc_str not in state.keys() or state[target_agent_loc_str] == None:
-                    self.logger.debug(f'current perspective does not have {target_agent_loc_str}')
+                    self.logger.debug('current perspective does not have {}',target_agent_loc_str)
                     return PDDL_TERNARY.UNKNOWN
                 
                 target_loc = int(state[target_agent_loc_str])
@@ -111,7 +109,7 @@ class ExternalFunction:
 
             agent_loc_str = AGENT_LOC_PREFIX+agt_index
             if agent_loc_str not in state.keys() or state[agent_loc_str] == None:
-                self.logger.debug(f'current perspective does not have {agent_loc_str}')
+                self.logger.debug('current perspective does not have {}',agent_loc_str)
                 return PDDL_TERNARY.UNKNOWN
 
             agt_loc = int(state[agent_loc_str])
@@ -120,7 +118,7 @@ class ExternalFunction:
             # extract necessary common constants from given domain
             # logger.debug(f"necessary common constants from given domain")
 
-            self.logger.debug(f'checking seeing with agent location: {agt_loc} and target location: {target_loc}')
+            self.logger.debug('checking seeing with agent location: {} and target location: {}',agt_loc,target_loc)
             # # agent is able to see anything in the same location
             # if target_loc == agt_loc:
             #     return PDDL_TERNARY.TRUE

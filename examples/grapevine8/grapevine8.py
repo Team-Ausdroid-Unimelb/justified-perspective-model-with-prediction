@@ -27,9 +27,7 @@ class ExternalFunction:
     logger = None
     
     def __init__(self, handlers):
-        self.logger = setup_logger(LOGGER_NAME,handlers) 
-        self.logger.setLevel(LOGGER_LEVEL)
-
+        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=logging.INFO) 
 
     # # customized evaluation function
 
@@ -52,7 +50,6 @@ class ExternalFunction:
 
     # customized evaluation function
     def evaluateS(self,world,statement):
-        self.logger.debug(f"evaluate seeing: {statement} in the world: {world}, {type(statement)}, {len(statement)}")
         #default evaluation for variables
         if world == {}:
             return 2
@@ -79,7 +76,8 @@ class ExternalFunction:
         
         # logger.debug(f"checkVisibility(_,_,{agt_index},{var_index})")
         try:
-            self.logger.debug(f'checking seeing for agent {agt_index} on {var_index} in state {state}')
+
+            self.logger.debug('checking seeing for agent {} on {} in state {}',agt_index,var_index,state)
             tgt_index = variables[var_index].v_parent
             
             # check if the agt_index can be found
@@ -154,15 +152,11 @@ class ExternalFunction:
     # customise action filters
     # to filter out the irrelevant actions
     def filterActionNames(self,problem,action_dict):
-        self.logger.debug(f'action names before filter: {action_dict.keys()}')   
+
+        self.logger.debug('action names before filter: {}',action_dict.keys())   
         action_name_list = []
         relevant_variable_parent_index = []
         relevant_agent_index = []
-        
-        
-
-        
-        
         
         for eq_str,value in problem.goals.epistemic_dict.items():
             
@@ -179,11 +173,12 @@ class ExternalFunction:
 
 
 
-        self.logger.debug(f'relevant agent index: {relevant_agent_index}') 
-        self.logger.debug(f'relevant variables index: {relevant_variable_parent_index}') 
+
+        self.logger.debug('relevant agent index: {}',relevant_agent_index) 
+        self.logger.debug('relevant variables index: {}',relevant_variable_parent_index) 
         # relevant_agent_index += relevant_variable_parent_index
         for name,action in action_dict.items():
-            self.logger.debug(f'action_name: {name}') 
+            self.logger.debug('action_name: {}',name) 
             if "sharing_" in name:
                 if name.split("-")[2] in relevant_variable_parent_index:
                     action_name_list.append(name)
@@ -191,12 +186,12 @@ class ExternalFunction:
                 if name.split("-")[1] in relevant_variable_parent_index:
                     action_name_list.append(name)
             elif "move" in name:
-                self.logger.debug(f'agent_in: {name.split("-")[1]}') 
+                self.logger.debug('agent_in: {}',name.split("-")[1]) 
                 if name.split("-")[1] in relevant_agent_index:
                     action_name_list.append(name) 
             else:
                 action_name_list.append(name)
-        self.logger.debug(f'action names after filter: {action_name_list}')   
+        self.logger.debug('action names after filter: {}',action_name_list)   
         return action_name_list
 
     # if __name__ == "__main__":

@@ -4,7 +4,7 @@ import typing
 import re
 import logging
 import copy
-from util import PDDL_TERNARY
+from util import PDDL_TERNARY,EP_VALUE
 from util import EpistemicQuery,EQ_TYPE,Q_TYPE
 
 
@@ -21,8 +21,7 @@ class EpistemicModel:
     
     
     def __init__(self, handlers, entities, variables, external):
-        self.logger = setup_logger(LOGGER_NAME,handlers) 
-        self.logger.setLevel(LOGGER_LEVEL)
+        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=LOGGER_LEVEL) 
         self.entities = entities
         self.variables = variables
         self.external = external
@@ -30,9 +29,9 @@ class EpistemicModel:
 
     def allPerspectiveKeys(self, epistemic_goals_dict,prefix):
         keys = []
-        # self.logger.debug(f'')
-        # self.logger.debug(f'allPerspectiveKeys')
-        # self.logger.debug(f'prefix{prefix}')
+        self.logger.debug('')
+        self.logger.debug('allPerspectiveKeys')
+        self.logger.debug('prefix: [%s]',prefix)
         eq_dict = {}
         perspective_name_list = set([''])
         for epistemic_goal_str,value in epistemic_goals_dict.items():
@@ -56,41 +55,46 @@ class EpistemicModel:
                 else:
                     eq_dict[key] = {'q_type':temp_eq.q_type,'eq_type':temp_eq.eq_type,'q_group':temp_eq.q_group,'content':{content:value}}
                     
-        # self.logger.debug(f'eq_dict in allPerspectiveKeys {eq_dict}')       
+        self.logger.debug('eq_dict in allPerspectiveKeys [%s]',eq_dict)       
         
         for key,item in eq_dict.items():
             # generate perspectives
             new_path = []
             eq_type = item['eq_type']
-            # self.logger.debug(f"calling local perspective for {key} and content {item['content']}")
+            
+            self.logger.debug("calling local perspective for [%s] and content [%s]",key,item['content'])
             local_p_keys_list = self.allPerspectiveKeys(item['content'],key)
-            # self.logger.debug(f"local_p_keys_list is {local_p_keys_list}")
+            
+            self.logger.debug("local_p_keys_list is [%s]",local_p_keys_list)
             # perspectives_dict.update(local_perspectives)
-            # self.logger.debug(f'perspectives_dict before adding local {perspective_name_list}')
+            self.logger.debug('perspectives_dict before adding local [%s]',perspective_name_list)
             for lp_key in local_p_keys_list:
                 p_key = key+lp_key
                 perspective_name_list.add(p_key)
-            # self.logger.debug(f'perspectives_dict after adding local {perspective_name_list}')
+            
+            self.logger.debug('perspectives_dict after adding local [%s]',perspective_name_list)
         
         perspective_name_list = sorted(perspective_name_list, key=len)
-        # self.logger.debug(f'returned {perspective_name_list}')
+        
+        self.logger.debug('returned [%s]',perspective_name_list)
         return perspective_name_list
         
 
 
     def epistemicGoalsHandlerP(self,epistemic_goals_dict, prefix, path, p_path):
+        
+        self.logger.debug('')
+        self.logger.debug('epistemicGoalHandler')
+        self.logger.debug('prefix: [%s]',prefix)
 
-        # self.logger.debug(f'')
-        # self.logger.debug(f'epistemicGoalHandler')
-        # self.logger.debug(f'prefix{prefix}')
-        # perspectives_dict = {'':path[-1][0]}
-        actions_name = str([a for s,a in path])
-        previous_actions_name = "None"
+        previous_actions_name = str(['-'])
+        actions_name = str(['-'])+str([a for s,a in path])
+        
         
         if len(path) > 1:
-            previous_actions_name = str([a for s,a in path[:-1]])
-        # self.logger.debug(f'actions_name {actions_name}')
-        # self.logger.debug(f'previous_action_names {previous_actions_name}')
+            previous_actions_name = previous_actions_name+ str([a for s,a in path[:-1]])
+        
+        self.logger.debug("actions_name [%s], previous_actions_name [%s]",actions_name,previous_actions_name)
         
         all_p_keys = self.allPerspectiveKeys(epistemic_goals_dict,prefix)
 
@@ -98,65 +102,72 @@ class EpistemicModel:
         result_dict = {} 
         
         # there is no pervious perspectives path
-        if "None" not in p_path.keys():
-            # Then there is no initial perspectives
-            p_path["None"] = {}
+        pre_init_perspective_key = str(['-'])
+        if pre_init_perspective_key not in p_path.keys():
+            # Then there is no perspective before the initial perspectives
+            p_path[pre_init_perspective_key] = {}
         
-        # all_p_keys list are sorted, the short perspectives are going to be generated first
+        # the following session to generate pre_init perspectives
         for key in all_p_keys:
-            if key not in p_path['None'].keys():
+            
+            if key not in p_path[pre_init_perspective_key].keys():
+                # it mean this perspective has not been generated
+                # it should be true twice in a search
+                # 1. first time check goals
+                # 2. first time check all preconditions
                 if key == '':
+                    # global perspectives
                     empty_update = {}
                     empty_state = {}
-                    p_path["None"][key] = {}
+                    p_path[pre_init_perspective_key][key] = {}
                     for v_name in path[-1][0].keys():
-                        # does not matter for the global state
                         empty_update[v_name] = False
-                        empty_state[v_name] = None
+                        empty_state[v_name] = EP_VALUE.HAVENT_SEEN
                     # initial perspective for "" is the current global state
-                    p_path["None"][key]['states'] = [empty_state]
-                    p_path["None"][key]['updates'] =[empty_update]
+                    p_path[pre_init_perspective_key][key]['states'] = [empty_state]
+                    p_path[pre_init_perspective_key][key]['updates'] =[empty_update]
                 else:
-                    p_path["None"][key] ={}
-                    # every one level will have two space
+                    p_path[pre_init_perspective_key][key] = {}
+                    # every one level will have two space in between
                     depth_indicator = key.count(' ')
                     # assert(depth_indicator %2 == 0, f"wrong key {key} when generating perspectives")
                     if depth_indicator >2:
                         parent_key_index = key[:key[:key.rfind(" ")].rfind(" ")].rfind(' ')
                         parent_key = key[:parent_key_index+1]
                         current_key = key[parent_key_index+1:]
-                        # self.logger.debug(f"parent_key_index is {parent_key_index}")
-                        # self.logger.debug(f"key is {key}")
-                        # self.logger.debug(f"parent_key is {parent_key}")
-                        # self.logger.debug(f"current_key is {current_key}")
+                        
+                        self.logger.debug("parent_key_index is [%s]",parent_key_index)
+                        self.logger.debug("key is [%s]",key)
+                        self.logger.debug("parent_key is [%s]",parent_key)
+                        self.logger.debug("current_key is [%s]",current_key)
                     else:
                         parent_key = ''
                         current_key = key
-                    # assert(parent_key not in p_path["None"].keys(), f"wrong order handling perspectives, exists {p_path['None'].keys()}, but doing {parent_key}")
+                    # assert(parent_key not in p_path[''].keys(), f"wrong order handling perspectives, exists {p_path['None'].keys()}, but doing {parent_key}")
                     
                     eq_type_str = current_key.split(' ')[0]
                     agent_str = current_key.split(' ')[1][1:-1]
                     initial_p_path = {}
-                    empty_state ={}
+                    empty_state = {}
                     empty_updates = {}
                     for v_name in path[-1][0].keys():
-                        empty_state[v_name]= None
+                        empty_state[v_name]= EP_VALUE.HAVENT_SEEN
                         empty_updates[v_name]= False
-                    initial_p_path['states'] = [empty_state]
-                    initial_p_path['updates'] = [empty_updates]
+                    # initial_p_path['states'] = [empty_state]
+                    # initial_p_path['updates'] = [empty_updates]
                     # ignoring group beliefs for now
-                    if 'b' in eq_type_str:
+                    # if 'b' in eq_type_str:
 
-                        state,updating = self._generateGroupPerspectives("",agent_str,p_path["None"][parent_key]['states'][-1],initial_p_path)
+                    #     state,updating = self._generateGroupPerspectives("",agent_str,p_path[''][parent_key]['states'][-1],initial_p_path)
                         
-                    elif 's' in eq_type_str:
-                        state,updating = self._generateGroupObservations("",agent_str,p_path["None"][parent_key]['states'][-1],initial_p_path)
-                    elif 'k' in eq_type_str:
-                        state,updating = self._generateGroupObservations("",agent_str,p_path["None"][parent_key]['states'][-1],initial_p_path)
-                    p_path["None"][key]['states'] = [state]
-                    p_path["None"][key]['updates'] = [updating]
+                    # elif 's' in eq_type_str:
+                    #     state,updating = self._generateGroupObservations("",agent_str,p_path[''][parent_key]['states'][-1],initial_p_path)
+                    # elif 'k' in eq_type_str:
+                    #     state,updating = self._generateGroupObservations("",agent_str,p_path[''][parent_key]['states'][-1],initial_p_path)
+                    p_path[pre_init_perspective_key][key]['states'] = [empty_state]
+                    p_path[pre_init_perspective_key][key]['updates'] = [empty_updates]
                     
-
+        self.logger.debug("p_path after initialization: [%s]",p_path)
         if actions_name not in p_path.keys():
             p_path[actions_name] = {}
             # all_p_keys list are sorted, the short perspectives are going to be generated first
@@ -164,13 +175,15 @@ class EpistemicModel:
             if key not in p_path[actions_name].keys(): 
                 if key == '':
                     empty_update = {}
+                    state = [path[-1][0]]
                     p_path[actions_name][key] = {}
                     for v_name in path[-1][0].keys():
                         # does not matter for the global state
                         empty_update[v_name] = False
                     # initial perspective for "" is the current global state
                     
-                    p_path[actions_name][key]['states'] = p_path[previous_actions_name][key]['states'] + [path[-1][0]]
+                    self.logger.debug('actions_name [%s], key [%s], previous_actions_name [%s]',actions_name,key,previous_actions_name)
+                    p_path[actions_name][key]['states'] = p_path[previous_actions_name][key]['states'] + state
                     p_path[actions_name][key]['updates'] = p_path[previous_actions_name][key]['updates']  + [empty_update]
                 else:
                     p_path[actions_name][key] = {}
@@ -181,10 +194,11 @@ class EpistemicModel:
                         parent_key_index = key[:key[:key.rfind(" ")].rfind(" ")].rfind(' ')
                         parent_key = key[:parent_key_index+1]
                         current_key = key[parent_key_index+1:]
-                        # self.logger.debug(f"parent_key_index is {parent_key_index}")
-                        # self.logger.debug(f"key is {key}")
-                        # self.logger.debug(f"parent_key is {parent_key}")
-                        # self.logger.debug(f"current_key is {current_key}")
+                        
+                        self.logger.debug("parent_key_index is [%s]",parent_key_index)
+                        self.logger.debug("key is [%s]",key)
+                        self.logger.debug("parent_key is [%s]",parent_key)
+                        self.logger.debug("current_key is [%s]",current_key)
                     else:
                         parent_key = ''
                         current_key = key
@@ -192,15 +206,6 @@ class EpistemicModel:
                     
                     eq_type_str = current_key.split(' ')[0]
                     agent_str = current_key.split(' ')[1][1:-1]
-
-                    # initial_p_path = {}
-                    # empty_state ={}
-                    # empty_updates = {}
-                    # for v_name in path[-1][0].keys():
-                    #     empty_state[v_name]= None
-                    #     empty_updates[v_name]= False
-                    # initial_p_path['states'] = [empty_state]
-                    # initial_p_path['updates'] = [empty_updates]
                     # ignoring group beliefs for now
                     if 'b' in eq_type_str:
                         state,updating = self._generateGroupPerspectives("",agent_str,p_path[actions_name][parent_key]['states'][-1],p_path[previous_actions_name][key])
@@ -211,7 +216,8 @@ class EpistemicModel:
                     p_path[actions_name][key]['states'] = p_path[previous_actions_name][key]['states'] +[state]
                     p_path[actions_name][key]['updates'] = p_path[previous_actions_name][key]['updates']+[updating]
 
-        # self.logger.debug(f"p_path is {p_path}")
+        
+        self.logger.debug("p_path is [%s]",p_path)
         
         for eq_str, value in epistemic_goals_dict.items():
 
@@ -221,59 +227,32 @@ class EpistemicModel:
             v_value = eqv_str.split(',')[1][1:-1]
             perspective = p_path[actions_name][p_str]['states'][-1]
                 
-            if v_name in perspective.keys() and not perspective[v_name] ==None:
-                if perspective[v_name] == v_value:
+            if v_name in perspective.keys():
+                if perspective[v_name] == EP_VALUE.HAVENT_SEEN:
+                    
+                    self.logger.debug("The eq_str [%s] is FALSE because of HAVENT_SEEN",eq_str)
+                    result_dict[eq_str] = PDDL_TERNARY.FALSE
+
+                elif perspective[v_name] == EP_VALUE.NOT_SEEING:
+                    
+                    self.logger.debug("The eq_str [%s] is UNKNOWN because of NOT_SEEING",eq_str)
+                    result_dict[eq_str] = PDDL_TERNARY.UNKNOWN   
+                     
+                elif perspective[v_name] == v_value:
+                    
+                    self.logger.debug("The eq_str [%s] is TRUE because of value is same",eq_str)
                     result_dict[eq_str] = PDDL_TERNARY.TRUE
                 else:
+                    
+                    self.logger.debug("The eq_str [%s] is FALSE because of value is different",eq_str)
                     result_dict[eq_str] = PDDL_TERNARY.FALSE
             else:
+                
+                self.logger.debug("The eq_str [%s] is UNKNOWN because of not in perspective",eq_str)
                 result_dict[eq_str] = PDDL_TERNARY.UNKNOWN
                 
         return result_dict
-        # exit()
-        # # solving eq by perspectives
-        # for key,item in eq_dict.items():
-            
-            
-            
-        #     # generate perspectives
-        #     new_path = []
-        #     eq_type = item['eq_type']
-        #     if eq_type == EQ_TYPE.BELIEF:
-        #         new_path = self._generateGroupPerspectives(path,item['q_type'],item['q_group'])
-        #     elif eq_type == EQ_TYPE.SEEING or eq_type == EQ_TYPE.KNOWLEDGE:
-        #         new_path = self._generateGroupObservations(path,item['q_type'],item['q_group'])
-        #     # elif eq_type == EQ_TYPE.KNOWLEDGE:
-        #     #     new_path = self._generateGroupObservations(self,path,item['q_type'],item['q_group'])
-        #     else:
-        #         assert("wrong eq_type of the epistemic query")
-        #     # perspectives_dict.update({key:new_path[-1][0]})
-        #     self.logger.debug(f"calling local perspective for {key} and content {item['content']}")
-        #     local_perspectives, local_result_dict = self.epistemicGoalsHandler(item['content'],key,new_path)
-        #     self.logger.debug(f"local_perspectives is {local_perspectives}")
-        #     # perspectives_dict.update(local_perspectives)
-        #     self.logger.debug(f'perspectives_dict before adding local {perspectives_dict}')
-        #     for lp_key,lp_value in local_perspectives.items():
-        #         p_key = key+lp_key
-        #         perspectives_dict[p_key] = lp_value
-        #     self.logger.debug(f'perspectives_dict after adding local {perspectives_dict}')
-            
-        #     for result_key,result_value in local_result_dict.items():
-        #         result_key = key + result_key
-        #         self.logger.debug(f'key is {key}, result_key is {result_key}')
-        #         # result_key = result_key
-        #         new_result_value = result_value
-        #         if eq_type == EQ_TYPE.SEEING:
-        #             if not self.external.agentsExists(new_path,item['q_group']):
-        #                 new_result_value = PDDL_TERNARY.UNKNOWN
-        #             elif result_value == PDDL_TERNARY.UNKNOWN:
-        #                 new_result_value = PDDL_TERNARY.FALSE
-        #             else:
-        #                 new_result_value = PDDL_TERNARY.TRUE
-        #         result_dict.update({result_key:new_result_value})
-        # self.logger.debug(f'result_dict {result_dict}')
-        # self.logger.debug(f'perspectives_dict {perspectives_dict}')
-        # return perspectives_dict,result_dict
+
 
     def _evaluateContent(self,path,temp_eq):
 
@@ -363,23 +342,17 @@ class EpistemicModel:
                 new_update[v_name] = False
 
         return new_state,new_update
-        # for i in range(len(path)):
-        #     observation_list.append(self._getOneObservation(path[i][0],agt_id))
-        # self.logger.debug(f'observation list is {observation_list}')
-        # for i in range(len(path)):
-        #     new_state = self._generateOnePerspective(state_template,observation_list[:i+1])
-        #     new_path.append((new_state,path[i][1]))
-        # return new_path
+
     
     
     def _generateOnePerspective(self,state_template,observation_list):
         new_state = {}
         for v_index,e in state_template.items():
-            self.logger.debug(f'\t find history value for {v_index},{e}')
+            self.logger.debug('\t find history value for [%s],[%s]',v_index,e)
             ts_index = self._identifyLastSeenTimestamp(observation_list,v_index)
-            self.logger.debug(f'\t last seen timestamp index: {ts_index}')
+            self.logger.debug('\t last seen timestamp index: [%s]',ts_index)
             value = self._identifyMemorizedValue( observation_list, ts_index,v_index)
-            self.logger.debug(f'\t {v_index}"s value is: {value}')
+            self.logger.debug('\t {v_index}"s value is: [%s]',value)
             new_state.update({v_index:value})
         return new_state 
     
@@ -390,7 +363,7 @@ class EpistemicModel:
         while ts_index_temp >=0:
 
             # temp_observation = self.getObservations(external,state,agt_id,entities,variables)
-            # logger.debug(f'temp observation in identifyMemorization: {temp_observation}')
+            self.logger.debug('temp observation in identifyMemorization: [%s]',temp_observation)
             temp_observation = observation_list[ts_index_temp]
             if not v_index in temp_observation or temp_observation[v_index] == None:
                 ts_index_temp += -1
@@ -439,7 +412,7 @@ class EpistemicModel:
     def partially_converting_to_eq(self,eq_str):
         match = re.search("[edc]?[ksb] \[[0-9a-z_,]*\] ",eq_str)
         if match == None:
-            self.logger.debug(f"return eq string {eq_str}")
+            self.logger.debug("return eq string [%s]",eq_str)
             return eq_str
         else:
             eq_list = eq_str.split(" ")
