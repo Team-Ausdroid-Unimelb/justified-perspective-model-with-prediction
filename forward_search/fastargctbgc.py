@@ -5,16 +5,12 @@ from util import setup_logger, PriorityQueue, PDDL_TERNARY
 
 
 LOGGER_NAME = "forward_search:astargctbgc"
-LOGGER_LEVEL = logging.INFO
-LOGGER_LEVEL = logging.DEBUG
-# logger = logging.getLogger("bfsdc")
-# logger.setLevel(logging.DEBUG)
 
 SPLIT_KEY_WORD = "@"
 
 class Search:
     def __init__(self,handlers):
-        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=logging.INFO) 
+        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=logging.DEBUG) 
         self.expanded = 0
         self.goal_checked = 0
         self.generated = 0
@@ -48,6 +44,7 @@ class Search:
         
         self.logger.info(f'starting searching using {LOGGER_NAME}')
         max_goal_num = len(problem.goals.ontic_dict)+len(problem.goals.epistemic_dict)
+        self.logger.debug("goal size is: [%s]",max_goal_num)
         # self.logger.info(f'the initial is {problem.initial_state}')
         # self.logger.info(f'the variables are {problem.variables}')
         # self.logger.info(f'the domains are {problem.domains}')
@@ -126,7 +123,7 @@ class Search:
             
             
             flag_dict,e_pre_dict,pre_dict = problem.checkAllPreconditionsP(state,path, ontic_pre_dict,epistemic_pre_dict,self.p_path)
-
+            self.logger.debug("flag_dict [%s]", flag_dict)
             
             
             e_pre_dict.update(state)
@@ -161,7 +158,9 @@ class Search:
                         succ_node = self.SearchNode(succ_state,{},path + [(succ_state,action_name)])
                         p,ep_dict = self._f(succ_node,problem,self.p_path)
                         
-                        succ_node.remaining_goal = p - self._gn(succ_node)
+                        succ_node.remaining_goal = self._remainingGoalNum(p,succ_node)
+
+                        self.logger.debug("remaining goal number is: [%s]", succ_node.remaining_goal)
                         if succ_node.remaining_goal <= max_goal_num:
                             succ_node.epistemic_item_set = ep_dict
                                 
@@ -173,7 +172,7 @@ class Search:
                             temp_actions.append(action_name)
                         else:
                             self.pruned_by_unknown +=1
-
+                            self.logger.debug('action [%s] not generated in state [%s] due to impossible to reach goal ([%s])',action_name,state,max_goal_num)
 
                     else:
                         self.logger.debug('action [%s] not generated in state [%s] due to not pass precondition',action_name,state)
@@ -237,8 +236,11 @@ class Search:
         f = g*1+h*1.01
         return f,es
 
-    def _isGoal(self,current_p, current_node):
-        return (current_p - self._gn(current_node)*1) == 0
+    def _remainingGoalNum(self,current_p,current_node):
+        return (current_p - self._gn(current_node)*1)/1.01
+
+    # def _isGoal(self,current_p, current_node):
+    #     return self._remainingGoalNum(current_p,current_node) == 0
 
     def _gn(self,node):
         path = node.path
@@ -254,7 +256,7 @@ class Search:
 
         
         remain_goal_number = list(goal_dict.values()).count(False)
-
+        self.logger.debug("goal dict is: \n [%s]",goal_dict)
         for key,value in goal_dict.items():
             if str(PDDL_TERNARY.UNKNOWN.value) in key and not value:
                 self.logger.debug('Unknown been updated, goal is impossible')
