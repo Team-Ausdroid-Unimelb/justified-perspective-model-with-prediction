@@ -63,7 +63,7 @@ class Instance:
         # logging.basicConfig(filename = f'{output_path}/{self.instance_name}.log',
         #                     level = debug_level,
         #                     format = '%(asctime)s:%(levelname)s:%(name)s:%(message)s')
-        logger_handlers = setup_logger_handlers(f'{output_path}/{self.instance_name}.log', c_display=True)
+        logger_handlers = setup_logger_handlers(f'{output_path}/{self.instance_name}.log', c_logger_level=log_level, c_display=False)
         # print(logger_handlers)
         logger = setup_logger(LOGGER_NAME,logger_handlers) 
         logger.setLevel(logging.INFO)

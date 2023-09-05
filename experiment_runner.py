@@ -64,7 +64,7 @@ def loadParameter():
     parser.add_option('-o','--output', dest="output_path", help='output directory for the running results (default: output/<timestamp>)',default='')
     parser.add_option('-s', '--search', dest="search_path", help='the name of the search algorithm', default='bfs')
     # parser.add_option('-d','--debug', dest="log_debug", action='store_true', help='enable logging level to debug', default=False)
-    parser.add_option('--log_debug', dest="log_debug", action='store_true', help='enable logging level to debug', default=False)
+    parser.add_option('--console_debug', dest="console_debug", action='store_true', help='enable logging level to debug', default=False)
     # parser.add_option('--time_debug', dest="time_debug", action='store_true', help='enable logging level to debug', default=False)
     # parser.add_option('-i','--input', dest="input_path", help='input directory for the experiments (default: examples/*)',default='examples')
     parser.add_option('-i','--input', dest="input_domain_names", help='input for the experiment config (default: examples/*)',default='examples/CONFIG')
@@ -87,18 +87,13 @@ if __name__ == '__main__':
     if not os.path.isdir(output_path):
         os.makedirs(output_path)
     
-    if options.log_debug:
-        log_level = logging.DEBUG
+    if options.console_debug:
+        c_logger_level = logging.DEBUG
     else:
-        log_level = logging.INFO    
+        c_logger_level = logging.INFO    
     
-    # Set up root logger, and add a file handler to root logger
-    # logging.basicConfig(filename = f'{output_path}/main.log',
-    #                     level = debug_level,
-    #                     format = '%(asctime)s:%(levelname)s:%(name)s:%(message)s')
-    # logger = logging.getLogger(LOGGER_NAME)
-    handlers = setup_logger_handlers(f'{output_path}/main.log',log_level= log_level)
-    logger = setup_logger(LOGGER_NAME,handlers)
+    handlers = setup_logger_handlers(f'{output_path}/main.log',c_logger_level= c_logger_level, c_display= True)
+    logger = setup_logger(LOGGER_NAME,handlers,logging.INFO)
     
     
     # loading search algorithm
@@ -170,7 +165,7 @@ if __name__ == '__main__':
                 logger.info(f"solving {instance_name} - {problem_folder}")
                 start_time = datetime.datetime.now().astimezone(TIMEZONE)
                 ins = instance_runner.Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search= search)
-                ins.solve(timeout=options.timeout,log_debug = options.log_debug, output_path = output_path)
+                ins.solve(timeout=options.timeout,log_debug = options.console_debug, output_path = output_path)
                 end_time = datetime.datetime.now().astimezone(TIMEZONE)
                 used_time = end_time - start_time
                 logger.info(f"solving time: {used_time}")

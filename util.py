@@ -6,7 +6,7 @@ from enum import Enum
 formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
 
 
-def setup_logger_handlers(log_filename, c_display = False):
+def setup_logger_handlers(log_filename, c_display = False, c_logger_level = logging.INFO):
 
     f_handler = logging.FileHandler(log_filename)
     c_handler = logging.StreamHandler()
@@ -17,7 +17,7 @@ def setup_logger_handlers(log_filename, c_display = False):
     f_handler.setFormatter(f_format)  
     # default handler level are info for terminal output
     # and debug for the log output
-    c_handler.setLevel(logging.INFO)
+    c_handler.setLevel(c_logger_level)
     f_handler.setLevel(logging.DEBUG)
 
     # if the logger exist, it does not create a new one
