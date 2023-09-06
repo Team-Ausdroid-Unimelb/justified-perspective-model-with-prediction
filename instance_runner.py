@@ -45,7 +45,7 @@ class Instance:
         self.search = search
 
 
-    def solve(self,timeout=300,log_debug = False, output_path = '', time_debug =False):
+    def solve(self,timeout=300,log_debug = False, output_path = '', time_debug =False, belief_mode = -1):
         
         start_time = datetime.datetime.now().astimezone(TIMEZONE)
         result = dict()
@@ -65,7 +65,6 @@ class Instance:
         #                     level = debug_level,
         #                     format = '%(asctime)s:%(levelname)s:%(name)s:%(message)s')
         logger_handlers = setup_logger_handlers(f'{output_path}/{self.instance_name}.log', c_logger_level=log_level, c_display=False)
-        # print(logger_handlers)
         logger = setup_logger(LOGGER_NAME,logger_handlers,logger_level=LOGGER_LEVEL) 
 
         # read the pddl files
@@ -120,7 +119,7 @@ class Instance:
             
             
         logger.info(f'Initialize problem')
-        problem = pddl_model.Problem(variable_domains,i_state,g_states,agent_index,obj_index,variables,actions,self.external_function,retreive_mode=options.retrevie_model,handlers=logger_handlers)
+        problem = pddl_model.Problem(variable_domains,i_state,g_states,agent_index,obj_index,variables,actions,self.external_function,belief_mode=belief_mode,handlers=logger_handlers)
         problem.logger.handlers = logger.handlers
 
         logger.info(f'starting search')
@@ -184,7 +183,7 @@ def loadParameter():
     parser.add_option('-o', '--output', dest="output_path", help='output directory for the running results (default: output/timestamp)',default='')
     parser.add_option('-s', '--search', dest="search_path", help='the name of the search algorithm', default='bfs')
     parser.add_option('--log_debug', dest="log_debug", action='store_true', help='enable logging level to debug', default=False)
-    parser.add_option('-r', '--retrevie_model', dest="retrevie_model", action='store_true', help='enable forward', default=False)
+    parser.add_option('-b', '--belief_mode', dest="belief_mode", type='int', help='should between 0-3', default=1)
     parser.add_option('--time_debug', dest="time_debug", action='store_true', help='enable cProfile', default=False)
     parser.add_option('-t', '--timeout', dest="timeout", help='timeout, default 300s', type='int', default=300)
     
@@ -232,8 +231,8 @@ if __name__ == '__main__':
         print("starting profiling")
         pr = cProfile.Profile()
         pr.enable()
-        ins = Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search= search)
-        ins.solve(timeout=options.timeout,log_debug = options.log_debug, output_path = output_path, time_debug= options.time_debug)
+        ins = Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search= search, )
+        ins.solve(timeout=options.timeout,log_debug = options.log_debug, output_path = output_path, time_debug= options.time_debug,belief_mode=options.belief_mode)
         
         
         pr.disable()
@@ -255,5 +254,5 @@ if __name__ == '__main__':
         
     else:
         ins = Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search= search)
-        ins.solve(timeout=options.timeout,log_debug = options.log_debug, output_path = output_path, time_debug= options.time_debug)
+        ins.solve(timeout=options.timeout,log_debug = options.log_debug, output_path = output_path, time_debug= options.time_debug,belief_mode=options.belief_mode)
 

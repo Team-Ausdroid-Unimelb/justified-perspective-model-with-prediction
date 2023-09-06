@@ -68,7 +68,7 @@ def loadParameter():
     # parser.add_option('--time_debug', dest="time_debug", action='store_true', help='enable logging level to debug', default=False)
     # parser.add_option('-i','--input', dest="input_path", help='input directory for the experiments (default: examples/*)',default='examples')
     parser.add_option('-i','--input', dest="input_domain_names", help='input for the experiment config (default: examples/*)',default='examples/CONFIG')
-
+    parser.add_option('-b', '--belief_mode', dest="belief_mode", type='int', help='should between 0-3', default=1)
     # parser.add_option('-s','--savefiles', action='store_true', help='keep the student repos', default=False)
     # parser.add_option('--tag', help='the tag for submission', default='submission')
     options, otherjunk = parser.parse_args(sys.argv[1:] )
@@ -146,88 +146,17 @@ if __name__ == '__main__':
         
         # loading external function
         external_function = external_path
-        # logger.info(f"loading external function: {external_path}")
-        # external_path = external_path.replace('.py','').replace('\\','.').replace('/','.').replace('..','')
-        # try:
-        #     external_function = importlib.import_module(external_path)
-        #     logger.info(f"finish loading external function")
-        # except (NameError, ImportError, IOError):
-        #     traceback.print_exc()
-        #     exit()
-        # except:
-        #     traceback.print_exc()
-        #     exit()
 
-        for problem_name in os.listdir(problem_folder):
+        for problem_name in sorted(os.listdir(problem_folder)):
             if '.pddl' in problem_name and not problem_name == 'domain.pddl':
                 problem_path = f"{problem_folder}/{problem_name}"
                 instance_name = f"{search_name}_{domain_name}_{problem_name}"
                 logger.info(f"solving {instance_name} - {problem_folder}")
                 start_time = datetime.datetime.now().astimezone(TIMEZONE)
                 ins = instance_runner.Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search= search)
-                ins.solve(timeout=options.timeout,log_debug = options.console_debug, output_path = output_path)
+                ins.solve(timeout=options.timeout,log_debug = options.console_debug, output_path = output_path,belief_mode=options.belief_mode)
                 end_time = datetime.datetime.now().astimezone(TIMEZONE)
                 used_time = end_time - start_time
                 logger.info(f"solving time: {used_time}")
     
     
-    
-    
-    # # loading external function
-    # external_function = options.external
-    # if type(external_function) ==str:
-    #     logger.info(f"loading external function: {self.external_function}")
-    #     external_path = self.external_function
-    #     external_path = external_path.replace('.py','').replace('\\','.').replace('/','.').replace('..','')
-    #     try:
-    #         self.external_function = importlib.import_module(external_path)
-    #         logger.info(f"finish loading external function")
-    #     except (NameError, ImportError, IOError):
-    #         traceback.print_exc()
-    #         exit()
-    #     except:
-    #         traceback.print_exc()
-    #         exit()
-    # else:
-    #     logger.info(f"External function exists")
-    
-    # # load pddl files
-    # logger.info(f'loading problem.pddl')
-    # domains,i_state,g_states,agent_index,obj_index,variables,d_name,p_name= pddl_parser.problemParser(options.problem)
-    # logger.info(f'loading domain.pddl')
-    # actions,domain_name = pddl_parser.domainParser(f"{options.domain}")
-    
-    # logger.info(f'loading external function')
-    # external = None
-    # external_class = options.external.replace('.py','').replace('\\','.').replace('/','.').replace('..','')
-    # try:
-    #     search = importlib.import_module(f"search.{options.search}")
-    # except (NameError, ImportError, IOError):
-    #     traceback.print_exc()
-    #     pass
-    # except:
-    #     pass
-
-    # try:
-    #     external = importlib.import_module(external_class)
-    # except (NameError, ImportError, IOError):
-    #     traceback.print_exc()
-    #     pass
-    # except:
-    #     pass
-    
-    # logger.info(f'initialize problem')
-    # problem = pddl_model.Problem(domains,i_state,g_states,agent_index,obj_index,variables,actions,external)
-    
-    # # print(problem)
-    
-    # # import search
-    # logger.info(f'starting search')
-    
-    # start_search_time = datetime.datetime.now().astimezone(TIMEZONE)
-    # print(search.searching(problem,external.filterActionNames))
-    # end_search_time = datetime.datetime.now().astimezone(TIMEZONE)
-    # logger.info(f'initialization time: {start_search_time - start_time }')
-    # logger.info(f'search time: {end_search_time - start_search_time }')
-  
-        

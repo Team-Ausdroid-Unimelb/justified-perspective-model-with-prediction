@@ -27,11 +27,12 @@ class EpistemicModel:
         self.external = external
 
 
-    def epistemicGoalsHandler(self,epistemic_goals_list, prefix, path):
+    def epistemicGoalsHandler(self,epistemic_goals_list, prefix, path,p_path):
         self.logger.debug('')
         self.logger.debug('epistemicGoalHandler')
         self.logger.debug('epistemic_goals_list[%s]',epistemic_goals_list)
         self.logger.debug('prefix[%s]',prefix)
+        
         perspectives_dict = {'':path[-1][0]}
         eq_dict = {}
         result_dict = {}
@@ -82,7 +83,7 @@ class EpistemicModel:
                 assert("wrong eq_type of the epistemic query")
             # perspectives_dict.update({key:new_path[-1][0]})
             self.logger.debug("calling local perspective for [%s] and content [%s]",key,item['content'])
-            local_perspectives, local_result_dict = self.epistemicGoalsHandler(item['content'],key,new_path)
+            local_perspectives, local_result_dict = self.epistemicGoalsHandler(item['content'],key,new_path,p_path)
             self.logger.debug("local_perspectives is [%s]",local_perspectives)
             # perspectives_dict.update(local_perspectives)
             self.logger.debug('perspectives_dict before adding local [%s]',perspectives_dict)
@@ -106,7 +107,7 @@ class EpistemicModel:
                 result_dict.update({result_key:new_result_value})
         self.logger.debug('result_dict [%s]',result_dict)
         self.logger.debug('perspectives_dict [%s]',perspectives_dict)
-        return perspectives_dict,result_dict
+        return result_dict
 
     def _evaluateContent(self,path,temp_eq):
 

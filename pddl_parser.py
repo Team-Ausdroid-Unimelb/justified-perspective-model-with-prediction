@@ -21,8 +21,6 @@ class PDDLParser:
     def __init__(self,handlers):
         self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=LOGGER_LEVEL) 
         self.logger.debug("PDDL PARSER initialized")
-        print(self.logger.handlers)
-        print(self.logger.level)
     
     def formatDocument(self,str):
         # . match anything but the endline
@@ -85,7 +83,6 @@ class PDDLParser:
                 exit()
             str = str[7:-1:]
             self.logger.debug(repr(str))
-            # print(repr(str))
             
             self.logger.debug("extract p_name")
             try:
@@ -136,7 +133,6 @@ class PDDLParser:
                 self.logger.debug(vars_list)
                 for var_str in vars_list:
                     var_str = var_str[1:-1:].split(' ')
-                    # print(var_str)
                     variable_name = var_str[0]
                     target_entities_list =[] 
                     for entities in var_str[1:]:
@@ -200,7 +196,6 @@ class PDDLParser:
                         value = value.replace('"',"")
                     else:
                         value =int(value)
-                    # print(value)
                     g_states["ontic_g"].update({variable:value})
                 
                 # loading epismetic goals
@@ -348,7 +343,6 @@ class PDDLParser:
                                 value = value.replace('(',"").replace(' ','').replace(')','')
                             else:
                                 value =int(value)
-                            # print(value)
                             preconditions["ontic_p"].update({variable:value})
                         
                         # loading epismetic goals

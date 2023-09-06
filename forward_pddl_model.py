@@ -36,7 +36,7 @@ class Problem:
     epistemic_model = None
     logger = None
 
-    def __init__(self, domains,i_state,g_states,agent_index,obj_index,variables, actions, external=None, retreive_mode=False,handlers=None):
+    def __init__(self, domains,i_state,g_states,agent_index,obj_index,variables, actions, external=None, belief_mode=-1,handlers=None):
         self.initial_state = {}
         self.abstract_actions = {} 
         self.entities = {} # agent indicators, should be unique
@@ -102,10 +102,17 @@ class Problem:
         self.initial_state = i_state
         self.logger.debug(self.initial_state)
         self.external = external
-        if retreive_mode:
+        if belief_mode == 0:
             self.epistemic_model = epistemic_model.EpistemicModel(handlers,self.entities,self.variables,external)
-        else:
+        elif belief_mode == 1:
             self.epistemic_model = forward_epistemic_model.EpistemicModel(handlers,self.entities,self.variables,external)
+        elif belief_mode == 2:
+            assert False,"belief mode not defined yet" 
+        elif belief_mode ==3:
+            assert False,"belief mode not defined yet"
+        else:
+            assert False,"belief mode should be between 0-3"
+
     
     def isGoal(self,state,path,p_path):
         is_goal=True
