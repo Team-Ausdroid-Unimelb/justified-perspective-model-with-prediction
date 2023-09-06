@@ -19,7 +19,7 @@ from util import setup_logger
 class PDDLParser:
     logger = None
     def __init__(self,handlers):
-        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=LOGGER_NAME) 
+        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=LOGGER_LEVEL) 
         self.logger.debug("PDDL PARSER initialized")
         print(self.logger.handlers)
         print(self.logger.level)
