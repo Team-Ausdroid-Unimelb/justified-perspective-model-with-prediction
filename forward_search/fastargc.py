@@ -125,7 +125,7 @@ class Search:
 
             
             
-            flag_dict,e_pre_dict,pre_dict = problem.checkAllPreconditionsP(state,path, ontic_pre_dict,epistemic_pre_dict,self.p_path)
+            flag_dict,e_pre_dict,pre_dict = problem.checkAllPreconditions(state,path, ontic_pre_dict,epistemic_pre_dict,self.p_path)
 
             
             
@@ -249,7 +249,7 @@ class Search:
         state = node.state
         path = node.path
         
-        is_goal,epistemic_dict,goal_dict = problem.isGoalP(state,path,p_path)
+        is_goal,epistemic_dict,goal_dict = problem.isGoal(state,path,p_path)
 
         
         remain_goal_number = list(goal_dict.values()).count(False)

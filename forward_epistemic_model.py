@@ -81,7 +81,7 @@ class EpistemicModel:
         
 
 
-    def epistemicGoalsHandlerP(self,epistemic_goals_dict, prefix, path, p_path):
+    def epistemicGoalsHandler(self,epistemic_goals_dict, prefix, path, p_path):
         
         self.logger.debug('')
         self.logger.debug('epistemicGoalHandler')

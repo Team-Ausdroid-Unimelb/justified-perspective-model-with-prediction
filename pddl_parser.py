@@ -12,12 +12,14 @@ timestamp = datetime.datetime.now().astimezone(TIMEZONE).strftime(DATE_FORMAT)
 
 
 LOGGER_NAME = "pddl_parser"
+LOGGER_LEVEL = logging.INFO
+# LOGGER_LEVEL = logging.DEBUG
 from util import setup_logger
 
 class PDDLParser:
     logger = None
     def __init__(self,handlers):
-        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=logging.INFO) 
+        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=LOGGER_NAME) 
         self.logger.debug("PDDL PARSER initialized")
         print(self.logger.handlers)
         print(self.logger.level)

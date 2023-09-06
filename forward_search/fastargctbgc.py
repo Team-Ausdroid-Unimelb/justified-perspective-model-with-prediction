@@ -5,12 +5,13 @@ from util import setup_logger, PriorityQueue, PDDL_TERNARY
 
 
 LOGGER_NAME = "forward_search:astargctbgc"
-
+LOGGER_LEVEL = logging.INFO
+# LOGGER_LEVEL = logging.DEBUG
 SPLIT_KEY_WORD = "@"
 
 class Search:
     def __init__(self,handlers):
-        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=logging.DEBUG) 
+        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=LOGGER_LEVEL) 
         self.expanded = 0
         self.goal_checked = 0
         self.generated = 0
@@ -122,7 +123,7 @@ class Search:
 
             
             
-            flag_dict,e_pre_dict,pre_dict = problem.checkAllPreconditionsP(state,path, ontic_pre_dict,epistemic_pre_dict,self.p_path)
+            flag_dict,e_pre_dict,pre_dict = problem.checkAllPreconditions(state,path, ontic_pre_dict,epistemic_pre_dict,self.p_path)
             self.logger.debug("flag_dict [%s]", flag_dict)
             
             
@@ -252,7 +253,7 @@ class Search:
         state = node.state
         path = node.path
         
-        is_goal,epistemic_dict,goal_dict = problem.isGoalP(state,path,p_path)
+        is_goal,epistemic_dict,goal_dict = problem.isGoal(state,path,p_path)
 
         
         remain_goal_number = list(goal_dict.values()).count(False)

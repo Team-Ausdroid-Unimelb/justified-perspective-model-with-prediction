@@ -21,7 +21,8 @@ from util import setup_logger_handlers,setup_logger
 TIMEZONE = pytz.timezone('Australia/Melbourne')
 DATE_FORMAT = '%d-%m-%Y_%H-%M-%S'
 LOGGER_NAME = "instance_runner"
-
+LOGGER_LEVEL = logging.INFO
+# LOGGER_LEVEL = logging.DEBUG
 
 class Instance:
     problem_path = ""
@@ -65,10 +66,7 @@ class Instance:
         #                     format = '%(asctime)s:%(levelname)s:%(name)s:%(message)s')
         logger_handlers = setup_logger_handlers(f'{output_path}/{self.instance_name}.log', c_logger_level=log_level, c_display=False)
         # print(logger_handlers)
-        logger = setup_logger(LOGGER_NAME,logger_handlers) 
-        logger.setLevel(logging.INFO)
-        logger.debug("This is debug message")
-
+        logger = setup_logger(LOGGER_NAME,logger_handlers,logger_level=LOGGER_LEVEL) 
 
         # read the pddl files
         pddl_parser = PDDLParser(logger_handlers)
@@ -122,7 +120,7 @@ class Instance:
             
             
         logger.info(f'Initialize problem')
-        problem = pddl_model.Problem(variable_domains,i_state,g_states,agent_index,obj_index,variables,actions,self.external_function,handlers=logger_handlers)
+        problem = pddl_model.Problem(variable_domains,i_state,g_states,agent_index,obj_index,variables,actions,self.external_function,retreive_mode=options.retrevie_model,handlers=logger_handlers)
         problem.logger.handlers = logger.handlers
 
         logger.info(f'starting search')
@@ -186,6 +184,7 @@ def loadParameter():
     parser.add_option('-o', '--output', dest="output_path", help='output directory for the running results (default: output/timestamp)',default='')
     parser.add_option('-s', '--search', dest="search_path", help='the name of the search algorithm', default='bfs')
     parser.add_option('--log_debug', dest="log_debug", action='store_true', help='enable logging level to debug', default=False)
+    parser.add_option('-r', '--retrevie_model', dest="retrevie_model", action='store_true', help='enable forward', default=False)
     parser.add_option('--time_debug', dest="time_debug", action='store_true', help='enable cProfile', default=False)
     parser.add_option('-t', '--timeout', dest="timeout", help='timeout, default 300s', type='int', default=300)
     

@@ -5,14 +5,14 @@ from util import setup_logger, PriorityQueue, PDDL_TERNARY
 
 
 LOGGER_NAME = "forward_search:bfsdc"
-# logger = logging.getLogger("bfsdc")
-# logger.setLevel(logging.DEBUG)
+LOGGER_LEVEL = logging.INFO
+# LOGGER_LEVEL = logging.DEBUG
 
 SPLIT_KEY_WORD = "@"
 
 class Search:
     def __init__(self,handlers):        
-        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=logging.INFO) 
+        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=LOGGER_LEVEL) 
         self.expanded = 0
         self.goal_checked = 0
         self.generated = 0
@@ -106,7 +106,7 @@ class Search:
                 ontic_pre_dict.update({action_name:action.a_preconditions.ontic_dict})
                 epistemic_pre_dict.update({action_name:action.a_preconditions.epistemic_dict})
  
-            flag_dict,e_pre_dict,pre_dict = problem.checkAllPreconditionsP(state,path, ontic_pre_dict,epistemic_pre_dict,self.p_path)
+            flag_dict,e_pre_dict,pre_dict = problem.checkAllPreconditions(state,path, ontic_pre_dict,epistemic_pre_dict,self.p_path)
 
             e_pre_dict.update(state)
             e_pre_dict.update(ep_goal_dict)
@@ -232,7 +232,7 @@ class Search:
         state = node.state
         path = node.path
         
-        is_goal,epistemic_dict,goal_dict = problem.isGoalP(state,path,p_path)
+        is_goal,epistemic_dict,goal_dict = problem.isGoal(state,path,p_path)
         
         remain_goal_number = list(goal_dict.values()).count(False)
 

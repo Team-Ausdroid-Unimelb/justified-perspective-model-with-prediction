@@ -5,9 +5,11 @@ import copy
 import re
 from typing import List
 from epistemic_model import EpistemicModel
-
+from forward_epistemic_model import EpistemicModel
 
 LOGGER_NAME = "pddl_model"
+LOGGER_LEVEL = logging.INFO
+# LOGGER_LEVEL = logging.DEBUG
 
 from util import setup_logger,PDDL_TERNARY
 
@@ -42,7 +44,7 @@ class Problem:
         self.epistemic_calls = 0
         self.epistemic_call_time = timedelta(0)
         self.logger = None
-        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=logging.INFO) 
+        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=LOGGER_LEVEL) 
         self.logger.debug("initialize entities")
         
         self.entities = {}
@@ -109,7 +111,8 @@ class Problem:
         # adding epistemic checker here
         current_time = datetime.now()
         self.epistemic_calls +=1
-        perspectives_dict,epistemic_dict = self.epistemic_model.epistemicGoalsHandler(self.goals.epistemic_dict,"",path)
+        p_dict,epistemic_dict = \
+            self.epistemic_model.epistemicGoalsHandler(self.goals.epistemic_dict,"",path)
         self.epistemic_call_time += datetime.now() - current_time
         
         for k,v in self.goals.epistemic_dict.items():
@@ -118,7 +121,7 @@ class Problem:
                 goal_dict.update({k+" "+str(v):False})
             else:
                 goal_dict.update({k+" "+str(v):True})
-        return is_goal,perspectives_dict,epistemic_dict,goal_dict
+        return is_goal,p_dict,epistemic_dict,goal_dict
     
     def isGoalP(self,state,path):
         is_goal=True
@@ -246,7 +249,7 @@ class Problem:
               
         current_time = datetime.now()
         self.epistemic_calls +=1
-        perspectives_dict,epistemic_dict = self.epistemic_model.epistemicGoalsHandler(temp_ep_dict,"",path)
+        p_dict,epistemic_dict = self.epistemic_model.epistemicGoalsHandler(temp_ep_dict,"",path)
         self.epistemic_call_time += datetime.now() - current_time
 
         ep_dict = {}
@@ -261,7 +264,7 @@ class Problem:
                 else:
                     pre_dict[action_name].update({k+":"+str(e):True})
         
-        return flag_dict,perspectives_dict,epistemic_dict,pre_dict    
+        return flag_dict,p_dict,epistemic_dict,pre_dict    
 
 
 
