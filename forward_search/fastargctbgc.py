@@ -26,13 +26,13 @@ class Search:
 
     class SearchNode:
         state = None
-        epistemic_item_set = set([])
+        goal_p_dict = dict()
         remaining_goal = 9999
         path = []
 
-        def __init__(self,state,epistemic_item_set,path):
+        def __init__(self,state,goal_p_dict,path):
             self.state = state
-            self.epistemic_item_set = epistemic_item_set
+            self.goal_p_dict = goal_p_dict
             self.path = path
 
 
@@ -53,9 +53,9 @@ class Search:
         # check whether the initial state is the goal state
         init_state = problem.initial_state
         init_path = [(problem.initial_state,'')]
-        init_epistemic_item_set = dict()
+        init_goal_p_dict = dict()
         
-        init_node = Search.SearchNode(init_state,init_epistemic_item_set,init_path)
+        init_node = Search.SearchNode(init_state,init_goal_p_dict,init_path)
         # self.group_eg_dict = self.group_epistemic_goals(problem)
         
         # self.landmarks_dict = problem.external.generate_constrain_dict(problem,self.group_eg_dict)
@@ -68,9 +68,9 @@ class Search:
         
         
         open_list = PriorityQueue()
-        p,es = self._f(init_node,problem,self.p_path)
+        p,p_dict = self._f(init_node,problem,self.p_path)
         init_node.remaining_goal =  p-self._gn(init_node)
-        init_node.epistemic_item_set.update(es)
+        init_node.goal_p_dict.update(p_dict)
         # remaining_g = p-_gn(init_node)
         open_list.push(item=init_node, priority=p)
         
@@ -80,34 +80,34 @@ class Search:
             current_p , _, current_node = open_list.pop_full()
 
             state = current_node.state
-            ep_goal_dict = current_node.epistemic_item_set
+            goal_p_dict = current_node.goal_p_dict
             path = current_node.path
-            actions = [ a  for s,a in path]
-            actions = actions[1:]
-            self.logger.debug("path: [%s]",actions)
+            action_path = [ a  for s,a in path]
+            action_path = action_path[1:]
+            self.logger.debug("expanding node with path: [%s]",action_path)
             # self.goal_checked += 1
             # if len(path) >3:
             #     return
             # Goal Check
-            # is_goal, temp_epistemic_item_set = problem.isGoalN(state,path)
-            # print(temp_epistemic_item_set)
+            # is_goal, temp_goal_p_dict = problem.isGoalN(state,path)
+            # print(temp_goal_p_dict)
             # remaining_g = current_p - _gn(current_node)
             # print(f"p:{current_p}, g:{ _gn(current_node)}, r:{remaining_g}")
             # is_goal = self._isGoal(current_p,current_node)
             is_goal = (0 == current_node.remaining_goal)
             if is_goal:
                 # self.logger.info(path)
-                actions = [ a  for s,a in path]
-                actions = actions[1:]
-                self.logger.info(f'plan is: {actions}')
+                action_path = [ a  for s,a in path]
+                action_path = action_path[1:]
+                self.logger.info(f'plan is: {action_path}')
                 self.logger.info(f'Goal found')
                 self.result.update({'solvable': True})
-                self.result.update({'plan':actions})
+                self.result.update({'plan':action_path})
                 self._finalise_result(problem)
                 return self.result
             
             # check whether the node has been visited before
-            # epistemic_item_set.update(epistemic_item_set)
+            # goal_p_dict.update(goal_p_dict)
             
             
             actions = problem.getAllActions(state,path)
@@ -123,17 +123,23 @@ class Search:
 
             
             
-            flag_dict,e_pre_dict,pre_dict = problem.checkAllPreconditions(state,path, ontic_pre_dict,epistemic_pre_dict,self.p_path)
+            flag_dict,e_pre_dict,p_dict = problem.checkAllPreconditions(state,path, ontic_pre_dict,epistemic_pre_dict,self.p_path)
             self.logger.debug("flag_dict [%s]", flag_dict)
             
             
             e_pre_dict.update(state)
-            e_pre_dict.update(ep_goal_dict)
+            e_pre_dict.update(goal_p_dict)
+            e_pre_dict.update(p_dict)
             
-            # assert(len(path) <=2)
+            # assert(len(path) <=4)
             ep_state_str = state_to_string(e_pre_dict)
+            # self.logger.info(action_path)
+            # self.logger.info(ep_state_str)
+            
+            
+            
             if not ep_state_str in self.visited:
-                # self.logger.debug(epistemic_item_set)
+                # self.logger.debug(goal_p_dict)
             # if True:
                 # self.branch_factors.append(flag_dict.values().count(True))
                 
@@ -157,13 +163,13 @@ class Search:
                         # self.visited.append(e_dict)
                         self.goal_checked += 1
                         succ_node = self.SearchNode(succ_state,{},path + [(succ_state,action_name)])
-                        p,ep_dict = self._f(succ_node,problem,self.p_path)
+                        p,goal_p_dict = self._f(succ_node,problem,self.p_path)
                         
                         succ_node.remaining_goal = self._remainingGoalNum(p,succ_node)
 
                         self.logger.debug("remaining goal number is: [%s]", succ_node.remaining_goal)
                         if succ_node.remaining_goal <= max_goal_num:
-                            succ_node.epistemic_item_set = ep_dict
+                            succ_node.goal_p_dict = goal_p_dict
                                 
                             self.generated += 1
 
@@ -180,6 +186,8 @@ class Search:
                 self.logger.debug('num of successor: %s',temp_successor)
                 self.logger.debug('with actions %s',temp_actions)
             else:
+                self.logger.debug("pruned by visited")
+                # print(self.pruned_by_visited)
                 self.pruned_by_visited += 1
             
             
@@ -233,9 +241,9 @@ class Search:
     def _f(self,node,problem,p_path):
         heuristic = self.goal_counting
         g = self._gn(node)
-        h,es = heuristic(node,problem,p_path)
+        h,p_dict = heuristic(node,problem,p_path)
         f = g*1+h*1.01
-        return f,es
+        return f,p_dict
 
     def _remainingGoalNum(self,current_p,current_node):
         return (current_p - self._gn(current_node)*1)/1.01
@@ -253,7 +261,7 @@ class Search:
         state = node.state
         path = node.path
         
-        is_goal,epistemic_dict,goal_dict = problem.isGoal(state,path,p_path)
+        p_dict,epistemic_dict,goal_dict = problem.isGoal(state,path,p_path)
 
         
         remain_goal_number = list(goal_dict.values()).count(False)
@@ -262,9 +270,9 @@ class Search:
             if str(PDDL_TERNARY.UNKNOWN.value) in key and not value:
                 self.logger.debug('Unknown been updated, goal is impossible')
                 return 9999,epistemic_dict      
-        return remain_goal_number,epistemic_dict
+        return remain_goal_number,p_dict
         # print(state)
-        # print(epistemic_item_set)
+        # print(goal_p_dict)
         # print(remain_goal_number)
         # {'secret-b': [("b [a] ('secret-b','t')", 1), ("b [d] b [a] ('secret-b','f')", 1)], 
         #  'secret-c': [("b [b] ('secret-c','t')", 1), ("b [c] b [b] ('secret-c','f')", 1)], 

@@ -4,6 +4,7 @@
 import logging
 from enum import Enum
 formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
+GLOBAL_PERSPECTIVE_INDEX = ""
 
 
 def setup_logger_handlers(log_filename, c_display = False, c_logger_level = logging.INFO):
@@ -160,10 +161,67 @@ class Action():
     def __repr__(self): # show when in a dictionary
         return f"<Action: {self.a_name}; parameters: {self.a_parameters}; precondition: {self.a_preconditions}; effects: {self.a_effects}>\n"
     
+def ActionList2DictKey(action_list):
+    action_str = '-'
+    for action_name in action_list:
+        action_str = action_str+','+action_name
+    return action_str
+
+
+
 class EP_VALUE(Enum):
     HAVENT_SEEN = 1
     NOT_SEEING = 2
     CONFLICT = 3
+
+def intersectBeliefValue(v1,v2):
+    if v1 == v2:
+        return v1
+    elif v1 == EP_VALUE.HAVENT_SEEN or v2 == EP_VALUE.HAVENT_SEEN:
+        return EP_VALUE.HAVENT_SEEN
+    elif v1 == EP_VALUE.NOT_SEEING or v2 == EP_VALUE.NOT_SEEING:
+        return EP_VALUE.NOT_SEEING
+    else:
+        return EP_VALUE.CONFLICT
+
+def intersectUpdates(v1,v2):
+    return v1 and v2
+
+def intersectKnowledgeValue(v1,v2):
+    if v1 == v2:
+        return v1
+    else:
+        return EP_VALUE.NOT_SEEING
+    
+def unionBeliefValue(v1,v2):
+    if v1 == v2:
+        return v1
+    elif v1 == EP_VALUE.HAVENT_SEEN:
+        if not v2 == EP_VALUE.NOT_SEEING:
+            return v2
+        else:
+            return v1
+    elif v2 == EP_VALUE.HAVENT_SEEN:
+        if not v1 == EP_VALUE.NOT_SEEING:
+            return v1
+        else:
+            return v2
+    else:
+        return EP_VALUE.CONFLICT
+
+def unionUpdate(v1,v2):
+    return v1 or v2
+
+def unionKnowledgeValue(v1,v2):
+    if v1 == v2:
+        return v1
+    elif v1 == EP_VALUE.NOT_SEEING:
+        return v2
+    elif v2 == EP_VALUE.NOT_SEEING:
+        return v1
+    else:
+        assert False, "value conflicted in the knowledge, which should not happen"
+
 
 class Variable():
     v_name = None
@@ -276,6 +334,14 @@ class EpistemicQuery:
         # show when in a dictionary
         output = f"{self.header_str} {self.agents_str} {self.q_content}"
         return output
+    
+    def agtStr2List(agent_str="[]"):
+        return agent_str[1:-1].split(",")
+    
+    def agtList2Str(agent_list=[]):
+
+        return "[" + ",".join(agent_list)+ "]"
+
 
 
 

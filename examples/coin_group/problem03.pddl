@@ -1,8 +1,8 @@
 
 
 ( define 
-    (problem coin_07) 
-    (:domain coin)
+    (problem coin_group_03) 
+    (:domain coin_group)
 
     (:agents
         a b
@@ -25,9 +25,10 @@
 
     (:goal (and
         ; (= (:ontic (= (dir b) 'se'))
-        (= (:epistemic cb [a,b] (= (face c) 'head')) 1)
-        ; (= (:epistemic b [b] (= (face c) 'head')) 1)
-        ; (= (:epistemic cb [b] b [a] (= (face c) 'head')) 1)
+        (= (:epistemic db [a,b] (= (face c) 'head')) 1)
+        
+        ; (= (:epistemic b [b] (= (face c) 'tail')) 1)
+        ; (= (:epistemic b [b] b [a] (= (face c) 'head')) 1)
         ; (= (:epistemic b [b] (= (face c) 'head')) 1)
         ; (= (:epistemic k [b] k [a] (= (v p) 't')) 0)
         ; (= (:epistemic s [b] s [a] (= (v p) 't')) 2)
