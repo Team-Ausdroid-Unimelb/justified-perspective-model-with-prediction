@@ -39,7 +39,7 @@
     (:goal (and
         ; (= (:ontic (= (agent_at a) 2)) 1)
         ; (= (:ontic (= (shared a) 2)) 1)
-        (= (:epistemic cb [a,c,d] (= (secret b) 't')) 1)
+        ; (= (:epistemic cb [a,c,d] (= (secret b) 't')) 1)
         (= (:epistemic b [b] eb [a,c,d] (= (secret b) 't')) 1)
         (= (:epistemic b [b] cb [a,c,d] (= (secret b) 't')) -1)
         ; (= (:epistemic b [b] (= (secret c) 't')) 1)

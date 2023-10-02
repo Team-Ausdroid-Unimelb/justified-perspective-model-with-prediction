@@ -81,6 +81,7 @@ class Problem:
             p = [ (i,eTypeConvert(self.logger,t))for i,t in parts['parameters']]
             self.logger.debug("parts['precondition']: [%s]",parts['precondition'])
             a_temp = Action(a_name, p,parts['precondition'], parts['effect'])
+            # self.logger.debug(parts['precondition'])
             self.abstract_actions.update({a_name:a_temp})
         self.logger.debug(self.abstract_actions)
         
@@ -122,49 +123,63 @@ class Problem:
 
         # generate perspectives for duplicate check
         action_list = [a for s,a in path]
+        self.logger.debug(action_list)
         action_list_str = ActionList2DictKey(action_list)
+        self.logger.debug(action_list_str)
         self.logger.debug("checking goal for actions: [%s]",action_list_str)
 
 
-        actions = [ a  for s,a in path]
-        actions = actions[1:]
+        # actions = [ a  for s,a in path]
+        # actions = actions[1:]
+
         for k,v in self.goals.ontic_dict.items():
-            if not state[k] == v:
-                is_goal = False
-                goal_dict.update({k+" "+str(v):False})
-            else:
-                goal_dict.update({k+" "+str(v):True})
+            symbol = v.symbol
+            variable_name = v.variable_name
+            v_value = v.v_value
+            value = v.value
+            if symbol == "=":
+                
+                    if not state[variable_name] == v_value:
+                        is_goal = False
+                        goal_dict.update({k:False})
+                    else:
+                        goal_dict.update({k:True})
             
         # adding epistemic checker here
         current_time = datetime.now()
         self.epistemic_calls +=1
 
-        if self.epistemic_model.goal_p_keys == None:
-            # goal perspective keys has not generated yet
-            self.epistemic_model.goal_p_keys = self.epistemic_model.allPerspectiveKeys(epistemic_goals_dict=self.goals.epistemic_dict,prefix="")
-            self.epistemic_model.all_p_keys = self.epistemic_model.all_p_keys + self.epistemic_model.goal_p_keys
+        # if self.epistemic_model.goal_p_keys == None:
+        #     # goal perspective keys has not generated yet
+        #     self.epistemic_model.goal_p_keys = self.epistemic_model.allPerspectiveKeys(epistemic_goals_dict=self.goals.epistemic_dict,prefix="")
+        #     self.epistemic_model.all_p_keys = self.epistemic_model.all_p_keys + self.epistemic_model.goal_p_keys
         epistemic_dict = \
             self.epistemic_model.epistemicGoalsHandler(self.goals.epistemic_dict,"",path,p_path)
         self.epistemic_call_time += datetime.now() - current_time
         
-        for k,v in self.goals.epistemic_dict.items():
-            if not epistemic_dict[k].value == v:
+        for k,ep_obj in self.goals.epistemic_dict.items():
+            v = ep_obj.value
+            if not epistemic_dict[k] == v:
                 # is_goal = False
-                goal_dict.update({k+" "+str(v):False})
+                goal_dict.update({k:False})
             else:
-                goal_dict.update({k+" "+str(v):True})
+                goal_dict.update({k:True})
                 
         # self.logger.debug("epistemic_dict {epistemic_dict}")
         # self.logger.debug("p_dict {p_dict}")
         # remainning goal proposition is checked by False value in goal_dict
-
+        self.logger.debug(p_path)
+        self.logger.debug(p_path.keys())
+        self.logger.debug(action_list_str)
     
         assert action_list_str in p_path.keys(), "action string not in p_path"
         p_dict = dict()
+        if "-,,move_right-a,sharing-b,move_right-b" in action_list_str:
+            self.logger.debug("p_path for action [%s]  is: \n [%s]",action_list_str,p_path[action_list_str])
         for k,p in p_path[action_list_str].items():
             temp_p = dict()
-            temp_p["state"] = p["states"][-1]
-            temp_p["update"] = p["updates"][-1]
+            temp_p["observation"] = p["observation"][-1]
+            temp_p["perspectives"] = p["perspectives"][-1]
             p_dict[k] = temp_p
         return p_dict,epistemic_dict,goal_dict
     
@@ -194,8 +209,27 @@ class Problem:
                 for params in self._generateParams(abstract_a.a_parameters):
                     a_temp_name = a_name
                     a_temp_parameters = copy.deepcopy(abstract_a.a_parameters)
-                    a_temp_ontic_p_list = copy.deepcopy(list(abstract_a.a_preconditions.ontic_dict.items()))
-                    a_temp_epistemic_p_list = copy.deepcopy(list(abstract_a.a_preconditions.epistemic_dict.items()))
+                    # self.logger.debug("abstract action")
+                    # self.logger.debug(abstract_a.a_preconditions.ontic_dict.items())
+                    temp_ontic_tuple_list = list()
+                    for key,con_obj in abstract_a.a_preconditions.ontic_dict.items():
+                        symbol = con_obj.symbol
+                        variable_name = con_obj.variable_name
+                        v_value = con_obj.v_value
+                        value = con_obj.value
+                        temp_ontic_tuple_list.append((key,symbol,variable_name,v_value,value))
+                        
+                    temp_epistemic_tuple_list = list()
+                    for key,con_obj in abstract_a.a_preconditions.epistemic_dict.items():
+                        symbol = con_obj.symbol
+                        query = con_obj.query
+                        variable_name = con_obj.variable_name
+                        v_value = con_obj.v_value
+                        value = con_obj.value
+                        temp_epistemic_tuple_list.append((key,symbol,query,variable_name,v_value,value))
+                    # self.logger.debug(temp_ontic_tuple_list)
+                    # self.logger.debug(temp_epistemic_tuple_list)
+                    
                     a_temp_effects = copy.deepcopy(abstract_a.a_effects)
                     # # self.logger.debug('works on params: {params}')
                     for i,v in params:
@@ -210,20 +244,36 @@ class Problem:
                             a_temp_parameters[j] = (v_name,v_effects)
                         
                         # update parameters in the ontic precondition
-                        for j in range(len(a_temp_ontic_p_list)):
-                            v_name, v_effects = a_temp_ontic_p_list[j]
-                            v_name = v_name.replace(f'{i}',f'-{v}')
-                            if type(v_effects) == str:
-                                v_effects = v_effects.replace(f'{i}',f'-{v}')
-                            a_temp_ontic_p_list[j]  = (v_name,v_effects)
+                        for j in range(len(temp_ontic_tuple_list)):
+                            key,symbol,variable_name,v_value,value = temp_ontic_tuple_list[j]
+                            key = key.replace(f'{i}',f'-{v}')
+                            symbol = symbol.replace(f'{i}',f'-{v}')
+                            variable_name = variable_name.replace(f'{i}',f'-{v}')
+                            v_value = v_value.replace(f'{i}',f'-{v}') if type(v_value) == str else v_value
+                            # self.logger.debug(type(value))
+                            value = value.replace(f'{i}',f'-{v}')  if type(value) == str else value if type(value) ==int else value.value
+                            temp_ontic_tuple_list[j]  = (key,symbol,variable_name,v_value,value)
+
 
                         # update parameters in the epistemic precondition
-                        for j in range(len(a_temp_epistemic_p_list)):
-                            v_name, v_effects = a_temp_epistemic_p_list[j]
-                            v_name = v_name.replace(f'{i}',f'-{v}').replace('[-','[').replace(',-',',')
-                            # precondition effect of epistemic is only going to be int
-                            # v_effects = v_effects.replace(f'{i}',f'-{v}')
-                            a_temp_epistemic_p_list[j] = (v_name,v_effects)                            
+                        for j in range(len(temp_epistemic_tuple_list)):
+                            key,symbol,query,variable_name,v_value,value = temp_epistemic_tuple_list[j]
+                            key = key.replace(f'{i}',f'-{v}')
+                            query = query.replace(f'{i}',f'{v}')
+                            symbol = symbol.replace(f'{i}',f'-{v}')
+                            variable_name = variable_name.replace(f'{i}',f'-{v}')
+                            v_value = v_value.replace(f'{i}',f'-{v}') if type(v_value) == str else v_value
+                            # self.logger.debug(type(value))
+                            value = value.replace(f'{i}',f'-{v}')  if type(value) == str else value if type(value) ==int else value.value
+                            temp_epistemic_tuple_list[j]  = (key,symbol,query,variable_name,v_value,value)
+                        # # update parameters in the epistemic precondition
+                        # for j in range(len(a_temp_epistemic_p_list)):
+                        #     v_name, v_effects = a_temp_epistemic_p_list[j]
+                        #     v_name = v_name.replace(f'{i}',f'-{v}').replace('[-','[').replace(',-',',')
+                        #     # precondition effect of epistemic is only going to be int
+                        #     # v_effects = v_effects.replace(f'{i}',f'-{v}')
+                        #     a_temp_epistemic_p_list[j] = (v_name,v_effects)                            
+                        
                         
                         # update parameters in the effects
                         for j in range(len(a_temp_effects)):
@@ -232,7 +282,8 @@ class Problem:
                             v_effects = v_effects.replace(f'{i}',f'-{v}')
                             a_temp_effects[j] = (v_name,v_effects)
 
-                    a_temp_pre_dict = {'ontic_p':dict(a_temp_ontic_p_list),'epistemic_p':dict(a_temp_epistemic_p_list)}
+                    a_temp_pre_dict = {'ontic_p':temp_ontic_tuple_list,'epistemic_p':temp_epistemic_tuple_list}
+                    
                     
                     all_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_pre_dict,a_temp_effects)})
                     # # self.logger.debug('legal action before precondition check: {all_actions}') 
@@ -253,8 +304,10 @@ class Problem:
             pre_dict[action_name] = dict()
             flag_dict[action_name] = True
             self.logger.debug('checking ontic precondition [%s] for action [%s]',ontic_pre,action_name)
-            for k,e in ontic_pre.items():
+            for key,ontic_obj in ontic_pre.items():
                 try:
+                    k = ontic_obj.variable_name
+                    e = ontic_obj.v_value
                     if k in state.keys():
                         if e in state.keys():
                             if not state[k] == state[e]:
@@ -286,31 +339,32 @@ class Problem:
         temp_ep_dict = dict()
         # this part need to be changed
         self.logger.debug("epistemic_pre_dict: [%s]",epistemic_pre_dict)
-        for action_name,ep_pre in epistemic_pre_dict.items():
+        for action_name,ep_dict in epistemic_pre_dict.items():
             # for ep in ep_pre.items():
-            temp_ep_dict.update(ep_pre) 
+            temp_ep_dict.update(ep_dict) 
             
         self.logger.debug("epistemic preconditions list [%s]",epistemic_pre_dict)    
         current_time = datetime.now()
         self.epistemic_calls +=1
-        if self.epistemic_model.pre_p_keys == None:
-            # precondition perspective keys has not generated yet
-            self.epistemic_model.pre_p_keys = self.epistemic_model.allPerspectiveKeys(epistemic_goals_dict=temp_ep_dict,prefix="")
-            self.epistemic_model.all_p_keys = self.epistemic_model.all_p_keys + self.epistemic_model.pre_p_keys
+        # if self.epistemic_model.pre_p_keys == None:
+        #     # precondition perspective keys has not generated yet
+        #     self.epistemic_model.pre_p_keys = self.epistemic_model.allPerspectiveKeys(epistemic_goals_dict=temp_ep_dict,prefix="")
+        #     self.epistemic_model.all_p_keys = self.epistemic_model.all_p_keys + self.epistemic_model.pre_p_keys
         epistemic_dict = self.epistemic_model.epistemicGoalsHandler(temp_ep_dict,"",path,p_path)
         self.epistemic_call_time += datetime.now() - current_time
 
-        ep_dict = dict()
-        for action_name,ep_pre in epistemic_pre_dict.items():
-            ep_dict[action_name] = dict()
-            for k,v in ep_pre.items():
-                if not epistemic_dict[k].value == v:
+
+        for action_name,ep_dict in epistemic_pre_dict.items():
+
+            for k,ep_obj in ep_dict.items():
+                v = ep_obj.value
+                if not epistemic_dict[k] == v:
                     flag_dict[action_name] = False
-                    pre_dict[action_name].update({k+":"+str(e):False})
+                    pre_dict[action_name].update({k:False})
                     # pre_flag = False
                     # pre_dict.update({k+" "+str(v):False})
                 else:
-                    pre_dict[action_name].update({k+":"+str(e):True})
+                    pre_dict[action_name].update({k:True})
         
         
         self.logger.debug("flag_dict: [%s]",flag_dict)
@@ -320,13 +374,19 @@ class Problem:
         # generate perspectives for duplicate check
         action_list = [a for s,a in path]
         action_list_str = ActionList2DictKey(action_list)
-
+        
+        
+        # if "-,,move_right-a,sharing-b,move_right-b" in action_list_str:
+        #     self.logger.info("p_path for action [%s]  is: \n [%s]",action_list_str,p_path[action_list_str])
+        
+        
+        
         assert action_list_str in p_path.keys(), "action string not in p_path"
         p_dict = dict()
         for k,p in p_path[action_list_str].items():
             temp_p = dict()
-            temp_p["state"] = p["states"][-1]
-            temp_p["update"] = p["updates"][-1]
+            temp_p["observation"] = p["observation"][-1]
+            temp_p["perspectives"] = p["perspectives"][-1]
             p_dict[k] = temp_p
         # return p_dict,epistemic_dict,goal_dict
 

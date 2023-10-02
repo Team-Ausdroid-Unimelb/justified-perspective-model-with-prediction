@@ -151,34 +151,34 @@ class ExternalFunction:
 
     # customise action filters
     # to filter out the irrelevant actions
+    # customise action filters
+    # to filter out the irrelevant actions
     def filterActionNames(self,problem,action_dict):
-
-        self.logger.debug('action names before filter: {}',action_dict.keys())   
+        # print(action_dict.keys())
         action_name_list = []
         relevant_variable_parent_index = []
         relevant_agent_index = []
         
-        for eq_str,value in problem.goals.epistemic_dict.items():
-            
+
+        for key,ep_obj in problem.goals.epistemic_dict.items():
+            eq_str = ep_obj.query
             match = re.search("[edc]?[ksb] \[[0-9a-z_,]*\] ",eq_str)
             while not match == None:
                 eq_list = eq_str.split(" ")
-                # print(eq_list[1])
                 relevant_agent_index += eq_list[1][1:-1].split(",")
                 eq_str = eq_str[len(eq_list[0])+len(eq_list[1])+2:]
                 match = re.search("[edc]?[ksb] \[[0-9a-z_,]*\] ",eq_str)
                 
-            variable_name,value =self.extractVariable(eq_str)
+            # variable_name,value =self.extractVariable(eq_str)
+            variable_name = ep_obj.variable_name
             relevant_variable_parent_index.append(problem.variables[variable_name].v_parent)
+            self.logger.debug("variable_name[%s] , problem.variables[variable_name].v_parent [%s]",variable_name,problem.variables[variable_name].v_parent)
 
 
 
 
-        self.logger.debug('relevant agent index: {}',relevant_agent_index) 
-        self.logger.debug('relevant variables index: {}',relevant_variable_parent_index) 
-        # relevant_agent_index += relevant_variable_parent_index
         for name,action in action_dict.items():
-            self.logger.debug('action_name: {}',name) 
+            self.logger.debug('action_name: [%s]',name) 
             if "sharing_" in name:
                 if name.split("-")[2] in relevant_variable_parent_index:
                     action_name_list.append(name)
@@ -186,17 +186,14 @@ class ExternalFunction:
                 if name.split("-")[1] in relevant_variable_parent_index:
                     action_name_list.append(name)
             elif "move" in name:
-                self.logger.debug('agent_in: {}',name.split("-")[1]) 
+                self.logger.debug('agent_in: [%s]',name.split("-")[1]) 
                 if name.split("-")[1] in relevant_agent_index:
                     action_name_list.append(name) 
             else:
                 action_name_list.append(name)
-        self.logger.debug('action names after filter: {}',action_name_list)   
+        if logging.getLogger().isEnabledFor(logging.DEBUG):
+            self.logger.debug('action names after filter: [%s]',action_name_list)   
         return action_name_list
-
-    # if __name__ == "__main__":
-        
-    #     pass
-    
+        return action_dict.keys()
 
     

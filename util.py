@@ -4,8 +4,14 @@
 import logging
 from enum import Enum
 formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
-GLOBAL_PERSPECTIVE_INDEX = ""
 
+import inspect
+import sys
+import re
+
+
+GLOBAL_PERSPECTIVE_INDEX = ""
+ROOT_NODE_ACTION = ""
 
 def setup_logger_handlers(log_filename, c_display = False, c_logger_level = logging.INFO):
 
@@ -91,7 +97,9 @@ class PDDL_TERNARY(Enum):
     TRUE = 1
     UNKNOWN = 0
     FALSE = -1
-    
+    def __lt__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value < other.value
     # def __repr__(self): 
     #     # show when in a dictionary
         
@@ -239,7 +247,43 @@ class Variable():
     def __repr__(self): # show when in a dictionary
         return f"<Variable: v_name: {self.v_name}; v_domain: {self.v_domain_name}; v_parent: {self.v_parent}>\n"
         
-
+def eval_var_from_str(logger,eval_str,state):
+    # for example(= (face c) 'head'))
+    while eval_str[0] == "(":
+        # removing top level brackets
+        eval_str = eval_str[1:-1]
+    var_list  = re.findall("\([0-9a-z_, -]*\)",eval_str)
+    logger.debug("eq string is [%s]",eval_str)
+    logger.debug("state is [%s]",state)
+    # currently only support at most two variables
+    if len(var_list) == 1:
+        key1 = var_list[0][1:-1]
+        value1 = state[key1] if key1 in state.keys() else EP_VALUE.NOT_SEEING
+        value2_str = eval_str.split(" ")[-1]
+        if "'" not in value2_str and '"' not in value2_str:
+            value2 = int(value2_str)
+        else:
+            value2 = value2_str.replace("'","").replace('"',"")
+    elif len(var_list) == 2:
+        key1 = var_list[0][1:-1]
+        key2 = var_list[1][1:-1]
+        value1 = state[key1] if key1 in state.keys() else EP_VALUE.NOT_SEEING
+        value2 = state[key2] if key2 in state.keys() else EP_VALUE.NOT_SEEING
+    else:
+        raiseNotDefined()
+        
+    
+    
+    if eval_str[0] == "=":
+        if value1 == EP_VALUE.NOT_SEEING or value2 == EP_VALUE.NOT_SEEING:
+            return PDDL_TERNARY.UNKNOWN
+        elif value1 == value2:
+            return PDDL_TERNARY.TRUE
+        else:
+            return PDDL_TERNARY.FALSE
+        # equality relation
+        # match = re.search("\([0-9a-z_, -]*\)",eval_str)
+        
     
 def convertBooltoPDDL_TERNARY(bool):
     return PDDL_TERNARY.TRUE if bool else PDDL_TERNARY.FALSE
@@ -268,18 +312,53 @@ class Domain():
         return self.agency
 
 class Conditions():
-    ontic_dict = {}
-    epistemic_dict = {}
+    ontic_dict = dict()
+    epistemic_dict = dict()
 
-    def __init__(self,ontic_dict,epistemic_dict) -> None:
-        self.ontic_dict = ontic_dict
-        self.epistemic_dict = epistemic_dict
+    def __init__(self,ontic_list,epistemic_list) -> None:
+        self.ontic_dict = dict()
+        self.epistemic_dict = dict()
+
+        for ontic_tuple in ontic_list:
+            # print(ontic_tuple)
+            key,symbol,variable,v_value,value = ontic_tuple
+            value = PDDL_TERNARY(int(value))
+            self.ontic_dict[key] = OnticCondition(symbol,variable,v_value,value)
+        for epistemic_tuple in epistemic_list:
+            key,symbol,query,variable,v_value,value = epistemic_tuple
+            value = PDDL_TERNARY(int(value))
+            self.epistemic_dict[key] = EpistemicCondition(symbol,query,variable,v_value,value)
 
     def __str__(self) -> str:
         return f"Conditions: \n Ontic: {self.ontic_dict} \n Epistemic: {self.epistemic_dict}"
+
+class OnticCondition():
+    variable_name = ""
+    v_value = ""
+    value = ""
+    symbol = ""
+    
+    def __init__(self,symbol,variable_name,v_value,value) -> None:
+        self.symbol = symbol
+        self.variable_name = variable_name
+        self.v_value = v_value
+        self.value =  value
+        
+class EpistemicCondition():
+    variable_name = ""
+    v_value = ""
+    value = ""
+    symbol = ""
+    query = ""
+
+    def __init__(self,symbol,query,variable_name,v_value,value) -> None:
+        self.symbol = symbol
+        self.query = query
+        self.variable_name = variable_name
+        self.v_value = v_value
+        self.value =  value
+ 
 # the following classes are for epistemic model
-
-
 class Q_TYPE(Enum):
     MUTUAL = 0
     DISTRIBUTION = -1
@@ -341,60 +420,43 @@ class EpistemicQuery:
     def agtList2Str(agent_list=[]):
 
         return "[" + ",".join(agent_list)+ "]"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# LOGGER_NAME = "util"
-# logger = setup_logger(LOGGER_NAME,instance_handler,logging.INFO) 
-
-# from epistemic_model import EpistemicQuery,Q_TYPE,EQ_TYPE
-# def displayEQuery(epistemic_query: EpistemicQuery):
     
-#     logger.debug("display eq")
-#     first_char = ''
-#     second_char = ''
-#     if type(epistemic_query) == str:
-#         return epistemic_query
-    
-#     if len(epistemic_query.q_group):
-#         first_char = ''
-#     elif epistemic_query.q_type == Q_TYPE.MUTUAL:
-#         first_char = 'E'
-#     elif epistemic_query.q_type == Q_TYPE.DISTRIBUTION:
-#         first_char = 'D'
-#     elif epistemic_query.q_type == Q_TYPE.COMMON:
-#         first_char = 'C'
-#     else:
-#         logger.error(f'Unexpected query type: {epistemic_query}')
-    
+    def partial_eq2str(q_type,eq_type,agent_list):
+        
+        q_type_str = ""
+        if q_type == Q_TYPE.MUTUAL:
+            if len(agent_list) > 1:
+                q_type_str = "e"
+        elif q_type == Q_TYPE.DISTRIBUTION:
+            q_type_str = "d"
+        elif q_type == Q_TYPE.COMMON:
+            q_type_str = "c"
+        else:
+            raiseNotDefined()
+            
+        eq_type_str = ""
+        
+        if eq_type == EQ_TYPE.SEEING:
+            eq_type_str = "s"
+        elif eq_type == EQ_TYPE.KNOWLEDGE:
+            eq_type_str = "k"
+        elif eq_type == EQ_TYPE.BELIEF:
+            eq_type_str = "b"
+        else:
+            raiseNotDefined()
+        return f"{q_type_str}{eq_type_str} {EpistemicQuery.agtList2Str(agent_list)} "
+                
 
-#     if epistemic_query.eq_type == EQ_TYPE.SEEING:
-#         second_char = 'S'
-#     elif epistemic_query.eq_type == EQ_TYPE.KNOWLEDGE:
-#         second_char = 'K'
-#     elif epistemic_query.eq_type == EQ_TYPE.BELIEF:
-#         second_char = 'B'
-#     else:
-#         logger.error(f'Unexpected e_query type: {epistemic_query}')
-    
-#     return f"{first_char}{second_char} {epistemic_query.q_group} {displayEQuery(epistemic_query.q_content)}"
-    
+
+
+def raiseNotDefined():
+    fileName = inspect.stack()[1][1]
+    line = inspect.stack()[1][2]
+    method = inspect.stack()[1][3]
+
+    print("*** Method not implemented: %s at line %s of %s" % method, line, fileName)
+    sys.exit(1)
+
+
+
+

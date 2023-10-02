@@ -81,6 +81,8 @@ class Search:
             actions = [ a  for s,a in path]
             actions = actions[1:]
 
+            if len(path) > 5:
+                exit()
             self.logger.debug("path: %s",actions)
 
             is_goal = (0 == current_node.remaining_goal)
@@ -95,29 +97,33 @@ class Search:
                 self._finalise_result(problem)
                 return self.result
             
-            actions = problem.getAllActions(state,path)
+            all_actions = problem.getAllActions(state,path)
             # self.logger.debug(actions)
-            filtered_action_names = filterActionNames(problem,actions)
-
+            filtered_action_names = filterActionNames(problem,all_actions)
+            
             ontic_pre_dict = {}
             epistemic_pre_dict = {}
             for action_name in filtered_action_names:
-                action = actions[action_name]
+                action = all_actions[action_name]
                 ontic_pre_dict.update({action_name:action.a_preconditions.ontic_dict})
                 epistemic_pre_dict.update({action_name:action.a_preconditions.epistemic_dict})
  
             flag_dict,e_pre_dict,pre_dict = problem.checkAllPreconditions(state,path, ontic_pre_dict,epistemic_pre_dict,self.p_path)
 
+            # e_pre_dict.update(state)
+            # e_pre_dict.update(ep_goal_dict)
             e_pre_dict.update(state)
             e_pre_dict.update(ep_goal_dict)
+            e_pre_dict.update(pre_dict)
             
+            self.logger.debug("flag_dict is [%s]",flag_dict)
             # assert(len(path) <=2)
             ep_state_str = state_to_string(e_pre_dict)
             if not ep_state_str in self.visited:
                 # self.logger.debug(epistemic_item_set)
             # if True:
                 # self.branch_factors.append(flag_dict.values().count(True))
-                
+                self.logger.debug("get in visited")
                 
                 self.expanded +=1
                 temp_successor = 0
@@ -133,10 +139,11 @@ class Search:
                 
                 for action_name in filtered_action_names:
 
-                    
+                    self.logger.debug(action_name)
 
                     if flag_dict[action_name]: 
-                        action = actions[action_name]
+                        action = all_actions[action_name]
+                        self.logger.debug("action [%s] passed the precondition check", action_name)
                         # passed the precondition
                         succ_state = problem.generateSuccessor(state, action,path)
                         # self.visited.append(e_dict)

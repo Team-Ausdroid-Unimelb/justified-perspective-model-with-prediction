@@ -41,7 +41,7 @@ class ExternalFunction:
     logger = None
     
     def __init__(self, handlers):
-        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=logging.INFO) 
+        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=LOGGER_LEVEL) 
 
     # # customized evaluation function
 
@@ -60,14 +60,15 @@ class ExternalFunction:
     #     else:
     #         return self.extractVariables(eq.q_content)
     
-    def extractVariable(self,q_content_str):
-        if not re.search("\([0-9a-z _\-\'\"]*,[0-9a-z _\'\"]*\)",q_content_str) == None:
-            var_name = q_content_str.split(",")[0][1:]
-            value = q_content_str.split(",")[1][:-1]
-            return (var_name.replace('"','').replace("'",''),value.replace('"','').replace("'",''))
-        else:
-            # customized function here
-            pass
+    # def extractVariable(self,q_content_str):
+    #     print(q_content_str)
+    #     if not re.search("\([0-9a-z _\-\'\"]*,[0-9a-z _\'\"]*\)",q_content_str) == None:
+    #         var_name = q_content_str.split(",")[0][1:]
+    #         value = q_content_str.split(",")[1][:-1]
+    #         return (var_name.replace('"','').replace("'",''),value.replace('"','').replace("'",''))
+    #     else:
+    #         # customized function here
+    #         pass
 
     # def extractAgents(self,eq):
     #     if not type(eq) == epistemic_model.EpistemicQuery:
@@ -101,9 +102,8 @@ class ExternalFunction:
     
     def checkVisibility(self,state,agt_index,var_name,entities,variables):
         
-        self.logger.debug("checkVisibility(_,_,{},{})",agt_index,var_name)
         try:
-            self.logger.debug('checking seeing for agent {} on {} in state {}',agt_index,var_name,state)
+            # self.logger.debug('checking seeing for agent [%s] on [%s]  in state [%s]',agt_index,var_name,state)
             tgt_index = variables[var_name].v_parent
             
             # check if the agt_index can be found
@@ -181,14 +181,14 @@ class ExternalFunction:
     # customise action filters
     # to filter out the irrelevant actions
     def filterActionNames(self,problem,action_dict):
-
+        # print(action_dict.keys())
         action_name_list = []
         relevant_variable_parent_index = []
         relevant_agent_index = []
         
 
-        for eq_str,value in problem.goals.epistemic_dict.items():
-            
+        for key,ep_obj in problem.goals.epistemic_dict.items():
+            eq_str = ep_obj.query
             match = re.search("[edc]?[ksb] \[[0-9a-z_,]*\] ",eq_str)
             while not match == None:
                 eq_list = eq_str.split(" ")
@@ -196,14 +196,16 @@ class ExternalFunction:
                 eq_str = eq_str[len(eq_list[0])+len(eq_list[1])+2:]
                 match = re.search("[edc]?[ksb] \[[0-9a-z_,]*\] ",eq_str)
                 
-            variable_name,value =self.extractVariable(eq_str)
+            # variable_name,value =self.extractVariable(eq_str)
+            variable_name = ep_obj.variable_name
             relevant_variable_parent_index.append(problem.variables[variable_name].v_parent)
+            self.logger.debug("variable_name[%s] , problem.variables[variable_name].v_parent [%s]",variable_name,problem.variables[variable_name].v_parent)
 
 
 
 
         for name,action in action_dict.items():
-            self.logger.debug('action_name: {}',name) 
+            self.logger.debug('action_name: [%s]',name) 
             if "sharing_" in name:
                 if name.split("-")[2] in relevant_variable_parent_index:
                     action_name_list.append(name)
@@ -211,13 +213,13 @@ class ExternalFunction:
                 if name.split("-")[1] in relevant_variable_parent_index:
                     action_name_list.append(name)
             elif "move" in name:
-                self.logger.debug('agent_in: {}',name.split("-")[1]) 
+                self.logger.debug('agent_in: [%s]',name.split("-")[1]) 
                 if name.split("-")[1] in relevant_agent_index:
                     action_name_list.append(name) 
             else:
                 action_name_list.append(name)
         if logging.getLogger().isEnabledFor(logging.DEBUG):
-            self.logger.debug('action names after filter: {}',action_name_list)   
+            self.logger.debug('action names after filter: [%s]',action_name_list)   
         return action_name_list
         return action_dict.keys()
 
@@ -230,8 +232,8 @@ class ExternalFunction:
 
         self.logger.debug('')
         self.logger.debug('generate_constrain_dict')
-        self.logger.debug('group_eg_dict {}',group_eg_dict)
-        land_marks = {}
+        self.logger.debug('group_eg_dict [%s]',group_eg_dict)
+        land_marks = dict()
         for v_name, ep_goals in group_eg_dict.items():
             agents = set()
             land_marks[v_name] = []
@@ -398,7 +400,7 @@ def get_agent_names(ep_str):
       
                 
 # def get_entities_names(ep_str,problem):
-#     # print(ep_str)
+
 #     agent_set = set()
 #     object_set = set()
     
@@ -413,7 +415,7 @@ def get_agent_names(ep_str):
 #     for variable_pair_str in variable_list:
 #         variable_name = variable_pair_str[1:-1].split(",")[0][1:-1]
 #         object_set.add(problem.variables[variable_name].v_parent)
-#     # print(variable_set)
+
 #     return agent_set,object_set,value
      
 def get_relative_variables(agents,object_tuple,problem):
