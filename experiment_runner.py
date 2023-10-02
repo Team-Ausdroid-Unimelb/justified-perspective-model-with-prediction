@@ -83,7 +83,7 @@ if __name__ == '__main__':
     options = loadParameter()
     output_path = options.output_path
     if output_path == '':
-        output_path = f"output/{start_time.strftime(DATE_FORMAT)}"
+        output_path = os.path.join("output",start_time.strftime(DATE_FORMAT))
     if not os.path.isdir(output_path):
         os.makedirs(output_path)
     
@@ -92,17 +92,19 @@ if __name__ == '__main__':
     else:
         c_logger_level = logging.INFO    
     
-    handlers = setup_logger_handlers(f'{output_path}/main.log',c_logger_level= c_logger_level, c_display= True)
+    handlers = setup_logger_handlers(os.path.join(output_path,'main.log'),c_logger_level= c_logger_level, c_display= True)
     logger = setup_logger(LOGGER_NAME,handlers,logging.INFO)
     
     
     # loading search algorithm
     search = options.search_path
-    search_name = search
-    if '\\' in search:
-        search_name = search.split('\\')[-1].replace('.py','')
-    elif '/' in search:
-        search_name = search.split('/')[-1].replace('.py','')   
+    # search_name = search
+    
+    search_name = os.path.split(options.search_path)[-1].replace('.py','')
+    # if '\\' in search:
+    #     search_name = search.split('\\')[-1].replace('.py','')
+    # elif '/' in search:
+    #     search_name = search.split('/')[-1].replace('.py','')   
         
     if type(search) ==str:
         logger.info(f"loading search algorithm: {search}")
@@ -129,19 +131,22 @@ if __name__ == '__main__':
             domain_name_str = f.readline()
             domain_name_list = domain_name_str.split(" ")
         directory_breaker = "/"
-        example_folder_path = directory_breaker.join(options.input_domain_names.split("/")[:-1])
+        
+        
+        example_folder_path = os.path.dirname(options.input_domain_names)
+        # example_folder_path = directory_breaker.join(options.input_domain_names.split("/")[:-1])
         for domain_name in domain_name_list:
-            if not os.path.exists(f"{example_folder_path}/{domain_name}"):
-                raise FileNotFoundError(f"{example_folder_path}/{domain_name}")
+            if not os.path.exists(os.path.join(example_folder_path,domain_name)):
+                raise FileNotFoundError(os.path.join(example_folder_path,domain_name))
     except:
         traceback.print_exc()
         exit()
     
     
     for domain_name in domain_name_list:
-        problem_folder = f"{example_folder_path}/{domain_name}"
-        domain_path = f"{problem_folder}/domain.pddl"
-        external_path = f"{problem_folder}/{domain_name}.py"
+        problem_folder = os.path.join(example_folder_path,domain_name)
+        domain_path = os.path.join(problem_folder,"domain.pddl")
+        external_path = os.path.join(problem_folder,f"{domain_name}.py")
         
         
         # loading external function
@@ -149,7 +154,7 @@ if __name__ == '__main__':
 
         for problem_name in sorted(os.listdir(problem_folder)):
             if '.pddl' in problem_name and not problem_name == 'domain.pddl':
-                problem_path = f"{problem_folder}/{problem_name}"
+                problem_path = os.path.join(problem_folder,problem_name)
                 instance_name = f"{search_name}_{domain_name}_{problem_name}"
                 logger.info(f"solving {instance_name} - {problem_folder}")
                 start_time = datetime.datetime.now().astimezone(TIMEZONE)
