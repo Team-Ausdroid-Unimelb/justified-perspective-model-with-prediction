@@ -6,7 +6,7 @@ from util import setup_logger, PriorityQueue, PDDL_TERNARY
 
 LOGGER_NAME = "forward_search:bfsdc"
 LOGGER_LEVEL = logging.INFO
-# LOGGER_LEVEL = logging.DEBUG
+LOGGER_LEVEL = logging.DEBUG
 
 SPLIT_KEY_WORD = "@"
 
@@ -81,8 +81,8 @@ class Search:
             actions = [ a  for s,a in path]
             actions = actions[1:]
 
-            if len(path) > 5:
-                exit()
+            # if len(path) > 5:
+            #     exit()
             self.logger.debug("path: %s",actions)
 
             is_goal = (0 == current_node.remaining_goal)
@@ -168,12 +168,15 @@ class Search:
             else:
                 self.pruned_by_visited += 1
             
+            self.logger.debug(open_list.count)
+            
             
         self.logger.info(f'Problem is not solvable')
         self.result.update({'plan':[]})
         self.result.update({'solvable': False})
         
         self._finalise_result(problem)
+        self.logger.debug(self.result)
         return self.result
 
     
