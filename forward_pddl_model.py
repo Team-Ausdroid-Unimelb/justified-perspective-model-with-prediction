@@ -171,11 +171,16 @@ class Problem:
         self.logger.debug(p_path)
         self.logger.debug(p_path.keys())
         self.logger.debug(action_list_str)
-    
+        
+        # self.logger.info("p_path and action [%s]  is: \n [%s]",action_list_str,p_path)
+        
+        
         assert action_list_str in p_path.keys(), "action string not in p_path"
         p_dict = dict()
-        if "-,,move_right-a,sharing-b,move_right-b" in action_list_str:
-            self.logger.debug("p_path for action [%s]  is: \n [%s]",action_list_str,p_path[action_list_str])
+        # if "-,,move_right-a,sharing-b,move_right-b" in action_list_str:
+        # if "-,,single_peek-a,subtraction1-c,return-a,single_peek-b" in action_list_str:
+        #     self.logger.info("p_path for action [%s]  is: \n [%s]",action_list_str,p_path[action_list_str])
+        # self.logger.info("p_path for action [%s]  is: \n [%s]",action_list_str,p_path[action_list_str])
         for k,p in p_path[action_list_str].items():
             temp_p = dict()
             temp_p["observation"] = p["observation"][-1]
@@ -378,7 +383,8 @@ class Problem:
         
         # if "-,,move_right-a,sharing-b,move_right-b" in action_list_str:
         #     self.logger.info("p_path for action [%s]  is: \n [%s]",action_list_str,p_path[action_list_str])
-        
+        # if "-,,single_peek-a,subtraction1-c,return-a,single_peek-b" in action_list_str:
+        #     self.logger.info("p_path for action [%s]  is: \n [%s]",action_list_str,p_path[action_list_str])
         
         
         assert action_list_str in p_path.keys(), "action string not in p_path"

@@ -273,14 +273,47 @@ def eval_var_from_str(logger,eval_str,state):
         raiseNotDefined()
         
     
+    symbol = eval_str.split(" ")[0]
     
-    if eval_str[0] == "=":
-        if value1 == EP_VALUE.NOT_SEEING or value2 == EP_VALUE.NOT_SEEING:
+    if symbol == "=":
+        if value1 == EP_VALUE.NOT_SEEING or value2 == EP_VALUE.NOT_SEEING or value1 == None or value2 == None:
             return PDDL_TERNARY.UNKNOWN
         elif value1 == value2:
             return PDDL_TERNARY.TRUE
         else:
             return PDDL_TERNARY.FALSE
+    elif symbol == ">":
+        if value1 == EP_VALUE.NOT_SEEING or value2 == EP_VALUE.NOT_SEEING or value1 == None or value2 == None:
+            return PDDL_TERNARY.UNKNOWN
+        elif value1 > value2:
+            return PDDL_TERNARY.TRUE
+        else:
+            return PDDL_TERNARY.FALSE
+    elif symbol == ">=":
+        if value1 == EP_VALUE.NOT_SEEING or value2 == EP_VALUE.NOT_SEEING or value1 == None or value2 == None:
+            return PDDL_TERNARY.UNKNOWN
+        elif value1 >= value2:
+            return PDDL_TERNARY.TRUE
+        else:
+            return PDDL_TERNARY.FALSE
+    elif symbol == "<":
+        if value1 == EP_VALUE.NOT_SEEING or value2 == EP_VALUE.NOT_SEEING or value1 == None or value2 == None:
+            return PDDL_TERNARY.UNKNOWN
+        elif value1 < value2:
+            return PDDL_TERNARY.TRUE
+        else:
+            return PDDL_TERNARY.FALSE    
+    elif symbol == "<=":
+        if value1 == EP_VALUE.NOT_SEEING or value2 == EP_VALUE.NOT_SEEING or value1 == None or value2 == None:
+            return PDDL_TERNARY.UNKNOWN
+        elif value1 <= value2:
+            return PDDL_TERNARY.TRUE
+        else:
+            return PDDL_TERNARY.FALSE
+    else:
+        raiseNotDefined()
+        # equality relation
+        # equality relation
         # equality relation
         # match = re.search("\([0-9a-z_, -]*\)",eval_str)
         

@@ -114,7 +114,7 @@ class EpistemicModel:
         self.logger.debug(action_list)
         old_actions_str = ActionList2DictKey(action_list=action_list[:-1])
         actions_str = ActionList2DictKey(action_list=action_list)
-        # if "-,,move_right-a,sharing-b,move_right-b" in actions_str:
+        # if "-,,single_peek-a,subtraction1-c,return-a,single_peek-b" in actions_str:
         #     self.logger.setLevel(logging.DEBUG)
             
         self.logger.debug("actions_str [%s], old_actions_str [%s]",actions_str,old_actions_str)
@@ -176,7 +176,7 @@ class EpistemicModel:
                         # added = set()
                         for temp_p in for_p:
                             for agt_id in eq.q_group:
-                                new_prefix = prefix + eq.header_str + " " + EpistemicQuery.agtList2Str([agt_id])
+                                new_prefix = prefix + eq.header_str + " " + EpistemicQuery.agtList2Str([agt_id]) + " "
                                 self.logger.debug("input perspective: [%s]",temp_p)
                                 new_temp_p = self.get1ps(agt_id,temp_p, new_prefix, actions_str_old, actions_str_new, p_path)
                                 self.logger.debug("[%s]'s perspective: [%s]",agt_id,new_temp_p)
@@ -189,7 +189,7 @@ class EpistemicModel:
                         
                 else:
                     for agt_id in eq.q_group:
-                        new_prefix = prefix + eq.header_str + " " + EpistemicQuery.agtList2Str([agt_id])
+                        new_prefix = prefix + eq.header_str + " " + EpistemicQuery.agtList2Str([agt_id]) + " "
                         new_temp_p = self.get1ps(agt_id,p, new_prefix, actions_str_old, actions_str_new, p_path)
                         new_ps.append(new_temp_p)
 
@@ -215,7 +215,7 @@ class EpistemicModel:
             
             
             elif len(eq.q_group) == 1:
-                new_prefix = prefix + eq.header_str + " " + EpistemicQuery.agtList2Str(eq.q_group)
+                new_prefix = prefix + eq.header_str + " " + EpistemicQuery.agtList2Str(eq.q_group) + " "
                 self.logger.debug("input perspective: [%s]",p)
                 new_p = self.get1ps(eq.q_group[0],p,new_prefix, actions_str_old, actions_str_new,p_path)
                 self.logger.debug("[%s]'s perspective: [%s]",eq.q_group[0],new_p)
@@ -227,6 +227,7 @@ class EpistemicModel:
 
     def get1ps(self,agt_id,p,prefix, actions_str_old, actions_str_new,p_path):
         parent_state = p[-1]
+        parent_ps = p
         p_str = str(p)
         # self.logger.debug(actions_str_new)
         # self.logger.debug(ActionList2DictKey([ROOT_NODE_ACTION]))
@@ -261,21 +262,21 @@ class EpistemicModel:
             p_path[actions_str_new] = dict()
         if not prefix in p_path[actions_str_new].keys():
             p_path[actions_str_new][prefix] = dict()
-            p_path[actions_str_new][prefix]['p_parent'] = p
+            p_path[actions_str_new][prefix]['p_parent'] = parent_ps
         
         self.logger.debug("actions_str_new [%s]",actions_str_new)
         
         self.logger.debug("p_path[actions_str_new][prefix] [%s]",p_path[actions_str_new][prefix])
         
         
-        if p_path[actions_str_new][prefix]['p_parent'] == p:
+        if p_path[actions_str_new][prefix]['p_parent'] == parent_ps:
             self.logger.debug("p_parent is the same")
             if "observation" in p_path[actions_str_new][prefix].keys() and not p_path[actions_str_new][prefix]["observation"]==list():
                 self.logger.debug("observation is not empty [%s]",p_path[actions_str_new][prefix]['observation'])
                 new_os = p_path[actions_str_new][prefix]['observation']
             else:
                 
-                p_path[actions_str_new][prefix]['p_parent'] = p
+                p_path[actions_str_new][prefix]['p_parent'] = parent_ps
                 old_os = current_level_dict["observation"]
                 new_o = self.get1o(parent_state,agt_id)
                 new_os =  old_os + [new_o]
@@ -287,8 +288,7 @@ class EpistemicModel:
             else:
                 
                 old_ps = current_level_dict["perspectives"]
-                parent_state = p[-1]
-                new_p = self.get1p(parent_state,new_os)
+                new_p = self.get1p(parent_state,new_os,parent_ps)
                 new_ps =  old_ps + [new_p]
                 p_path[actions_str_new][prefix]['perspectives'] = new_ps
                 
@@ -303,7 +303,7 @@ class EpistemicModel:
             
             new_ps = []
             for i in range(len(p)):
-                temp_p = self.get1p(p[i],new_os[:i+1:])
+                temp_p = self.get1p(p[i],new_os[:i+1:],parent_ps)
                 new_ps.append(temp_p)
             
             return new_ps
@@ -317,13 +317,13 @@ class EpistemicModel:
         return new_state
     # def get1o(self,agt_id,p,prefix, actions_str_old, actions_str_new,p_path):
 
-    def get1p(self,parent_state,os):
+    def get1p(self,parent_state,os,parent_ps):
         new_state = {}
         for v_index,e in parent_state.items():
             self.logger.debug('\t find history value for [%s],[%s]',v_index,e)
             ts_index = self._identifyLastSeenTimestamp(os,v_index)
             self.logger.debug('\t last seen timestamp index: [%s]',ts_index)
-            value = self._identifyMemorizedValue( os, ts_index,v_index)
+            value = self._identifyMemorizedValue( parent_ps, ts_index,v_index)
             self.logger.debug('\t [%s]"s value is: [%s]',v_index,value)
             new_state.update({v_index:value})
         return new_state 
@@ -342,7 +342,37 @@ class EpistemicModel:
             else:
                 ts_index_temp -= 1
         return -1
+    
+    
+    # def _identifyMemorizedValue(self,observation_list, ts_index,v_index):
+    #     ts_index_temp = ts_index
+    #     if ts_index_temp <0: return None
+        
+    #     while ts_index_temp < len(observation_list):
 
+    #         # temp_observation = self.getObservations(external,state,agt_id,entities,variables)
+    #         temp_observation = observation_list[ts_index_temp]
+    #         if not v_index in temp_observation or temp_observation[v_index] == None:
+    #             ts_index_temp += 1
+    #         else:
+    #             return temp_observation[v_index]      
+             
+    #     while ts_index_temp >=0:
+
+    #         # temp_observation = self.getObservations(external,state,agt_id,entities,variables)
+    #         # logger.debug(f'temp observation in identifyMemorization: {temp_observation}')
+    #         temp_observation = observation_list[ts_index_temp]
+    #         if not v_index in temp_observation or temp_observation[v_index] == None:
+    #             ts_index_temp += -1
+    #         else:
+    #             return temp_observation[v_index]
+        
+    #     ts_index_temp = ts_index + 1
+        
+ 
+    #     return None
+
+    # this is not wrong, but could not find a solution, need more investigation
     def _identifyMemorizedValue(self,observation_list, ts_index,v_index):
         ts_index_temp = ts_index
         if ts_index_temp <0: return None
@@ -368,6 +398,21 @@ class EpistemicModel:
             else:
                 return temp_observation[v_index]        
         return None
+    
+    
+    # this is wrong
+    # def _identifyMemorizedValue(self,observation_list, ts_index,v_index):
+    #     ts_index_temp = ts_index
+    #     if ts_index_temp <0:
+    #         self.logger.debug("return None because agent has not seen this variable ever")
+    #         return None
+        
+    #     self.logger.debug("observation list: [%s]",observation_list)
+    #     for i in range(len(observation_list)):
+    #         index = len(observation_list) - i -1
+    #         if v_index in observation_list[index].keys() and not observation_list[index][v_index] == None:
+    #             return observation_list[index][v_index]    
+    #     return None
 
 
     # def _generateOnePerspectives(self,agt_id,p,p_path):

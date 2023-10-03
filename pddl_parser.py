@@ -210,30 +210,33 @@ class PDDLParser:
                 # loading epismetic goals
                 self.logger.debug("extract epistemic goal propositions")
                 g_states["epistemic_g"] = list()
-
-                epistemic_goal_list = re.findall('\(= \(:epistemic[ 0-9a-z_\[\],]*\([=><] \([ 0-9a-z_]*\) [0-9a-z_\'\"]*\)\) [0-9a-z_\'\"\-]*\)',found[10:-1:].replace(")-1)",") -1)"))  
+                self.logger.debug("found [%s]",found)
+                self.logger.debug("found[10:-1:] [%s]",found[10:-1:])
+                self.logger.debug("found replaced [%s]",found[10:-1:].replace(")-1)",") -1)"))
+                epistemic_goal_list = re.findall('\(= \(:epistemic[\? 0-9a-z_\[\],]*\((?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) [0-9a-z_\'\"-]\)\) [0-9a-z_]*\)',found[10:-1:].replace(")-1)",") -1)"))  
                 epistemic_prefix = "(= (:epistemic "
                 epistemic_surfix = ")"
                 self.logger.debug(epistemic_goal_list)
                 for goal_str in epistemic_goal_list:
-                    self.logger.debug(goal_str)
+                    self.logger.debug("goal string 1: [%s]",goal_str)
                     key = goal_str
                     goal_str = goal_str[len(epistemic_prefix):-len(epistemic_surfix):]
-                    self.logger.debug(goal_str)
+                    self.logger.debug("goal string 2: [%s]",goal_str)
                     goal_str_list = goal_str.split(" ")
                     # symbol  = goal_str_list[0]
                     value = goal_str_list[-1]
                     goal_str = goal_str[:-(len(value)+2):]
+                    value = int(value)
                     query = goal_str
-                    self.logger.debug(goal_str)
+                    self.logger.debug("goal string 3: [%s]",goal_str)
                     
                     # i,j = re.search('\)\) .*',goal_str).span()
                     # value1 = int(goal_str[i+3:j:])
                     
-                    p,q = re.search('[=><] \([0-9a-z _]*\) [0-9a-z _\'\"]*\)',goal_str).span()
+                    p,q = re.search('(?:>|<|=|>=|<=)+ \([0-9a-z _]*\) [0-9a-z _\'\"]*\)',goal_str).span()
                     # query = goal_str[:p-1]
                     goal_str = goal_str[p:q-1]
-                    self.logger.debug("[",goal_str,"]")
+                    self.logger.debug("goal string 4: [%s]",goal_str)
                     
                     
                     goal_list = goal_str.split(' ')
@@ -400,7 +403,7 @@ class PDDLParser:
                         self.logger.debug("extract epistemic precondition propositions")
                         
                         preconditions["epistemic_p"] = list()
-                        epistemic_pre_list = re.findall('\(= \(:epistemic[\? 0-9a-z_\[\],]*\([=><] \([ 0-9a-z_\? ]*\) [0-9a-z_\'\"\]*\)\) [0-9a-z_\'\"\-]*\)',preconditions_str)  
+                        epistemic_pre_list = re.findall('\(= \(:epistemic[\? 0-9a-z_\[\],]*\((?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) [0-9a-z_\'\"-]\)\) [0-9a-z_]*\)',preconditions_str)  
                         epistemic_prefix = "(= (:epistemic "
                         epistemic_surfix = ")"
                         self.logger.debug(epistemic_pre_list)
@@ -413,13 +416,14 @@ class PDDLParser:
                             # symbol  = goal_str_list[0]
                             value = pre_str_list[-1]
                             pre_str = pre_str[:-(len(value)+2):]
+                            value = int(value)
                             query = pre_str
                             self.logger.debug(pre_str)
                             
                             # i,j = re.search('\)\) .*',goal_str).span()
                             # value1 = int(goal_str[i+3:j:])
                             
-                            p,q = re.search('[=><] \([0-9a-z _\?]*\) [0-9a-z _\'\"\?]*\)',pre_str).span()
+                            p,q = re.search('(?:>|<|=|>=|<=)+ \([0-9a-z _\?]*\) [0-9a-z _\'\"\?]*\)',pre_str).span()
                             # query = pre_str[:p-1]
                             pre_str = pre_str[p:q-1]
                             self.logger.debug("[",pre_str,"]")

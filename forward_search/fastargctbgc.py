@@ -1,6 +1,6 @@
 import logging
 
-from util import setup_logger, PriorityQueue, PDDL_TERNARY
+from util import setup_logger, PriorityQueue, PDDL_TERNARY, ROOT_NODE_ACTION
 # import util
 
 
@@ -52,7 +52,7 @@ class Search:
         
         # check whether the initial state is the goal state
         init_state = problem.initial_state
-        init_path = [(problem.initial_state,'')]
+        init_path = [(problem.initial_state,ROOT_NODE_ACTION)]
         init_goal_p_dict = dict()
         
         init_node = Search.SearchNode(init_state,init_goal_p_dict,init_path)

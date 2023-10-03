@@ -6,7 +6,7 @@ from util import setup_logger, PriorityQueue, PDDL_TERNARY
 
 LOGGER_NAME = "forward_search:bfsdc"
 LOGGER_LEVEL = logging.INFO
-LOGGER_LEVEL = logging.DEBUG
+# LOGGER_LEVEL = logging.DEBUG
 
 SPLIT_KEY_WORD = "@"
 
@@ -81,8 +81,8 @@ class Search:
             actions = [ a  for s,a in path]
             actions = actions[1:]
 
-            # if len(path) > 5:
-            #     exit()
+            if len(path) > 8:
+                exit()
             self.logger.debug("path: %s",actions)
 
             is_goal = (0 == current_node.remaining_goal)
@@ -123,8 +123,8 @@ class Search:
                 # self.logger.debug(epistemic_item_set)
             # if True:
                 # self.branch_factors.append(flag_dict.values().count(True))
-                self.logger.debug("get in visited")
-                
+                self.logger.debug("path [%s] get in visited",actions)
+                self.logger.debug("ep_state_str is [%s]",ep_state_str)
                 self.expanded +=1
                 temp_successor = 0
                 temp_actions = []
@@ -167,8 +167,10 @@ class Search:
                 self.logger.debug('successor: [%s] with actions [%s]',temp_successor,temp_actions)
             else:
                 self.pruned_by_visited += 1
-            
-            self.logger.debug(open_list.count)
+                self.logger.debug("path [%s] already visited",actions)
+                self.logger.debug("ep_state_str: [%s]",ep_state_str)
+                self.logger.debug("visited: [%s]",self.visited)
+            # self.logger.debug(open_list.count)
             
             
         self.logger.info(f'Problem is not solvable')
