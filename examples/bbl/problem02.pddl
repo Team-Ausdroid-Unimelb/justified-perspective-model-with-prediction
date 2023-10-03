@@ -31,7 +31,7 @@
 
     (:goal (and
         ; (= (:ontic (= (dir b) 'se')) 1)
-        (= (:epistemic k [b] (= (v p) 't')) 1)
+        (= (:epistemic b [b] (= (v p) 't')) 1)
         ; (= (:epistemic k [b] k [a] (= (v p) 't')) 0)
         ; (= (:epistemic s [b] s [a] (= (v p) 't')) 2)
         ; (= (:epistemic k [b] s [a] (= (v p) 't')) 2)
