@@ -213,7 +213,7 @@ class PDDLParser:
                 self.logger.debug("found [%s]",found)
                 self.logger.debug("found[10:-1:] [%s]",found[10:-1:])
                 self.logger.debug("found replaced [%s]",found[10:-1:].replace(")-1)",") -1)"))
-                epistemic_goal_list = re.findall('\(= \(:epistemic[\? 0-9a-z_\[\],]*\((?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) [0-9a-z_\'\"-]\)\) [0-9a-z_]*\)',found[10:-1:].replace(")-1)",") -1)"))  
+                epistemic_goal_list = re.findall('\(= \(:epistemic[\? 0-9a-z_\[\],]*\((?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) [0-9a-z_\'\"-]*\)\) [0-9a-z_]*\)',found[10:-1:].replace(")-1)",") -1)"))  
                 epistemic_prefix = "(= (:epistemic "
                 epistemic_surfix = ")"
                 self.logger.debug(epistemic_goal_list)
@@ -233,7 +233,7 @@ class PDDLParser:
                     # i,j = re.search('\)\) .*',goal_str).span()
                     # value1 = int(goal_str[i+3:j:])
                     
-                    p,q = re.search('(?:>|<|=|>=|<=)+ \([0-9a-z _]*\) [0-9a-z _\'\"]*\)',goal_str).span()
+                    p,q = re.search('(?:>|<|=|>=|<=)+ \([0-9a-z _]*\) [0-9a-z _\'\"-]*\)',goal_str).span()
                     # query = goal_str[:p-1]
                     goal_str = goal_str[p:q-1]
                     self.logger.debug("goal string 4: [%s]",goal_str)
@@ -403,7 +403,7 @@ class PDDLParser:
                         self.logger.debug("extract epistemic precondition propositions")
                         
                         preconditions["epistemic_p"] = list()
-                        epistemic_pre_list = re.findall('\(= \(:epistemic[\? 0-9a-z_\[\],]*\((?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) [0-9a-z_\'\"-]\)\) [0-9a-z_]*\)',preconditions_str)  
+                        epistemic_pre_list = re.findall('\(= \(:epistemic[\? 0-9a-z_\[\],]*\((?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) [0-9a-z_\'\"-]*\)\) [0-9a-z_]*\)',preconditions_str)  
                         epistemic_prefix = "(= (:epistemic "
                         epistemic_surfix = ")"
                         self.logger.debug(epistemic_pre_list)
@@ -423,7 +423,7 @@ class PDDLParser:
                             # i,j = re.search('\)\) .*',goal_str).span()
                             # value1 = int(goal_str[i+3:j:])
                             
-                            p,q = re.search('(?:>|<|=|>=|<=)+ \([0-9a-z _\?]*\) [0-9a-z _\'\"\?]*\)',pre_str).span()
+                            p,q = re.search('(?:>|<|=|>=|<=)+ \([0-9a-z _\?]*\) [0-9a-z _\'\"\?-]*\)',pre_str).span()
                             # query = pre_str[:p-1]
                             pre_str = pre_str[p:q-1]
                             self.logger.debug("[",pre_str,"]")
