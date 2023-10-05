@@ -81,8 +81,8 @@ class Search:
             actions = [ a  for s,a in path]
             actions = actions[1:]
 
-            # if len(path) > 8:
-            #     exit()
+            if len(path) > 5:
+                exit()
             self.logger.debug("path: %s",actions)
 
             is_goal = (0 == current_node.remaining_goal)

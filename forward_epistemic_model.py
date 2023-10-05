@@ -44,7 +44,7 @@ class EpistemicModel:
         self.logger.debug(action_list)
         old_actions_str = ActionList2DictKey(action_list=action_list[:-1])
         actions_str = ActionList2DictKey(action_list=action_list)
-        # if "-,,single_peek-a,subtraction1-c,return-a,single_peek-b" in actions_str:
+        # if "-,,move_right-b,sharing-a,move_right-c" in actions_str:
         #     self.logger.setLevel(logging.DEBUG)
             
         self.logger.debug("actions_str [%s], old_actions_str [%s]",actions_str,old_actions_str)
@@ -61,7 +61,7 @@ class EpistemicModel:
             output = self.eval_eq_in_ps(eq_str,prefix, GLOBAL_PERSPECTIVE_INDEX, old_actions_str, actions_str, state_list, p_path,seeing_flag=False)
             result_dict[key] = output
 
-        # self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(logging.INFO)
                 
         return result_dict
     
@@ -75,6 +75,9 @@ class EpistemicModel:
             value_list.append(value)
             
         if eq.q_type == Q_TYPE.MUTUAL or eq.q_type == Q_TYPE.COMMON:
+            int_list = [v.value for v in value_list]
+            minimum = min(int_list)
+            self.logger.debug(" the value list is: [%s] with values [%s] and min value is [%s]",value_list,int_list,minimum)
             return min(value_list)
         elif eq.q_type == Q_TYPE.DISTRIBUTION:
             return max(value_list)
@@ -134,6 +137,9 @@ class EpistemicModel:
                     result_list.append(value)
                     
                 if eq.q_type == Q_TYPE.MUTUAL or eq.q_type == Q_TYPE.COMMON:
+                    int_list = [v.value for v in result_list]
+                    minimum = min(result_list)
+                    self.logger.debug(" the value list is: [%s] with values [%s] and min value is [%s]",result_list,int_list,minimum)
                     return min(result_list)
                 elif eq.q_type == Q_TYPE.DISTRIBUTION:
                     return max(result_list)

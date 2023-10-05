@@ -81,7 +81,7 @@ class Problem:
             p = [ (i,eTypeConvert(self.logger,t))for i,t in parts['parameters']]
             self.logger.debug("parts['precondition']: [%s]",parts['precondition'])
             a_temp = Action(a_name, p,parts['precondition'], parts['effect'])
-            # self.logger.debug(parts['precondition'])
+            self.logger.debug(parts['precondition'])
             self.abstract_actions.update({a_name:a_temp})
         self.logger.debug(self.abstract_actions)
         
@@ -252,26 +252,34 @@ class Problem:
                         # update parameters in the ontic precondition
                         for j in range(len(temp_ontic_tuple_list)):
                             key,symbol,variable_name,v_value,value = temp_ontic_tuple_list[j]
-                            key = key.replace(f'{i}',f'-{v}')
-                            symbol = symbol.replace(f'{i}',f'-{v}')
-                            variable_name = variable_name.replace(f'{i}',f'-{v}')
+
+                            old_variable_name = variable_name
+                            new_variable_name = old_variable_name.replace(f'{i}',f'-{v}')
+
+                            key = key.replace(old_variable_name,new_variable_name).replace(f'{i}',f'{v}')
+                            # symbol = symbol.replace(f'{i}',f'-{v}')
+
                             v_value = v_value.replace(f'{i}',f'-{v}') if type(v_value) == str else v_value
                             # self.logger.debug(type(value))
                             value = value.replace(f'{i}',f'-{v}')  if type(value) == str else value if type(value) ==int else value.value
-                            temp_ontic_tuple_list[j]  = (key,symbol,variable_name,v_value,value)
+                            temp_ontic_tuple_list[j]  = (key,symbol,new_variable_name,v_value,value)
 
 
                         # update parameters in the epistemic precondition
                         for j in range(len(temp_epistemic_tuple_list)):
                             key,symbol,query,variable_name,v_value,value = temp_epistemic_tuple_list[j]
-                            key = key.replace(f'{i}',f'-{v}')
-                            query = query.replace(f'{i}',f'{v}')
-                            symbol = symbol.replace(f'{i}',f'-{v}')
-                            variable_name = variable_name.replace(f'{i}',f'-{v}')
+
+                            old_variable_name = variable_name
+                            new_variable_name = old_variable_name.replace(f'{i}',f'-{v}')
+
+                            key = key.replace(old_variable_name,new_variable_name).replace(f'{i}',f'{v}')
+                            query = query.replace(old_variable_name,new_variable_name).replace(f'{i}',f'{v}')
+                            # symbol = symbol.replace(f'{i}',f'-{v}')
+
                             v_value = v_value.replace(f'{i}',f'-{v}') if type(v_value) == str else v_value
                             # self.logger.debug(type(value))
                             value = value.replace(f'{i}',f'-{v}')  if type(value) == str else value if type(value) ==int else value.value
-                            temp_epistemic_tuple_list[j]  = (key,symbol,query,variable_name,v_value,value)
+                            temp_epistemic_tuple_list[j]  = (key,symbol,query,new_variable_name,v_value,value)
                         # # update parameters in the epistemic precondition
                         # for j in range(len(a_temp_epistemic_p_list)):
                         #     v_name, v_effects = a_temp_epistemic_p_list[j]
@@ -289,6 +297,10 @@ class Problem:
                             a_temp_effects[j] = (v_name,v_effects)
 
                     a_temp_pre_dict = {'ontic_p':temp_ontic_tuple_list,'epistemic_p':temp_epistemic_tuple_list}
+
+                    self.logger.debug('a_temp_name [%s]',a_temp_name)
+                    self.logger.debug('ontic_p [%s]',temp_ontic_tuple_list)
+                    self.logger.debug('epistemic_p [%s]',temp_epistemic_tuple_list)
                     
                     
                     all_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_pre_dict,a_temp_effects)})
@@ -300,6 +312,13 @@ class Problem:
         self.logger.debug('function checkAllPreconditions')
         self.logger.debug('checking precondition for state: [%s]', state)
         # preconditions = action.a_precondition
+
+        action_list = [a for s,a in path]
+        actions_str = ActionList2DictKey(action_list)
+        # self.logger.info(actions_str)
+        if "move_right-b,sharing-a,move_right-c" in actions_str:
+            self.logger.setLevel(logging.DEBUG)
+
 
         pre_dict = dict()
         flag_dict = dict()
@@ -397,7 +416,7 @@ class Problem:
             p_dict[k] = temp_p
         # return p_dict,epistemic_dict,goal_dict
 
-
+        self.logger.setLevel(logging.INFO)
         return flag_dict,epistemic_dict,p_dict
         # return flag_dict,epistemic_dict,pre_dict
 

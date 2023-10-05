@@ -186,7 +186,7 @@ class PDDLParser:
                 self.logger.debug('ontic goal list: [%s]',ontic_goal_list)
                 for goal_str in ontic_goal_list:
                     self.logger.debug(goal_str)
-                    key = goal_str
+                    key = goal_str.replace(' ?',"?")
                     goal_str = goal_str[len(ontic_prefix):-len(ontic_surfix):]
                     self.logger.debug(goal_str)
                     goal_str_list = goal_str.split(" ")
@@ -204,7 +204,10 @@ class PDDLParser:
                     elif '?' in v_value:
                         v_value = v_value.replace(' ?',"?").replace(')','').replace('(','')
                     else:
-                        v_value =int(v_value)
+                        v_value =int(v_value)                            
+                    
+                    self.logger.debug("ontic_g: [%s]",(key,symbol,variable,v_value,value))
+
                     g_states["ontic_g"].append((key,symbol,variable,v_value,value))
                 
                 # loading epismetic goals
@@ -219,7 +222,7 @@ class PDDLParser:
                 self.logger.debug(epistemic_goal_list)
                 for goal_str in epistemic_goal_list:
                     self.logger.debug("goal string 1: [%s]",goal_str)
-                    key = goal_str
+                    key = goal_str.replace(' ?',"?")
                     goal_str = goal_str[len(epistemic_prefix):-len(epistemic_surfix):]
                     self.logger.debug("goal string 2: [%s]",goal_str)
                     goal_str_list = goal_str.split(" ")
@@ -245,7 +248,11 @@ class PDDLParser:
                     goal_list = goal_str.split(') ')
                     old_variable = goal_list[0]
                     variable = goal_list[0].replace(' ?','?').replace(' ','-')
+                    self.logger.debug("old variable string: [%s]",old_variable)
+                    self.logger.debug("new variable string: [%s]",variable)
+                    self.logger.debug("query string: [%s]",query)
                     query = query.replace(old_variable,variable) 
+                    self.logger.debug("query string: [%s]",query)
                     key = key.replace(old_variable,variable)
                     v_value = goal_list[1]
                     if "'" in v_value:
@@ -256,6 +263,8 @@ class PDDLParser:
                         v_value = v_value.replace(' ?',"?").replace(')','').replace('(','')
                     else:
                         v_value =int(v_value)
+
+                    self.logger.debug("epistemic_p: [%s]",(key,symbol,query,variable,v_value,value))
                     g_states["epistemic_g"].append((key,symbol,query,variable,v_value,value))
 
                     
@@ -374,7 +383,7 @@ class PDDLParser:
                         ontic_surfix = ")"
                         self.logger.debug('ontic preconditions list: [%s]',ontic_pre_list)
                         for pre_str in ontic_pre_list:
-                            key = pre_str
+                            key = pre_str.replace(' ?',"?")
                             self.logger.debug(pre_str)
                             pre_str = pre_str[len(ontic_prefix):-len(ontic_surfix):]
                             self.logger.debug(pre_str)
@@ -397,18 +406,19 @@ class PDDLParser:
                                 v_value = v_value.replace(' ?',"?").replace(')','').replace('(','')
                             else:
                                 v_value =int(v_value)
+                            self.logger.debug("ontic_p: [%s]",(key,symbol,variable,v_value,value))
                             preconditions["ontic_p"].append((key,symbol,variable,v_value,value))
                                 
                         # loading epismetic goals
                         self.logger.debug("extract epistemic precondition propositions")
-                        
+                        self.logger.debug("input pre str: [%s]",preconditions_str)
                         preconditions["epistemic_p"] = list()
                         epistemic_pre_list = re.findall('\(= \(:epistemic[\? 0-9a-z_\[\],]*\((?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) [0-9a-z_\'\"-]*\)\) [0-9a-z-]*\)',preconditions_str)  
                         epistemic_prefix = "(= (:epistemic "
                         epistemic_surfix = ")"
                         self.logger.debug(epistemic_pre_list)
                         for pre_str in epistemic_pre_list:
-                            key = pre_str
+                            key = pre_str.replace(' ?',"?")
                             self.logger.debug(pre_str)
                             pre_str = pre_str[len(epistemic_prefix):-len(epistemic_surfix):]
                             self.logger.debug(pre_str)
@@ -426,16 +436,19 @@ class PDDLParser:
                             p,q = re.search('(?:>|<|=|>=|<=)+ \([0-9a-z _\?]*\) [0-9a-z _\'\"\?-]*\)',pre_str).span()
                             # query = pre_str[:p-1]
                             pre_str = pre_str[p:q-1]
-                            self.logger.debug("[",pre_str,"]")
                             
                             
                             pre_str_list = pre_str.split(' ')
                             symbol = pre_str_list[0]
                             pre_str = pre_str[(len(symbol)+2)::]
                             pre_str_list = pre_str.split(') ')
-                            old_variable = goal_list[0]
-                            variable = goal_list[0].replace(' ?','?').replace(' ','-')
+                            old_variable = pre_str_list[0]
+                            variable = pre_str_list[0].replace(' ?','?').replace(' ','-')
+                            self.logger.debug("old variable string: [%s]",old_variable)
+                            self.logger.debug("new variable string: [%s]",variable)
+                            self.logger.debug("query string: [%s]",query)
                             query = query.replace(old_variable,variable) 
+                            self.logger.debug("query string: [%s]",query)
                             key = key.replace(old_variable,variable)
                             v_value = pre_str_list[1]
                             if "'" in v_value:
@@ -446,6 +459,7 @@ class PDDLParser:
                                 v_value = v_value.replace(' ?',"?").replace(')','').replace('(','')
                             else:
                                 v_value =int(v_value)
+                            self.logger.debug("epistemic_p: [%s]",(key,symbol,query,variable,v_value,value))
                             preconditions["epistemic_p"].append((key,symbol,query,variable,v_value,value))
                     except AttributeError:
                         
