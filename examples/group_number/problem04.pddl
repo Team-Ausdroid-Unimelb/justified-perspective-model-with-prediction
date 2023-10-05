@@ -1,6 +1,6 @@
 ( define 
-    (problem num_07) 
-    (:domain number)
+    (problem gnum_04) 
+    (:domain group_number)
 
     (:agents
         a b
@@ -22,16 +22,10 @@
     )
 
     (:goal (and
-        ; (= (:ontic (= (dir b) 'se'))
-        ; (= (:epistemic b [a] b [b] (= (num c) 1)) 1)
-        ; (= (:epistemic b [b] b [a] (= (num c) 2)) 1)
-        ; (= (:epistemic b [b] cb [a,b] (= (num c) 2)) 1)
-        (= (:epistemic cb [a,b] (<= (num c) 2)) 1)
-        (= (:epistemic db [a,b] (= (num c) 2)) 1)
-        (= (:epistemic db [a,b] (= (num c) 1)) 1)
-        (= (:epistemic b [a] b [b] (= (num c) 1)) 1)
-        (= (:epistemic b [b] b [a] (= (num c) 2)) 1)
-
+        ; (= (:epistemic b [a] b [b] (= (num c) 2)) 1)
+        (= (:epistemic cb [a,b] (< (num c) 2)) -1)
+        
+        (= (:epistemic eb [a,b] (< (num c) 2)) 1)
         ; (= (:epistemic b [b] (= (face c) 'tail')) 1)
         ; (= (:epistemic b [b] b [a] (= (face c) 'head')) 1)
         ; (= (:epistemic b [b] (= (face c) 'head')) 1)
