@@ -87,7 +87,7 @@ class Problem:
         
         # self.logger.debug("initialize domains")
         self.domains = dict()
-        # self.logger.debug('input domains: {domains}')
+        self.logger.debug('input domains: [%s]',domains)
         for d_name in domains.keys():
             values = domains[d_name]['values']
             d_type = dTypeConvert(self.logger,domains[d_name]['basic_type'])
@@ -99,6 +99,7 @@ class Problem:
             self.domains.update({d_name:domain_temp})
         self.logger.debug(self.domains)
         
+        self.logger.debug("input goals: [%s]",g_states)
         self.goals = Conditions(g_states['ontic_g'],g_states['epistemic_g'])
         self.logger.debug(self.goals)
         self.initial_state = i_state

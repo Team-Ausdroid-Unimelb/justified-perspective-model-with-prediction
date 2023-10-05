@@ -180,7 +180,7 @@ class PDDLParser:
                 self.logger.debug("extract ontic goal propositions")
                 g_states["ontic_g"] = list()
                 # ontic_goal_list = re.findall('\(= \([0-9a-z_ ]*\) [0-9a-z_\'\"]*\)',found[10:-1:])
-                ontic_goal_list = re.findall('\(= \(:ontic[ 0-9a-z_\[\],]*\([=><] \([ 0-9a-z_]*\) [0-9a-z_\'\"]*\)\) [0-9a-z_\'\"]*\)',found[10:-1:])  
+                ontic_goal_list = re.findall('\(= \(:ontic[ 0-9a-z_\[\],]*\([=><] \([ 0-9a-z_]*\) [0-9a-z_\'\"-]*\)\) [0-9a-z_\'\"-]*\)',found[10:-1:])  
                 ontic_prefix = "(= (:ontic ("
                 ontic_surfix = ")"
                 self.logger.debug('ontic goal list: [%s]',ontic_goal_list)
@@ -213,7 +213,7 @@ class PDDLParser:
                 self.logger.debug("found [%s]",found)
                 self.logger.debug("found[10:-1:] [%s]",found[10:-1:])
                 self.logger.debug("found replaced [%s]",found[10:-1:].replace(")-1)",") -1)"))
-                epistemic_goal_list = re.findall('\(= \(:epistemic[\? 0-9a-z_\[\],]*\((?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) [0-9a-z_\'\"-]*\)\) [0-9a-z_]*\)',found[10:-1:].replace(")-1)",") -1)"))  
+                epistemic_goal_list = re.findall('\(= \(:epistemic[\? 0-9a-z_\[\],]*\((?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) [0-9a-z_\'\"-]*\)\) [0-9a-z-]*\)',found[10:-1:].replace(")-1)",") -1)"))  
                 epistemic_prefix = "(= (:epistemic "
                 epistemic_surfix = ")"
                 self.logger.debug(epistemic_goal_list)
@@ -368,7 +368,7 @@ class PDDLParser:
                         preconditions["ontic_p"] = list()
                         # ontic_goal_list = re.findall('\(= \([0-9a-z_ ]*\) [0-9a-z_\'\"]*\)',found[10:-1:])
                         # (= (:ontic (= (agent_at-a) (secret_at ?s))) 1)
-                        ontic_pre_list = re.findall('\(= \(:ontic[ 0-9a-z_\[\],]*\([=><] \([ 0-9a-z_\-\?]*\) [\(\)\?0-9a-z_\'\" ]*\)\) [0-9a-z_\'\"]*\)',preconditions_str)  
+                        ontic_pre_list = re.findall('\(= \(:ontic[ 0-9a-z_\[\],]*\([=><] \([ 0-9a-z_\-\?]*\) [\(\)\?0-9a-z_\'\" ]*\)\) [0-9a-z_\'\"-]*\)',preconditions_str)  
 
                         ontic_prefix = "(= (:ontic ("
                         ontic_surfix = ")"
@@ -403,7 +403,7 @@ class PDDLParser:
                         self.logger.debug("extract epistemic precondition propositions")
                         
                         preconditions["epistemic_p"] = list()
-                        epistemic_pre_list = re.findall('\(= \(:epistemic[\? 0-9a-z_\[\],]*\((?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) [0-9a-z_\'\"-]*\)\) [0-9a-z_]*\)',preconditions_str)  
+                        epistemic_pre_list = re.findall('\(= \(:epistemic[\? 0-9a-z_\[\],]*\((?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) [0-9a-z_\'\"-]*\)\) [0-9a-z-]*\)',preconditions_str)  
                         epistemic_prefix = "(= (:epistemic "
                         epistemic_surfix = ")"
                         self.logger.debug(epistemic_pre_list)
