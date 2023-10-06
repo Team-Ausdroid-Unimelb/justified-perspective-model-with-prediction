@@ -316,8 +316,8 @@ class Problem:
         action_list = [a for s,a in path]
         actions_str = ActionList2DictKey(action_list)
         # self.logger.info(actions_str)
-        if "move_right-b,sharing-a,move_right-c" in actions_str:
-            self.logger.setLevel(logging.DEBUG)
+        # if "move_right-b,sharing-a,move_right-c" in actions_str:
+        #     self.logger.setLevel(logging.DEBUG)
 
 
         pre_dict = dict()
