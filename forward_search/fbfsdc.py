@@ -201,16 +201,36 @@ class Search:
         self.logger.info(f'[number of node generated]: {self.generated}')
         self.logger.info(f'[number of epistemic formulas evaluation: {problem.epistemic_calls}]')
         self.logger.info(f'[time in epistemic formulas evaluation: {problem.epistemic_call_time}]')
+        
         # file output
         self.result.update({'pruned':self.pruned})
         self.result.update({'pruned_by_unknown':self.pruned_by_unknown})
         self.result.update({'pruned_by_visited':self.pruned_by_visited})
-
         self.result.update({'goal_checked':self.goal_checked})
         self.result.update({'expanded':self.expanded})
         self.result.update({'generated':self.generated})
         self.result.update({'epistemic_calls':problem.epistemic_calls})
         self.result.update({'epistemic_call_time':problem.epistemic_call_time.total_seconds()})
+        
+        ## added for common perspective iterations
+        common_iteration_list = problem.epistemic_model.common_iteration_list
+        num_common_call = 0
+        all_common_iteration = 0
+        max_common_iteration = 0
+        average_common_iteration = 0
+        if not common_iteration_list == list():
+            num_common_call = len(common_iteration_list)
+            all_common_iteration = sum(common_iteration_list)
+            max_common_iteration = max(common_iteration_list)
+            average_common_iteration = all_common_iteration/(num_common_call*1.0)
+        self.logger.info(f'[number of common perspective generated]: {num_common_call}')
+        self.logger.info(f'[number of all iterations used when generating common perspectives]: {all_common_iteration}')
+        self.logger.info(f'[number of max iterations used when generating common perspectives]: {max_common_iteration}')
+        self.logger.info(f'[number of average iterations used when generating common perspectives]: {average_common_iteration}')
+        self.result.update( {'common_calls':num_common_call})
+        self.result.update( {'common_total':all_common_iteration})
+        self.result.update( {'common_max':max_common_iteration})
+        self.result.update( {'common_average':average_common_iteration})
 
     def group_epistemic_goals(self,problem):
         group_eg_dict = {}

@@ -20,6 +20,7 @@ PRE_INIT_PDICT_KEY = ActionList2DictKey([])
 class EpistemicModel:
     logger = None
     external = None
+    common_iteration_list = list()
     entities = {}
     variables = {}
     
@@ -100,9 +101,10 @@ class EpistemicModel:
                 new_ps = list()
                 if eq.q_type == Q_TYPE.COMMON:
                     new_ps = [p]
-                    
+                    common_counter = 0
                     temp_ps = None
                     while not new_ps == temp_ps:
+                        common_counter +=1
                         for_p = new_ps.copy()
                         temp_ps = new_ps.copy()
                         new_ps = list()
@@ -119,6 +121,7 @@ class EpistemicModel:
                                     # added.add(new_t_p_str)
                                     new_ps.append(new_temp_p)
                         self.logger.debug("all perspective: [%s]",new_ps)
+                    self.common_iteration_list.append(common_counter)
                         
                 else:
                     for agt_id in eq.q_group:
