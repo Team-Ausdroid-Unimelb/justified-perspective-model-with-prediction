@@ -13,7 +13,7 @@ LOGGER_LEVEL = logging.INFO
 # LOGGER_LEVEL = logging.DEBUG
 from util import setup_logger
 from util import ActionList2DictKey,GLOBAL_PERSPECTIVE_INDEX, ROOT_NODE_ACTION
-from util import raiseNotDefined,eval_var_from_str
+from util import raiseNotDefined,eval_var_from_str,Queue
 PRE_INIT_PDICT_KEY = ActionList2DictKey([])
 
 
@@ -62,7 +62,7 @@ class EpistemicModel:
             output = self.eval_eq_in_ps(eq_str,prefix, GLOBAL_PERSPECTIVE_INDEX, old_actions_str, actions_str, state_list, p_path,seeing_flag=False)
             result_dict[key] = output
 
-        self.logger.setLevel(logging.INFO)
+        # self.logger.setLevel(logging.INFO)
                 
         return result_dict
     
@@ -87,8 +87,8 @@ class EpistemicModel:
     
     def eval_eq_in_ps(self,eq_str,prefix, parent_prefix, actions_str_old, actions_str_new, p, p_path,seeing_flag=False):
         eq = self.partially_converting_to_eq(eq_str)
-        
-        # self.logger.debug(p)
+        self.logger.debug("input perspectives: [%s]",p)
+        self.logger.debug("last state: [%s]",p[-1])
         if type(eq) == str:
             # for knowledge and belief
             
@@ -122,7 +122,95 @@ class EpistemicModel:
                                     new_ps.append(new_temp_p)
                         self.logger.debug("all perspective: [%s]",new_ps)
                     self.common_iteration_list.append(common_counter)
+                elif eq.q_type == Q_TYPE.DISTRIBUTION:
+                    temp_ps = list()
+                    for agt_id in eq.q_group:
+                        new_prefix = prefix + eq.header_str + " " + EpistemicQuery.agtList2Str([agt_id]) + " "
+                        new_temp_p = self.get1ps(agt_id,p, new_prefix, actions_str_old, actions_str_new, p_path)
+                        temp_ps.append(new_temp_p)
                         
+                    # generate all possible values
+                    
+                    
+
+                            
+                    
+                    
+                    
+                    temp_v_dict_list = [dict() for i in range(len(temp_ps[0]))]
+                    for temp_p in temp_ps:
+                        for i in range(len(temp_p)):
+                            for k,v in temp_p[i].items():
+                                if k not in temp_v_dict_list[i].keys():
+                                    temp_v_dict_list[i][k] = set()
+                                temp_v_dict_list[i][k].add(v)
+                    self.logger.debug("all values [%s]",temp_v_dict_list)
+                    
+                    # remove None here
+                    for i in range(len(temp_v_dict_list)):
+                        for k,v in temp_v_dict_list[i].items():
+                            if not v == {None}:
+                                temp_set = set()
+                                for item in v:
+                                    if not item == None:
+                                        temp_set.add(item)
+                                temp_v_dict_list[i][k] = temp_set
+                    self.logger.debug("updated all values [%s]",temp_v_dict_list)
+                    
+                    
+                    
+                    state_space_list = list()
+                    for i in  range(len(temp_v_dict_list)):
+                        v_dict=temp_v_dict_list[i]
+                        state_space_list.append([])
+                        empty_state = {}
+                        myQ = Queue()
+                        myQ.push(empty_state)
+                        while not myQ.isEmpty():
+                            temp_dict = myQ.pop()
+                            flag = True
+                            for k,v_set in v_dict.items():
+                                if k not in temp_dict.keys():
+                                    flag = False
+                                    for v in v_set:
+                                        new_temp_dict = temp_dict.copy()
+                                        new_temp_dict[k] = v
+                                        myQ.push(new_temp_dict)
+                                    break
+                            if flag:
+                                state_space_list[i].append(temp_dict)
+                            
+                            
+                        self.logger.debug("The number states is [%s] for timestamp [%s]",len(state_space_list[i]),i)
+                        self.logger.debug("state space is [%s]",state_space_list[i])
+                        
+                    self.logger.debug("all state space is [%s]",state_space_list)
+                    
+                    for temp_p in temp_ps:
+                        empty_sequence = []
+                        myQ = Queue()
+                        myQ.push(empty_sequence)
+                        while not myQ.isEmpty():
+                            temp_sequence = myQ.pop()
+                            current_index = len(temp_sequence)
+                            if not len(temp_sequence) == len(state_space_list):
+                                exist_state = temp_p[current_index]
+                                for matching_state in state_space_list[current_index]:
+                                    self.logger.debug("matching_state [%s]",matching_state)
+                                    self.logger.debug("exist_state [%s]",exist_state)
+                                    flag = True
+                                    for k,v in matching_state.items():
+                                        if k in exist_state.keys():
+                                            if not exist_state[k] == None and not exist_state[k] == matching_state[k] :
+                                                flag = False
+                                                continue
+                                    if flag:
+                                        new_sequence = temp_sequence + [matching_state]
+                                        myQ.push(new_sequence)
+                            else:
+                                if not temp_sequence in new_ps:
+                                    
+                                    new_ps.append(temp_sequence)                                            
                 else:
                     for agt_id in eq.q_group:
                         new_prefix = prefix + eq.header_str + " " + EpistemicQuery.agtList2Str([agt_id]) + " "
@@ -132,7 +220,7 @@ class EpistemicModel:
                 result_list = []
                 
                 
-                self.logger.debug("[%s] pss: [%s]",eq_str,new_ps)
+                self.logger.debug("[%s] generated ps: [%s]",eq_str,new_ps)
                 for p in new_ps:
                     
                     value = self.eval_eq_in_ps(eq.q_content,prefix, parent_prefix, actions_str_old, actions_str_new, p, p_path,seeing_flag)
@@ -259,11 +347,11 @@ class EpistemicModel:
     def get1p(self,parent_state,os,parent_ps):
         new_state = {}
         for v_index,e in parent_state.items():
-            self.logger.debug('\t find history value for [%s],[%s]',v_index,e)
+            # self.logger.debug('\t find history value for [%s],[%s]',v_index,e)
             ts_index = self._identifyLastSeenTimestamp(os,v_index)
-            self.logger.debug('\t last seen timestamp index: [%s]',ts_index)
+            # self.logger.debug('\t last seen timestamp index: [%s]',ts_index)
             value = self._identifyMemorizedValue( parent_ps, ts_index,v_index)
-            self.logger.debug('\t [%s]"s value is: [%s]',v_index,value)
+            # self.logger.debug('\t [%s]"s value is: [%s]',v_index,value)
             new_state.update({v_index:value})
         return new_state 
         
