@@ -1,0 +1,28 @@
+2023-10-07 21:55:51,467 - instance_runner - INFO - loading problem file: examples/group_bbl/problem2.pddl
+2023-10-07 21:55:51,467 - pddl_parser - INFO - parsing problem: [group_bbl_02]
+2023-10-07 21:55:51,467 - instance_runner - INFO - finish loading problem file: group_bbl_02
+2023-10-07 21:55:51,467 - instance_runner - INFO - loading domain file: examples/group_bbl/domain.pddl
+2023-10-07 21:55:51,467 - pddl_parser - INFO - parsing domain: [bbl]
+2023-10-07 21:55:51,467 - instance_runner - INFO - finish loading domain file: bbl
+2023-10-07 21:55:51,467 - instance_runner - INFO - Search algorithm exists
+2023-10-07 21:55:51,467 - instance_runner - INFO - loading external function: examples/group_bbl/group_bbl.py
+2023-10-07 21:55:51,467 - instance_runner - INFO - finish loading external function
+2023-10-07 21:55:51,467 - instance_runner - INFO - Initialize problem
+2023-10-07 21:55:51,467 - instance_runner - INFO - starting search
+2023-10-07 21:55:51,468 - forward_search:bfsdc - INFO - starting searching using forward_search:bfsdc
+2023-10-07 21:55:51,681 - forward_search:bfsdc - INFO - plan is: ['turn_clockwise-a', 'turn_clockwise-b']
+2023-10-07 21:55:51,681 - forward_search:bfsdc - INFO - Goal found
+2023-10-07 21:55:51,681 - forward_search:bfsdc - INFO - [number of node pruned_by_unknown]: 1
+2023-10-07 21:55:51,681 - forward_search:bfsdc - INFO - [number of node pruned_by_visited]: 0
+2023-10-07 21:55:51,681 - forward_search:bfsdc - INFO - [number of node pruned]: 1
+2023-10-07 21:55:51,682 - forward_search:bfsdc - INFO - [number of node goal_checked]: 20
+2023-10-07 21:55:51,682 - forward_search:bfsdc - INFO - [number of node expansion]: 5
+2023-10-07 21:55:51,682 - forward_search:bfsdc - INFO - [number of node generated]: 19
+2023-10-07 21:55:51,682 - forward_search:bfsdc - INFO - [number of epistemic formulas evaluation: 26]
+2023-10-07 21:55:51,682 - forward_search:bfsdc - INFO - [time in epistemic formulas evaluation: 0:00:00.211754]
+2023-10-07 21:55:51,682 - forward_search:bfsdc - INFO - [number of common perspective generated]: 30
+2023-10-07 21:55:51,682 - forward_search:bfsdc - INFO - [number of all iterations used when generating common perspectives]: 94
+2023-10-07 21:55:51,682 - forward_search:bfsdc - INFO - [number of max iterations used when generating common perspectives]: 4
+2023-10-07 21:55:51,682 - forward_search:bfsdc - INFO - [number of average iterations used when generating common perspectives]: 3.1333333333333333
+2023-10-07 21:55:51,682 - instance_runner - INFO - initialization time: 0:00:00.001022
+2023-10-07 21:55:51,682 - instance_runner - INFO - search time: 0:00:00.214254
