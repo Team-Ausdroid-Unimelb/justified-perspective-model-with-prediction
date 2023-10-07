@@ -1,0 +1,16 @@
+2023-10-07 13:11:59,892 - experiment_runner - INFO - loading search algorithm: forward_search/fbfsdc.py
+2023-10-07 13:11:59,894 - experiment_runner - INFO - finish loading search algorithm:
+2023-10-07 13:11:59,895 - experiment_runner - INFO - solving fbfsdc_group_grapevine_problem01.pddl - examples/group_grapevine
+2023-10-07 13:12:00,200 - experiment_runner - INFO - solving time: 0:00:00.305551
+2023-10-07 13:12:00,200 - experiment_runner - INFO - solving fbfsdc_group_grapevine_problem02.pddl - examples/group_grapevine
+2023-10-07 13:12:05,771 - experiment_runner - INFO - solving time: 0:00:05.570245
+2023-10-07 13:12:05,771 - experiment_runner - INFO - solving fbfsdc_group_grapevine_problem03.pddl - examples/group_grapevine
+2023-10-07 13:12:55,747 - experiment_runner - INFO - solving time: 0:00:49.976734
+2023-10-07 13:12:55,748 - experiment_runner - INFO - solving fbfsdc_group_grapevine_problem04.pddl - examples/group_grapevine
+2023-10-07 13:13:04,142 - experiment_runner - INFO - solving time: 0:00:08.394140
+2023-10-07 13:13:04,142 - experiment_runner - INFO - solving fbfsdc_group_grapevine_problem05.pddl - examples/group_grapevine
+2023-10-07 13:14:02,623 - experiment_runner - INFO - solving time: 0:00:58.481084
+2023-10-07 13:14:02,623 - experiment_runner - INFO - solving fbfsdc_group_grapevine_problem06.pddl - examples/group_grapevine
+2023-10-07 13:14:09,544 - experiment_runner - INFO - solving time: 0:00:06.920650
+2023-10-07 13:14:09,544 - experiment_runner - INFO - solving fbfsdc_group_grapevine_problem07.pddl - examples/group_grapevine
+2023-10-07 13:14:11,828 - experiment_runner - INFO - solving time: 0:00:02.283603
