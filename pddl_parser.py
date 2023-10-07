@@ -216,7 +216,7 @@ class PDDLParser:
                 self.logger.debug("found [%s]",found)
                 self.logger.debug("found[10:-1:] [%s]",found[10:-1:])
                 self.logger.debug("found replaced [%s]",found[10:-1:].replace(")-1)",") -1)"))
-                epistemic_goal_list = re.findall('\(= \(:epistemic[\? 0-9a-z_\[\],]*\((?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) [0-9a-z_\'\"-]*\)\) [0-9a-z-]*\)',found[10:-1:].replace(")-1)",") -1)"))  
+                epistemic_goal_list = re.findall('\(= \(:epistemic[\? 0-9a-z_\[\],]*\((?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)\) [0-9a-z-]*\)',found[10:-1:].replace(")-1)",") -1)"))  
                 epistemic_prefix = "(= (:epistemic "
                 epistemic_surfix = ")"
                 self.logger.debug(epistemic_goal_list)
@@ -236,7 +236,7 @@ class PDDLParser:
                     # i,j = re.search('\)\) .*',goal_str).span()
                     # value1 = int(goal_str[i+3:j:])
                     
-                    p,q = re.search('(?:>|<|=|>=|<=)+ \([0-9a-z _]*\) [0-9a-z _\'\"-]*\)',goal_str).span()
+                    p,q = re.search('(?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)',goal_str).span()
                     # query = goal_str[:p-1]
                     goal_str = goal_str[p:q-1]
                     self.logger.debug("goal string 4: [%s]",goal_str)
@@ -261,6 +261,12 @@ class PDDLParser:
                         v_value = v_value.replace('"',"")
                     elif '?' in v_value:
                         v_value = v_value.replace(' ?',"?").replace(')','').replace('(','')
+                    elif "(" in v_value and ")" in v_value:
+                        
+                        v_value = v_value[1:-1]
+                        old_v_value = v_value
+                        v_value = v_value.replace(" ","-")
+                        query = query.replace(old_v_value,v_value)
                     else:
                         v_value =int(v_value)
 
@@ -413,7 +419,7 @@ class PDDLParser:
                         self.logger.debug("extract epistemic precondition propositions")
                         self.logger.debug("input pre str: [%s]",preconditions_str)
                         preconditions["epistemic_p"] = list()
-                        epistemic_pre_list = re.findall('\(= \(:epistemic[\? 0-9a-z_\[\],]*\((?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) [0-9a-z_\'\"-]*\)\) [0-9a-z-]*\)',preconditions_str)  
+                        epistemic_pre_list = re.findall('\(= \(:epistemic[\? 0-9a-z_\[\],]*\((?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)\) [0-9a-z-]*\)',preconditions_str)  
                         epistemic_prefix = "(= (:epistemic "
                         epistemic_surfix = ")"
                         self.logger.debug(epistemic_pre_list)
@@ -433,7 +439,7 @@ class PDDLParser:
                             # i,j = re.search('\)\) .*',goal_str).span()
                             # value1 = int(goal_str[i+3:j:])
                             
-                            p,q = re.search('(?:>|<|=|>=|<=)+ \([0-9a-z _\?]*\) [0-9a-z _\'\"\?-]*\)',pre_str).span()
+                            p,q = re.search('(?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)',pre_str).span()
                             # query = pre_str[:p-1]
                             pre_str = pre_str[p:q-1]
                             
@@ -457,6 +463,13 @@ class PDDLParser:
                                 v_value = v_value.replace('"',"")
                             elif '?' in v_value:
                                 v_value = v_value.replace(' ?',"?").replace(')','').replace('(','')
+                            elif "(" in v_value and ")" in v_value:
+                                old_v_value = v_value
+                                v_value = v_value[1:-1]
+                                v_value = v_value.replace(" ","-")
+                                query = query.replace(old_v_value,v_value)
+                                
+                                
                             else:
                                 v_value =int(v_value)
                             self.logger.debug("epistemic_p: [%s]",(key,symbol,query,variable,v_value,value))
