@@ -444,7 +444,7 @@ class EpistemicModel:
             else:
                 if  v_index == 'face-c':
                     if know_rule:
-                        temp_observation[v_index] = self.updateCoinFlipRule(temp_observation[v_index], ts_index_temp)
+                        temp_observation[v_index] = self.updateCoinFlipRule(temp_observation[v_index], ts_index, ts_index_temp)
                 return temp_observation[v_index]
         
         ts_index_temp = ts_index + 1
@@ -461,15 +461,16 @@ class EpistemicModel:
             else:
                 if  v_index == 'face-c':
                     if know_rule:
-                        temp_observation[v_index] = self.updateCoinFlipRule(temp_observation[v_index], ts_index_temp)
+                        temp_observation[v_index] = self.updateCoinFlipRule(temp_observation[v_index],ts_index, ts_index_temp)
                 return temp_observation[v_index]        
         return None    
     
-    def updateCoinFlipRule(self, observed_result, ts_index_temp):
+    def updateCoinFlipRule(self, observed_result, ts_index, ts_index_temp):
         coin_flip_rule = ["head", "tail"]
         index_of_observed_result = coin_flip_rule.index(observed_result)
-        next_element_index = (index_of_observed_result - ts_index_temp) % len(coin_flip_rule)
-        return coin_flip_rule[next_element_index]
+        next_element_index = (ts_index - ts_index_temp) % len(coin_flip_rule)
+        rule_index = (next_element_index + index_of_observed_result)% len(coin_flip_rule)
+        return coin_flip_rule[rule_index]
 
     # this is wrong
     # def _identifyMemorizedValue(self,observation_list, ts_index,v_index):
