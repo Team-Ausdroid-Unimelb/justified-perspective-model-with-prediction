@@ -318,7 +318,6 @@ class EpistemicModel:
                 new_p = self.get1p(parent_state,new_os,parent_ps)
                 new_ps =  old_ps + [new_p]
                 p_path[actions_str_new][prefix]['perspectives'] = new_ps
-                
                 return new_ps
         else:
             self.logger.debug("p_parent is the different, must be cb")
@@ -401,6 +400,7 @@ class EpistemicModel:
 
     # this is not wrong, but could not find a solution, need more investigation
     # it turns out it correct, just the argument is wrong, it should be ps instead of os from parent
+    '''
     def _identifyMemorizedValue(self,ps, ts_index,v_index):
         ts_index_temp = ts_index
         if ts_index_temp <0: return None
@@ -426,8 +426,51 @@ class EpistemicModel:
             else:
                 return temp_observation[v_index]        
         return None
+    '''
+    def _identifyMemorizedValue(self,ps, ts_index,v_index):
+        ts_index_temp = ts_index
+        know_rule = False
+        if ts_index_temp <0: return None
+
+        while ts_index_temp >=0:
+            temp_observation = ps[ts_index_temp]
+            
+            for key, value in temp_observation.items():
+                if key.startswith('knows_rule') and value == 'yes':
+                    know_rule = True
+
+            if not v_index in temp_observation or temp_observation[v_index] == None:
+                ts_index_temp += -1
+            else:
+                if  v_index == 'face-c':
+                    if know_rule:
+                        temp_observation[v_index] = self.updateCoinFlipRule(temp_observation[v_index], ts_index_temp)
+                return temp_observation[v_index]
+        
+        ts_index_temp = ts_index + 1
     
+        while ts_index_temp < len(ps):
+            temp_observation = ps[ts_index_temp]
+
+            for key, value in temp_observation.items():
+                if key.startswith('knows_rule') and value == 'yes':
+                    know_rule = True
+
+            if not v_index in temp_observation or temp_observation[v_index] == None:
+                ts_index_temp += 1
+            else:
+                if  v_index == 'face-c':
+                    if know_rule:
+                        temp_observation[v_index] = self.updateCoinFlipRule(temp_observation[v_index], ts_index_temp)
+                return temp_observation[v_index]        
+        return None    
     
+    def updateCoinFlipRule(self, observed_result, ts_index_temp):
+        coin_flip_rule = ["head", "tail"]
+        index_of_observed_result = coin_flip_rule.index(observed_result)
+        next_element_index = (index_of_observed_result - ts_index_temp) % len(coin_flip_rule)
+        return coin_flip_rule[next_element_index]
+
     # this is wrong
     # def _identifyMemorizedValue(self,observation_list, ts_index,v_index):
     #     ts_index_temp = ts_index
