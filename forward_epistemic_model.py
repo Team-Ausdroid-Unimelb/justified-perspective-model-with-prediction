@@ -315,7 +315,7 @@ class EpistemicModel:
             else:
                 
                 old_ps = current_level_dict["perspectives"]
-                new_p = self.get1p(parent_state,new_os,parent_ps)
+                new_p = self.get1p(agt_id,parent_state,new_os,parent_ps)
                 new_ps =  old_ps + [new_p]
                 p_path[actions_str_new][prefix]['perspectives'] = new_ps
                 return new_ps
@@ -329,7 +329,7 @@ class EpistemicModel:
             
             new_ps = []
             for i in range(len(p)):
-                temp_p = self.get1p(p[i],new_os[:i+1:],parent_ps)
+                temp_p = self.get1p(agt_id,p[i],new_os[:i+1:],parent_ps)
                 new_ps.append(temp_p)
             
             return new_ps
@@ -343,13 +343,13 @@ class EpistemicModel:
         return new_state
     # def get1o(self,agt_id,p,prefix, actions_str_old, actions_str_new,p_path):
 
-    def get1p(self,parent_state,os,parent_ps):
+    def get1p(self,agt_id,parent_state,os,parent_ps):
         new_state = {}
         for v_index,e in parent_state.items():
             # self.logger.debug('\t find history value for [%s],[%s]',v_index,e)
             ts_index = self._identifyLastSeenTimestamp(os,v_index)
             # self.logger.debug('\t last seen timestamp index: [%s]',ts_index)
-            value = self._identifyMemorizedValue( parent_ps, ts_index,v_index)
+            value = self._identifyMemorizedValue( agt_id,parent_state,parent_ps, ts_index,v_index)
             # self.logger.debug('\t [%s]"s value is: [%s]',v_index,value)
             new_state.update({v_index:value})
         return new_state 
@@ -427,24 +427,31 @@ class EpistemicModel:
                 return temp_observation[v_index]        
         return None
     '''
-    def _identifyMemorizedValue(self,ps, ts_index,v_index):
+    def _identifyMemorizedValue(self,agt_id,state,ps, ts_index,v_index):
         ts_index_temp = ts_index
+        ts_index_temp_copy = ts_index_temp
         know_rule = False
+        find_num =0
         if ts_index_temp <0: return None
 
+        while ts_index_temp_copy >=0:
+            temp_observation = ps[ts_index_temp_copy]
+            if not v_index in temp_observation or temp_observation[v_index] == None:
+                ts_index_temp_copy += -1
+            else:                    
+                find_num += 1
+                if find_num >= 2:
+                    know_rule = True
+                    break
         while ts_index_temp >=0:
             temp_observation = ps[ts_index_temp]
-            
-            for key, value in temp_observation.items():
-                if key.startswith('knows_rule') and value == 'yes':
-                    know_rule = True
 
             if not v_index in temp_observation or temp_observation[v_index] == None:
                 ts_index_temp += -1
             else:
-                if  v_index == 'face-c':
-                    if know_rule:
-                        temp_observation[v_index] = self.updateCoinFlipRule(temp_observation[v_index], ts_index, ts_index_temp)
+                if know_rule or self.external.checkKnowRule(state, agt_id):
+                    if self.external.checkVIndex(v_index):
+                        temp_observation[v_index] = self.external.updateRule(temp_observation[v_index], ts_index, ts_index_temp)
                 return temp_observation[v_index]
         
         ts_index_temp = ts_index + 1
@@ -452,25 +459,16 @@ class EpistemicModel:
         while ts_index_temp < len(ps):
             temp_observation = ps[ts_index_temp]
 
-            for key, value in temp_observation.items():
-                if key.startswith('knows_rule') and value == 'yes':
-                    know_rule = True
-
             if not v_index in temp_observation or temp_observation[v_index] == None:
                 ts_index_temp += 1
             else:
-                if  v_index == 'face-c':
-                    if know_rule:
-                        temp_observation[v_index] = self.updateCoinFlipRule(temp_observation[v_index],ts_index, ts_index_temp)
+                if know_rule or self.external.checkKnowRule(state, agt_id, v_index):
+                    if self.external.checkVIndex(v_index):
+                        temp_observation[v_index] = self.external.updateRule(temp_observation[v_index],ts_index, ts_index_temp)
                 return temp_observation[v_index]        
         return None    
     
-    def updateCoinFlipRule(self, observed_result, ts_index, ts_index_temp):
-        coin_flip_rule = ["head", "tail"]
-        index_of_observed_result = coin_flip_rule.index(observed_result)
-        next_element_index = (ts_index - ts_index_temp) % len(coin_flip_rule)
-        rule_index = (next_element_index + index_of_observed_result)% len(coin_flip_rule)
-        return coin_flip_rule[rule_index]
+
 
     # this is wrong
     # def _identifyMemorizedValue(self,observation_list, ts_index,v_index):

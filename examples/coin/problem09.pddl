@@ -21,7 +21,7 @@
         (= (peeking b) 'f')
         (= (face c) 'head')
         (= (knows_rule a) 'yes') 
-        (= (knows_rule b) 'yes') 
+        (= (knows_rule b) 'no') 
 
     )
 

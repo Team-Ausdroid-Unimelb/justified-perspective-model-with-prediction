@@ -122,6 +122,43 @@ class ExternalFunction:
             # logger.error("error when checking visibility")
             return PDDL_TERNARY.UNKNOWN
 
+    def checkKnowRule(self, state, agt_index):
+
+        knows_rule_key = f'knows_rule-{agt_index}'
+            
+        if knows_rule_key in state and state[knows_rule_key].lower() == 'yes':
+            return True
+        else:
+            return False
+
+    
+    def updateRule(self, observed_result, ts_index, ts_index_temp):
+        coin_flip_rule = ["head", "tail"]
+        index_of_observed_result = coin_flip_rule.index(observed_result)
+        next_element_index = (ts_index - ts_index_temp) % len(coin_flip_rule)
+        rule_index = (next_element_index + index_of_observed_result)% len(coin_flip_rule)
+        return coin_flip_rule[rule_index]
+    
+    def update(self,value):
+        possible_values = ["head", "tail"]
+            
+        if value in possible_values:
+            current_index = possible_values.index(value)
+            next_index = (current_index + 1) % len(possible_values)
+            return possible_values[next_index]
+        else:
+            return value
+
+    def checkVIndex(self, v_index):
+        if v_index == 'face-c':
+            return True
+        else:
+            return False
+        
+    def checkV(self, state):
+        v_index = 'face-c'
+        return v_index
+    
     # customise action filters
     # to filter out the irrelevant actions
     def filterActionNames(self,problem,action_dict):

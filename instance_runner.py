@@ -127,13 +127,13 @@ class Instance:
         import func_timeout
         
         if time_debug:
-            search_algorithm = self.search.Search(logger_handlers)
+            search_algorithm = self.search.Search(logger_handlers,self.external_function)
 
             result = search_algorithm.searching(problem,self.external_function.filterActionNames)
         else:
             
             try:
-                search_algorithm = self.search.Search(logger_handlers)
+                search_algorithm = self.search.Search(logger_handlers,self.external_function)
                 result = func_timeout.func_timeout(timeout, search_algorithm.searching,args=(problem,self.external_function.filterActionNames))
             except func_timeout.FunctionTimedOut:
                 result.update({"running": f"timeout after {timeout}"})

@@ -127,6 +127,41 @@ class ExternalFunction:
     def filterActionNames(self,problem,action_dict):
         return action_dict.keys()
 
+    def checkKnowRule(self, state, agt_index, v_index):
+        if v_index == 'num-c':
+            knows_rule_key = f'knows_rule-{agt_index}'
+            
+            if knows_rule_key in state and state[knows_rule_key].lower() == 'yes':
+                return True
+            else:
+                return False
+        else:
+            return False
+
+    def updateRule(self, observed_result, ts_index, ts_index_temp):
+        rule_increment = 1
+
+        if ts_index_temp < ts_index:
+            diff = - abs(ts_index - ts_index_temp)
+        else:
+            diff = abs(ts_index_temp - ts_index)
+        
+
+        rule_value = observed_result+rule_increment*diff
+        return rule_value
+    
+    def checkVIndex(self, v_index):
+        if v_index == 'num-c':
+            return True
+        else:
+            return False
+        
+    def update(self,value):
+        return value + 1
+    
+    def checkV(self, state):
+        v_index = 'num-c'
+        return v_index
     # if __name__ == "__main__":
         
     #     pass
