@@ -262,7 +262,7 @@ class EpistemicModel:
         # self.logger.debug("[%s]",)
         self.logger.debug("agt_id [%s]",agt_id)
         self.logger.debug("prefix [%s]",prefix)
-  
+
         if actions_str_new == ActionList2DictKey([ROOT_NODE_ACTION]):
 
             if actions_str_old not in p_path:
@@ -316,8 +316,18 @@ class EpistemicModel:
                 
                 old_ps = current_level_dict["perspectives"]
                 new_p = self.get1p(agt_id,parent_state,new_os,parent_ps)
+                #######
+                if (self.external.checkKnowRule(new_p, agt_id) or self.external.learnRule(old_ps)):
+                    print("know")
+                    new_p = self.external.updatep(old_ps,new_p)
+
                 new_ps =  old_ps + [new_p]
                 p_path[actions_str_new][prefix]['perspectives'] = new_ps
+                ################
+                keyword = self.external.checkV()
+                face_c_values = [entry[keyword] for entry in new_ps if keyword in entry]
+                #print(new_ps)
+                print(face_c_values)
                 return new_ps
         else:
             self.logger.debug("p_parent is the different, must be cb")
@@ -331,7 +341,7 @@ class EpistemicModel:
             for i in range(len(p)):
                 temp_p = self.get1p(agt_id,p[i],new_os[:i+1:],parent_ps)
                 new_ps.append(temp_p)
-            
+   
             return new_ps
 
     
@@ -349,7 +359,7 @@ class EpistemicModel:
             # self.logger.debug('\t find history value for [%s],[%s]',v_index,e)
             ts_index = self._identifyLastSeenTimestamp(os,v_index)
             # self.logger.debug('\t last seen timestamp index: [%s]',ts_index)
-            value = self._identifyMemorizedValue( agt_id,parent_state,parent_ps, ts_index,v_index)
+            value = self._identifyMemorizedValue(parent_ps, ts_index,v_index)
             # self.logger.debug('\t [%s]"s value is: [%s]',v_index,value)
             new_state.update({v_index:value})
         return new_state 
@@ -427,31 +437,23 @@ class EpistemicModel:
                 return temp_observation[v_index]        
         return None
     '''
-    def _identifyMemorizedValue(self,agt_id,state,ps, ts_index,v_index):
+    def _identifyMemorizedValue(self,ps, ts_index,v_index):
         ts_index_temp = ts_index
-        ts_index_temp_copy = ts_index_temp
-        know_rule = False
-        find_num =0
+
+        #know_rule = False
+
         if ts_index_temp <0: return None
 
-        while ts_index_temp_copy >=0:
-            temp_observation = ps[ts_index_temp_copy]
-            if not v_index in temp_observation or temp_observation[v_index] == None:
-                ts_index_temp_copy += -1
-            else:                    
-                find_num += 1
-                if find_num >= 2:
-                    know_rule = True
-                    break
+
         while ts_index_temp >=0:
             temp_observation = ps[ts_index_temp]
 
             if not v_index in temp_observation or temp_observation[v_index] == None:
                 ts_index_temp += -1
             else:
-                if know_rule or self.external.checkKnowRule(state, agt_id):
-                    if self.external.checkVIndex(v_index):
-                        temp_observation[v_index] = self.external.updateRule(temp_observation[v_index], ts_index, ts_index_temp)
+                #if know_rule or self.external.checkKnowRule(state, agt_id):
+                    #if self.external.checkVIndex(v_index):
+                        #temp_observation[v_index] = self.external.updateRule(temp_observation[v_index], ts_index, ts_index_temp)
                 return temp_observation[v_index]
         
         ts_index_temp = ts_index + 1
@@ -462,9 +464,9 @@ class EpistemicModel:
             if not v_index in temp_observation or temp_observation[v_index] == None:
                 ts_index_temp += 1
             else:
-                if know_rule or self.external.checkKnowRule(state, agt_id, v_index):
-                    if self.external.checkVIndex(v_index):
-                        temp_observation[v_index] = self.external.updateRule(temp_observation[v_index],ts_index, ts_index_temp)
+                #if know_rule or self.external.checkKnowRule(state, agt_id):
+                    #if self.external.checkVIndex(v_index):
+                        #temp_observation[v_index] = self.external.updateRule(temp_observation[v_index],ts_index, ts_index_temp)
                 return temp_observation[v_index]        
         return None    
     

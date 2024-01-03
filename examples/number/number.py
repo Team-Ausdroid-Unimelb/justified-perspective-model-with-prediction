@@ -127,16 +127,15 @@ class ExternalFunction:
     def filterActionNames(self,problem,action_dict):
         return action_dict.keys()
 
-    def checkKnowRule(self, state, agt_index, v_index):
-        if v_index == 'num-c':
-            knows_rule_key = f'knows_rule-{agt_index}'
-            
-            if knows_rule_key in state and state[knows_rule_key].lower() == 'yes':
-                return True
-            else:
-                return False
+    def checkKnowRule(self, state, agt_index):
+        
+        knows_rule_key = f'knows_rule-{agt_index}'
+        
+        if knows_rule_key in state and state[knows_rule_key].lower() == 'yes':
+            return True
         else:
             return False
+        
 
     def updateRule(self, observed_result, ts_index, ts_index_temp):
         rule_increment = 1
@@ -159,9 +158,34 @@ class ExternalFunction:
     def update(self,value):
         return value + 1
     
-    def checkV(self, state):
+    
+    def checkV(self):
         v_index = 'num-c'
         return v_index
+    
+    def update_state(self, succ_state, path):
+        if self.checkV() in succ_state:
+            succ_state[self.checkV()] = self.update(succ_state[self.checkV()])
+
+    def learnRule(self, old_ps):
+        keyword = self.checkV()
+        observation_list = [entry[keyword] for entry in old_ps if keyword in entry]
+        non_none_count = sum(1 for value in observation_list if value is not None)
+        if non_none_count > 2:
+            return True
+        else:
+            return False
+    
+    def updatep(self, old_ps,new_p):
+        keyword = self.checkV()
+        observation_list = [entry[keyword] for entry in old_ps if keyword in entry]
+        non_none_count = sum(1 for value in observation_list if value is not None)
+        if self.checkV() in new_p and non_none_count >= 1:
+            new_p[self.checkV()] = self.update(observation_list[-1])
+            
+        return new_p
+
+
     # if __name__ == "__main__":
         
     #     pass

@@ -155,15 +155,37 @@ class ExternalFunction:
         else:
             return False
         
-    def checkV(self, state):
+    def checkV(self):
         v_index = 'face-c'
         return v_index
     
+
+    def update_state(self, succ_state, path):
+        if self.checkV() in succ_state:
+            succ_state[self.checkV()] = self.update(succ_state[self.checkV()])
     # customise action filters
     # to filter out the irrelevant actions
     def filterActionNames(self,problem,action_dict):
         return action_dict.keys()
 
+
+    def learnRule(self, old_ps):
+        keyword = self.checkV()
+        observation_list = [entry[keyword] for entry in old_ps if keyword in entry]
+        non_none_count = sum(1 for value in observation_list if value is not None)
+        if non_none_count > 2:
+            return True
+        else:
+            return False
+
+    def updatep(self, old_ps,new_p):
+        keyword = self.checkV()
+        observation_list = [entry[keyword] for entry in old_ps if keyword in entry]
+        non_none_count = sum(1 for value in observation_list if value is not None)
+        if self.checkV() in new_p and non_none_count >= 1:
+            new_p[self.checkV()] = self.update(observation_list[-1])
+            
+        return new_p
     # if __name__ == "__main__":
         
     #     pass

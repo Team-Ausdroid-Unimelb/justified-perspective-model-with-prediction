@@ -26,8 +26,8 @@
 
     (:goal (and
 
-        (= (:epistemic b [a] (= (num c) 3)) 1)
-        (= (:epistemic b [b] b [a] (> (num c) 2)) 1)
+        (= (:epistemic b [a] (= (num c) 5)) 1)
+        (= (:epistemic b [b] b [a] (= (num c) 5)) 1)
 
         ;todo: put the goal condition here
     ))

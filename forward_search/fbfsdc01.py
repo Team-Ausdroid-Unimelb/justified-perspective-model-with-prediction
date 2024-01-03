@@ -149,10 +149,11 @@ class Search:
                         # passed the precondition
                         succ_state = problem.generateSuccessor(state, action,path)
 
+
                         ##################################
-                        if self.external.checkV(succ_state) in succ_state:
-                            succ_state[self.external.checkV(succ_state)] = self.external.update(succ_state[self.external.checkV(succ_state)])
-                        
+                        #if self.external.checkV(succ_state,path) in succ_state:
+                            #succ_state[self.external.checkV(succ_state,path)] = self.external.update(succ_state[self.external.checkV(succ_state,path)])
+                        self.external.update_state(succ_state, path)
                         
                             
                         # self.visited.append(e_dict)
