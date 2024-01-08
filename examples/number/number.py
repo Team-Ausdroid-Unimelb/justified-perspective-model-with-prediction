@@ -139,14 +139,17 @@ class ExternalFunction:
 
     def updateRule(self, observed_result, ts_index, ts_index_temp):
         rule_increment = 1
+        rule_value = None
+        if ts_index_temp is not None and ts_index is not None:
 
-        if ts_index_temp < ts_index:
-            diff = - abs(ts_index - ts_index_temp)
+            if ts_index_temp < ts_index:
+                diff = - abs(ts_index - ts_index_temp)
+            else:
+                diff = abs(ts_index_temp - ts_index)
         else:
-            diff = abs(ts_index_temp - ts_index)
-        
-
-        rule_value = observed_result+rule_increment*diff
+            diff = 0
+        if observed_result is not None:
+            rule_value = observed_result+rule_increment*diff
         return rule_value
     
     def checkVIndex(self, v_index):
@@ -163,28 +166,52 @@ class ExternalFunction:
         v_index = 'num-c'
         return v_index
     
-    def update_state(self, succ_state, path):
-        if self.checkV() in succ_state:
-            succ_state[self.checkV()] = self.update(succ_state[self.checkV()])
+    def update_state(self, succ_state, path,domains):
+        check_value = self.checkV()
+        updated_state = succ_state
+        if succ_state is not None and check_value in succ_state:
+            updated_value = self.update(succ_state[check_value])
+            updated_state[check_value] = updated_value
+            if self.is_value_in_domain(updated_state,domains):
+                return updated_state
+        return succ_state
 
-    def learnRule(self, old_ps):
+    def is_value_in_domain(self, state,domains):
+        for var_name, value in state.items():
+            clean_var_name = var_name.split('-')[0]
+            if clean_var_name in domains:
+                domain = domains[clean_var_name].d_values
+
+                if value not in domain:
+                    return False
+        return False
+    
+    def learnRule(self, old_os):
         keyword = self.checkV()
-        observation_list = [entry[keyword] for entry in old_ps if keyword in entry]
+        observation_list = [entry[keyword] for entry in old_os if keyword in entry]
         non_none_count = sum(1 for value in observation_list if value is not None)
-        if non_none_count > 2:
+        if non_none_count >= 2:
             return True
         else:
             return False
     
-    def updatep(self, old_ps,new_p):
+    def updatep(self, new_os,ts_index,ts_index_temp,new_p):
+        new_o = new_os[-1]
         keyword = self.checkV()
-        observation_list = [entry[keyword] for entry in old_ps if keyword in entry]
-        non_none_count = sum(1 for value in observation_list if value is not None)
-        if self.checkV() in new_p and non_none_count >= 1:
-            new_p[self.checkV()] = self.update(observation_list[-1])
-            
+        memoryvalue = new_p[keyword]
+        updated_value = self.updateRule(memoryvalue , ts_index, ts_index_temp)
+        new_p[keyword] = updated_value
         return new_p
-
+    
+    def updatep(self, new_os, last_seen_index, new_p_index, new_p, new_o, agt_id, old_os):
+        if (self.checkKnowRule(new_o, agt_id) or self.learnRule(old_os)):
+            new_o = new_os[-1]
+            keyword = self.checkV()
+            memoryvalue = new_p[keyword]
+            updated_value = self.updateRule(memoryvalue, last_seen_index, new_p_index)
+            new_p[keyword] = updated_value
+        return new_p
+        
 
     # if __name__ == "__main__":
         

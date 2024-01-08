@@ -26,8 +26,8 @@
 
     (:goal (and
 
-        (= (:epistemic b [a] (= (num c) 5)) 1)
-        (= (:epistemic b [b] b [a] (= (num c) 5)) 1)
+        (= (:epistemic b [a] (= (num c) 9)) 1)
+        (= (:epistemic b [b] (= (num c) 9)) 1)
 
         ;todo: put the goal condition here
     ))
@@ -35,7 +35,7 @@
     (:domains
 
         (peeking enumerate ['t','f'])
-        (num integer [0,4])
+        (num integer [0,8])
 
     )
 

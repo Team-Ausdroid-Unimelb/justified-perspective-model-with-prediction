@@ -98,7 +98,7 @@ class Problem:
             domain_temp = Domain(d_name,values,d_name=='agent',d_type)
             self.domains.update({d_name:domain_temp})
         self.logger.debug(self.domains)
-        
+        ################
         self.logger.debug("input goals: [%s]",g_states)
         self.goals = Conditions(g_states['ontic_g'],g_states['epistemic_g'])
         self.logger.debug(self.goals)
@@ -542,6 +542,16 @@ class Problem:
                     new_state[v_name] = update
 
         # self.logger.debug('new state is : {new_state}')
+        ###########
+        #print(new_state)
+        for var_name, value in state.items():
+            clean_var_name = var_name.split('-')[0]
+            if clean_var_name in self.domains:
+                domain = self.domains[clean_var_name].d_values
+
+                if value not in domain:
+                    return None
+        ########
         return new_state
         
         

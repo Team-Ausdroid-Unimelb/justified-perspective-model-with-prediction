@@ -262,6 +262,8 @@ class EpistemicModel:
         # self.logger.debug("[%s]",)
         self.logger.debug("agt_id [%s]",agt_id)
         self.logger.debug("prefix [%s]",prefix)
+        ################
+        print(agt_id)
 
         if actions_str_new == ActionList2DictKey([ROOT_NODE_ACTION]):
 
@@ -311,23 +313,29 @@ class EpistemicModel:
                 p_path[actions_str_new][prefix]['observation'] = new_os 
             
             if "perspectives" in p_path[actions_str_new][prefix].keys() and not p_path[actions_str_new][prefix]["perspectives"]==list():
+
                 return p_path[actions_str_new][prefix]['perspectives']
             else:
                 
                 old_ps = current_level_dict["perspectives"]
                 new_p = self.get1p(agt_id,parent_state,new_os,parent_ps)
                 #######
-                if (self.external.checkKnowRule(new_p, agt_id) or self.external.learnRule(old_ps)):
-                    print("know")
-                    new_p = self.external.updatep(old_ps,new_p)
+                #edit
+                last_seen_index,new_p_index = self.get1pIndex(agt_id,parent_state,new_os,old_ps)
+                
+                new_p = self.external.updatep(new_os, last_seen_index, new_p_index, new_p, new_o, agt_id, old_os)
 
                 new_ps =  old_ps + [new_p]
                 p_path[actions_str_new][prefix]['perspectives'] = new_ps
                 ################
+                #print used
                 keyword = self.external.checkV()
-                face_c_values = [entry[keyword] for entry in new_ps if keyword in entry]
-                #print(new_ps)
-                print(face_c_values)
+                ps_values = [entry[keyword] for entry in new_ps if keyword in entry]
+                os_values = [entry[keyword] for entry in new_os if keyword in entry]
+                print(new_ps )
+                print("ps",ps_values)
+                print("os",os_values)
+                ##################
                 return new_ps
         else:
             self.logger.debug("p_parent is the different, must be cb")
@@ -341,7 +349,7 @@ class EpistemicModel:
             for i in range(len(p)):
                 temp_p = self.get1p(agt_id,p[i],new_os[:i+1:],parent_ps)
                 new_ps.append(temp_p)
-   
+
             return new_ps
 
     
@@ -363,7 +371,24 @@ class EpistemicModel:
             # self.logger.debug('\t [%s]"s value is: [%s]',v_index,value)
             new_state.update({v_index:value})
         return new_state 
-        
+
+    def get1pIndex(self,agt_id,parent_state,os,old_ps):
+        keyword = self.external.checkV()
+        ps_values = [entry[keyword] for entry in old_ps if keyword in entry]
+        os_values = [entry[keyword] for entry in os if keyword in entry]
+        new_p_index = len(old_ps)
+        last_seen_index = None
+        if os_values:
+            if os_values[-1] in ps_values:
+                last_seen_index = ps_values.index(os_values[-1])
+            elif os_values[-1] <0: 
+                return None
+            else:
+                last_seen_index = len(old_ps)
+        else:
+            None
+        return last_seen_index,new_p_index
+           
     def _identifyLastSeenTimestamp(self,observation_list:typing.List,v_index):
         ts_index_temp = len(observation_list) -1
         
@@ -440,8 +465,6 @@ class EpistemicModel:
     def _identifyMemorizedValue(self,ps, ts_index,v_index):
         ts_index_temp = ts_index
 
-        #know_rule = False
-
         if ts_index_temp <0: return None
 
 
@@ -451,9 +474,7 @@ class EpistemicModel:
             if not v_index in temp_observation or temp_observation[v_index] == None:
                 ts_index_temp += -1
             else:
-                #if know_rule or self.external.checkKnowRule(state, agt_id):
-                    #if self.external.checkVIndex(v_index):
-                        #temp_observation[v_index] = self.external.updateRule(temp_observation[v_index], ts_index, ts_index_temp)
+                #
                 return temp_observation[v_index]
         
         ts_index_temp = ts_index + 1
@@ -464,13 +485,11 @@ class EpistemicModel:
             if not v_index in temp_observation or temp_observation[v_index] == None:
                 ts_index_temp += 1
             else:
-                #if know_rule or self.external.checkKnowRule(state, agt_id):
-                    #if self.external.checkVIndex(v_index):
-                        #temp_observation[v_index] = self.external.updateRule(temp_observation[v_index],ts_index, ts_index_temp)
+                #
                 return temp_observation[v_index]        
         return None    
     
-
+  
 
     # this is wrong
     # def _identifyMemorizedValue(self,observation_list, ts_index,v_index):

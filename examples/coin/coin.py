@@ -160,7 +160,7 @@ class ExternalFunction:
         return v_index
     
 
-    def update_state(self, succ_state, path):
+    def update_state(self, succ_state, path,domains):
         if self.checkV() in succ_state:
             succ_state[self.checkV()] = self.update(succ_state[self.checkV()])
     # customise action filters

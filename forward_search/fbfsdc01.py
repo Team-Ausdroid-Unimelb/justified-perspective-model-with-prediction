@@ -2,7 +2,7 @@ import logging
 
 from util import setup_logger, PriorityQueue, PDDL_TERNARY
 # import util
-
+import re
 
 LOGGER_NAME = "forward_search:bfsdc"
 LOGGER_LEVEL = logging.INFO
@@ -151,25 +151,28 @@ class Search:
 
 
                         ##################################
-                        #if self.external.checkV(succ_state,path) in succ_state:
-                            #succ_state[self.external.checkV(succ_state,path)] = self.external.update(succ_state[self.external.checkV(succ_state,path)])
-                        self.external.update_state(succ_state, path)
+                        succ_state = self.external.update_state(succ_state, path,problem.domains)
+                        #print(succ_state)
+                        ###########################
                         
-                            
                         # self.visited.append(e_dict)
                         self.goal_checked += 1
-                        succ_node = self.SearchNode(succ_state,{},path + [(succ_state,action_name)])
-                        p,ep_dict = self._f(succ_node,problem,self.p_path)
+                        if succ_state is not None:
+                            succ_node = self.SearchNode(succ_state,{},path + [(succ_state,action_name)])
                         
-                        succ_node.remaining_goal = p - self._gn(succ_node)
-                        if succ_node.remaining_goal <= max_goal_num:
-                            succ_node.epistemic_item_set = ep_dict
-                            self.generated += 1
-                            open_list.push(item=succ_node, priority=self._gn(succ_node))
-                            temp_successor +=1
-                            temp_actions.append(action_name)
-                        else:
-                            self.pruned_by_unknown +=1
+
+                            p,ep_dict = self._f(succ_node,problem,self.p_path)
+                            
+                            succ_node.remaining_goal = p - self._gn(succ_node)
+                            if succ_node.remaining_goal <= max_goal_num:
+                                succ_node.epistemic_item_set = ep_dict
+                                self.generated += 1
+                                open_list.push(item=succ_node, priority=self._gn(succ_node))
+                                temp_successor +=1
+                                temp_actions.append(action_name)
+                            else:
+                                self.pruned_by_unknown +=1
+                        
 
 
                     else:
