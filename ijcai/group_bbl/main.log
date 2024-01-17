@@ -1,0 +1,16 @@
+2024-01-18 10:02:51,001 - experiment_runner - INFO - loading search algorithm: forward_search/fbfsdc.py
+2024-01-18 10:02:51,002 - experiment_runner - INFO - finish loading search algorithm:
+2024-01-18 10:02:51,003 - experiment_runner - INFO - solving fbfsdc_group_bbl_problem1.pddl - examples/group_bbl
+2024-01-18 10:02:51,204 - experiment_runner - INFO - solving time: 0:00:00.201120
+2024-01-18 10:02:51,204 - experiment_runner - INFO - solving fbfsdc_group_bbl_problem2.pddl - examples/group_bbl
+2024-01-18 10:02:51,478 - experiment_runner - INFO - solving time: 0:00:00.274183
+2024-01-18 10:02:51,478 - experiment_runner - INFO - solving fbfsdc_group_bbl_problem3.pddl - examples/group_bbl
+2024-01-18 10:03:10,864 - experiment_runner - INFO - solving time: 0:00:19.386074
+2024-01-18 10:03:10,864 - experiment_runner - INFO - solving fbfsdc_group_bbl_problem4.pddl - examples/group_bbl
+2024-01-18 10:03:54,351 - experiment_runner - INFO - solving time: 0:00:43.486834
+2024-01-18 10:03:54,351 - experiment_runner - INFO - solving fbfsdc_group_bbl_problem5.pddl - examples/group_bbl
+2024-01-18 10:04:00,208 - experiment_runner - INFO - solving time: 0:00:05.856292
+2024-01-18 10:04:00,208 - experiment_runner - INFO - solving fbfsdc_group_bbl_problem6.pddl - examples/group_bbl
+2024-01-18 10:04:04,943 - experiment_runner - INFO - solving time: 0:00:04.735352
+2024-01-18 10:04:04,944 - experiment_runner - INFO - solving fbfsdc_group_bbl_problem7.pddl - examples/group_bbl
+2024-01-18 10:04:04,954 - experiment_runner - INFO - solving time: 0:00:00.010548

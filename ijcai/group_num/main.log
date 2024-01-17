@@ -1,0 +1,16 @@
+2024-01-18 10:07:19,943 - experiment_runner - INFO - loading search algorithm: forward_search/fbfsdc.py
+2024-01-18 10:07:19,944 - experiment_runner - INFO - finish loading search algorithm:
+2024-01-18 10:07:19,944 - experiment_runner - INFO - solving fbfsdc_group_number_problem01.pddl - examples/group_number
+2024-01-18 10:07:20,095 - experiment_runner - INFO - solving time: 0:00:00.150427
+2024-01-18 10:07:20,095 - experiment_runner - INFO - solving fbfsdc_group_number_problem02.pddl - examples/group_number
+2024-01-18 10:07:20,103 - experiment_runner - INFO - solving time: 0:00:00.008449
+2024-01-18 10:07:20,104 - experiment_runner - INFO - solving fbfsdc_group_number_problem03.pddl - examples/group_number
+2024-01-18 10:07:20,196 - experiment_runner - INFO - solving time: 0:00:00.092202
+2024-01-18 10:07:20,196 - experiment_runner - INFO - solving fbfsdc_group_number_problem04.pddl - examples/group_number
+2024-01-18 10:07:20,580 - experiment_runner - INFO - solving time: 0:00:00.383885
+2024-01-18 10:07:20,580 - experiment_runner - INFO - solving fbfsdc_group_number_problem05.pddl - examples/group_number
+2024-01-18 10:07:22,787 - experiment_runner - INFO - solving time: 0:00:02.207019
+2024-01-18 10:07:22,787 - experiment_runner - INFO - solving fbfsdc_group_number_problem06.pddl - examples/group_number
+2024-01-18 10:07:22,862 - experiment_runner - INFO - solving time: 0:00:00.074931
+2024-01-18 10:07:22,862 - experiment_runner - INFO - solving fbfsdc_group_number_problem07.pddl - examples/group_number
+2024-01-18 10:07:22,979 - experiment_runner - INFO - solving time: 0:00:00.116902

@@ -33,6 +33,7 @@ class EpistemicModel:
         self.goal_p_keys = None
         self.pre_p_keys = None
         self.all_p_keys = list()
+        self.common_iteration_list = list()
 
     def epistemicGoalsHandler(self,epistemic_goals_dict, prefix, path, p_path):
 
