@@ -328,18 +328,19 @@ class Domain():
     d_values = None
     d_type = None
     agency = False
-    
-    def __init__(self,d_name,d_values,agency,d_type):
+    v_type = None
+    def __init__(self,d_name,d_values,agency,d_type,v_type):
         self.d_name = d_name
         self.d_values = d_values
         self.agency = agency
         self.d_type = d_type
+        self.v_type = v_type
     
     def __str__(self): # show only in the print(object)
-        return f"<domain_name: {self.d_name}; Basic type: {self.d_type}; values: {self.d_values}; isAgent?: {self.agency}>\n"
+        return f"<domain_name: {self.d_name}; Basic type: {self.d_type}; values: {self.d_values}; isAgent?: {self.agency}; varible type: {self.v_type}>\n"
 
     def __repr__(self): # show when in a dictionary
-        return f"<domain_name: {self.d_name}; Basic type: {self.d_type}; values: {self.d_values}; isAgent?: {self.agency}>\n"
+        return f"<domain_name: {self.d_name}; Basic type: {self.d_type}; values: {self.d_values}; isAgent?: {self.agency}; varible type: {self.v_type}>\n"
     
     def isAgent(self):
         return self.agency

@@ -263,7 +263,8 @@ class EpistemicModel:
         self.logger.debug("agt_id [%s]",agt_id)
         self.logger.debug("prefix [%s]",prefix)
         ################
-        print(agt_id)
+        print("agt_id",agt_id)
+
 
         if actions_str_new == ActionList2DictKey([ROOT_NODE_ACTION]):
 
@@ -313,17 +314,16 @@ class EpistemicModel:
                 p_path[actions_str_new][prefix]['observation'] = new_os 
             
             if "perspectives" in p_path[actions_str_new][prefix].keys() and not p_path[actions_str_new][prefix]["perspectives"]==list():
-
+                #print(p_path[actions_str_new][prefix]['perspectives'])
                 return p_path[actions_str_new][prefix]['perspectives']
             else:
                 
                 old_ps = current_level_dict["perspectives"]
                 new_p = self.get1p(agt_id,parent_state,new_os,parent_ps)
+
                 #######
-                #edit
                 last_seen_index,new_p_index = self.get1pIndex(agt_id,parent_state,new_os,old_ps)
-                
-                new_p = self.external.updatep(new_os, last_seen_index, new_p_index, new_p, new_o, agt_id, old_os)
+                new_p = self.external.updatep(new_os, last_seen_index, new_p_index, new_p, new_o, agt_id, old_os) #
 
                 new_ps =  old_ps + [new_p]
                 p_path[actions_str_new][prefix]['perspectives'] = new_ps
@@ -332,7 +332,7 @@ class EpistemicModel:
                 keyword = self.external.checkV()
                 ps_values = [entry[keyword] for entry in new_ps if keyword in entry]
                 os_values = [entry[keyword] for entry in new_os if keyword in entry]
-                print(new_ps )
+                print(new_ps)
                 print("ps",ps_values)
                 print("os",os_values)
                 ##################
@@ -372,21 +372,16 @@ class EpistemicModel:
             new_state.update({v_index:value})
         return new_state 
 
-    def get1pIndex(self,agt_id,parent_state,os,old_ps):
+    def get1pIndex(self,agt_id,parent_state,os,old_ps):#
         keyword = self.external.checkV()
-        ps_values = [entry[keyword] for entry in old_ps if keyword in entry]
-        os_values = [entry[keyword] for entry in os if keyword in entry]
         new_p_index = len(old_ps)
         last_seen_index = None
-        if os_values:
-            if os_values[-1] in ps_values:
-                last_seen_index = ps_values.index(os_values[-1])
-            elif os_values[-1] <0: 
-                return None
-            else:
-                last_seen_index = len(old_ps)
-        else:
-            None
+        peeking_key = f'peeking-{agt_id}'
+        for i in range(len(os)-1, -1, -1): # 
+            if os[i][peeking_key] == 't':
+                last_seen_index = i
+                break
+
         return last_seen_index,new_p_index
            
     def _identifyLastSeenTimestamp(self,observation_list:typing.List,v_index):

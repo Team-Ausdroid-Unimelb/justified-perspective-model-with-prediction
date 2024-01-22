@@ -127,37 +127,86 @@ class ExternalFunction:
     def filterActionNames(self,problem,action_dict):
         return action_dict.keys()
 
-    def checkKnowRule(self, state, agt_index):
-        
-        knows_rule_key = f'knows_rule-{agt_index}'
-        
+    def checkKnowRule(self, state, agt_id, old_os):
+        knows_rule_key = f'knows_rule-{agt_id}'
         if knows_rule_key in state and state[knows_rule_key].lower() == 'yes':
+            return True
+        elif self.learnRule(old_os,agt_id):
             return True
         else:
             return False
         
-
-    def updateRule(self, observed_result, ts_index, ts_index_temp):
-        rule_increment = 1
+    
+    def updateRule(self, observed_result, last_seen_index,new_p_index, old_os):
+        a = 1
         rule_value = None
-        if ts_index_temp is not None and ts_index is not None:
+        if last_seen_index is not None and new_p_index is not None:
+            diff = abs(last_seen_index - new_p_index)
 
-            if ts_index_temp < ts_index:
-                diff = - abs(ts_index - ts_index_temp)
+            if last_seen_index < new_p_index:
+                diff = diff
             else:
-                diff = abs(ts_index_temp - ts_index)
+                diff = -diff
         else:
             diff = 0
         if observed_result is not None:
-            rule_value = observed_result+rule_increment*diff
+            rule_value = observed_result+a*diff
         return rule_value
     
-    def checkVIndex(self, v_index):
-        if v_index == 'num-c':
-            return True
+    '''#y = ax+b
+    def updateRule(self, observed_result, last_seen_index,new_p_index, old_os):
+        keyword = self.checkV()
+        observed_list = []
+
+        for i in range(len(old_os)-1, -1, -1):
+            if keyword in old_os[i]:
+                value = old_os[i][keyword]
+                if value is not None:
+                    observed_list.append([i, value])
+        ##################
+        if observed_list:
+            x_values = [item[0] for item in observed_list]
+            y_values = [item[1] for item in observed_list]
+
+            coefficients = np.polyfit(x_values, y_values, 1)    #change 2 poly
+            a = coefficients[0]
+            b = coefficients[1]
+            ############# 
+            x = len(old_os)
+            result = a * x + b
         else:
-            return False
-        
+            result = observed_result
+        return result
+    '''
+    '''#sin
+    def updateRule(self, observed_result, last_seen_index,new_p_index, old_os):
+        keyword = self.checkV()
+        observed_list = []
+
+        for i in range(len(old_os)-1, -1, -1):
+            if keyword in old_os[i]:
+                value = old_os[i][keyword]
+                if value is not None:
+                    observed_list.append([i, value])
+        ##################
+        if observed_list:
+            x_values = [item[0] for item in observed_list]
+            y_values = [item[1] for item in observed_list]
+
+                params, covariance = curve_fit(sin_function, x_values, y_values)
+
+            a, b = params
+            ############# sin
+            x = len(old_os)
+            result = a * np.sin(b * x)
+        else:
+            result = observed_result
+        return result
+    '''
+
+    def sin_function(x, a, b):
+        return a * np.sin(b * x)
+
     def update(self,value):
         return value + 1
     
@@ -165,13 +214,13 @@ class ExternalFunction:
     def checkV(self):
         v_index = 'num-c'
         return v_index
-    
+
     def update_state(self, succ_state, path,domains):
-        check_value = self.checkV()
+        keyword = self.checkV()
         updated_state = succ_state
-        if succ_state is not None and check_value in succ_state:
-            updated_value = self.update(succ_state[check_value])
-            updated_state[check_value] = updated_value
+        if succ_state is not None and keyword in succ_state:
+            updated_value = self.update(succ_state[keyword])
+            updated_state[keyword] = updated_value
             if self.is_value_in_domain(updated_state,domains):
                 return updated_state
         return succ_state
@@ -181,34 +230,33 @@ class ExternalFunction:
             clean_var_name = var_name.split('-')[0]
             if clean_var_name in domains:
                 domain = domains[clean_var_name].d_values
-
                 if value not in domain:
                     return False
-        return False
+        return True
     
-    def learnRule(self, old_os):
+    def learnRule(self, old_os,agt_id):
         keyword = self.checkV()
-        observation_list = [entry[keyword] for entry in old_os if keyword in entry]
-        non_none_count = sum(1 for value in observation_list if value is not None)
-        if non_none_count >= 2:
-            return True
+        num_c_count = 0
+
+        for i in range(len(old_os)-1, -1, -1):
+            if keyword in old_os[i]:
+                
+                num_c_count += 1
+                if num_c_count >= 2:
+                    return True
         else:
             return False
+
     
-    def updatep(self, new_os,ts_index,ts_index_temp,new_p):
+    def updatep(self, new_os, last_seen_index, new_p_index, new_p, new_o, agt_id, old_os):
         new_o = new_os[-1]
         keyword = self.checkV()
         memoryvalue = new_p[keyword]
-        updated_value = self.updateRule(memoryvalue , ts_index, ts_index_temp)
-        new_p[keyword] = updated_value
-        return new_p
-    
-    def updatep(self, new_os, last_seen_index, new_p_index, new_p, new_o, agt_id, old_os):
-        if (self.checkKnowRule(new_o, agt_id) or self.learnRule(old_os)):
-            new_o = new_os[-1]
-            keyword = self.checkV()
-            memoryvalue = new_p[keyword]
-            updated_value = self.updateRule(memoryvalue, last_seen_index, new_p_index)
+        if self.checkKnowRule(new_o, agt_id, old_os): ##know rule 的index
+            knows_rule_key = f'knows_rule-{agt_id}'
+            new_p[knows_rule_key] = 'yes'
+
+            updated_value = self.updateRule(memoryvalue, last_seen_index, new_p_index, old_os)
             new_p[keyword] = updated_value
         return new_p
         

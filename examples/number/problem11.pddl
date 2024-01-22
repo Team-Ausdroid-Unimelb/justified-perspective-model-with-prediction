@@ -19,23 +19,23 @@
         (= (peeking a) 'f')
         (= (peeking b) 'f')
         (= (num c) 2)
-        (= (knows_rule a) 'yes') 
+        (= (knows_rule a) 'no') 
         (= (knows_rule b) 'no') 
         ;todo: put the initial state's facts and numeric values here
     )
 
     (:goal (and
-        ;a,b get different blief
-        (= (:epistemic b [a] (= (num c) 5)) 1)
-        (= (:epistemic b [b] (= (num c) 3)) 1)
-        (= (:epistemic b [b] b [a] (= (num c) 3)) 1)
-        ;(= (:ontic (= (peeking b) 'f')) 1)
-        
+        ;both a and b learn the rule
+        (= (:epistemic b [a] (= (num c) 14)) 1)
+        (= (:epistemic b [b] (= (num c) 14)) 1)
+        (= (:ontic (= (peeking b) 'f')) 1)
+        (= (:ontic (= (peeking a) 'f')) 1)  
     ))
 
     (:domains
-        (peeking enumerate ['t','f'] static) ;
-        (num integer [0,8] linear)
+
+        (peeking enumerate ['t','f']) ;
+        (num integer [0,20])
     ;static, linear, sin, 2nd_poly
 
     )

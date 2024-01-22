@@ -301,14 +301,17 @@ class PDDLParser:
                             value = domain_str[2].replace('"',"")[1:-1:].split(",")
                         else:
                             value = [ int(i) for i in domain_str[2][1:-1:].split(",")]
-                        domains.update({domain_str[0]:{"basic_type":domain_str[1],"values":value}})
+                        ###############    
+                        variable_type = domain_str[3] if len(domain_str) > 3 else None
+                        domains.update({domain_str[0]:{"basic_type":domain_str[1],"values":value,"variable_type":variable_type}})
+                        #############
                 self.logger.debug(domains)
             except AttributeError:
                 
                 self.logger.error("error when extract domains")
                 self.logger.error(traceback.format_exc())
                 exit()
-                
+
             return domains,i_state,g_states,agent_index,obj_index,variables,d_name,p_name
         
     def domainParser(self,file_path):
