@@ -251,7 +251,7 @@ class EpistemicModel:
                 self.logger.error("group size is wrong")
                 raiseNotDefined()
 
-
+    '''
     def get1ps(self,agt_id,p,prefix, actions_str_old, actions_str_new,p_path):
         parent_state = p[-1]
         parent_ps = p
@@ -351,7 +351,148 @@ class EpistemicModel:
                 new_ps.append(temp_p)
 
             return new_ps
+    '''
 
+    def get1ps(self,agt_id,p,prefix, actions_str_old, actions_str_new,p_path):
+        parent_state = p[-1]
+        parent_ps = p
+        p_str = str(p)
+        # self.logger.debug(actions_str_new)
+        # self.logger.debug(ActionList2DictKey([ROOT_NODE_ACTION]))
+        # self.logger.debug("test")
+        # self.logger.debug("[%s]",)
+        self.logger.debug("agt_id [%s]",agt_id)
+        self.logger.debug("prefix [%s]",prefix)
+        ################
+        print("###################")
+        print("agt_id",agt_id)
+        print("prefix",prefix)
+
+        if actions_str_new == ActionList2DictKey([ROOT_NODE_ACTION]):
+
+            if actions_str_old not in p_path:
+                p_path[actions_str_old] = dict()
+                p_path[actions_str_old]["p_parent"] = list({})
+                p_path[actions_str_old]["observation"] = list({})
+                p_path[actions_str_old]["perspectives"] = list({})
+            current_level_dict = dict()
+            current_level_dict["p_parent"] = list()
+            current_level_dict["observation"] = list()
+            current_level_dict["perspectives"] = list()
+        else:
+            existing_p_dict = p_path[actions_str_old]
+            current_level_dict = existing_p_dict[prefix]
+            
+            
+        self.logger.debug("actions_str_old [%s]",actions_str_old)
+        self.logger.debug("current_level_dict [%s]",current_level_dict)
+
+            
+        # self.logger.debug(p_path)
+        
+        if not actions_str_new in p_path.keys():
+            p_path[actions_str_new] = dict()
+        if not prefix in p_path[actions_str_new].keys():
+            p_path[actions_str_new][prefix] = dict()
+            p_path[actions_str_new][prefix]['p_parent'] = parent_ps
+        
+        self.logger.debug("actions_str_new [%s]",actions_str_new)
+        
+        self.logger.debug("p_path[actions_str_new][prefix] [%s]",p_path[actions_str_new][prefix])
+        
+        
+        if p_path[actions_str_new][prefix]['p_parent'] == parent_ps:
+            self.logger.debug("p_parent is the same")
+            
+            if "observation" in p_path[actions_str_new][prefix].keys() and not p_path[actions_str_new][prefix]["observation"]==list():
+                self.logger.debug("observation is not empty [%s]",p_path[actions_str_new][prefix]['observation'])
+                #new_os = p_path[actions_str_new][prefix]['observation']
+                ##
+                new_os = []
+                for temp_p in p:
+                    temp_o = self.get1o(temp_p,agt_id)
+                    new_os.append(temp_o)
+
+                keyword = self.external.checkV()
+                os_values = [entry[keyword] for entry in new_os if keyword in entry]
+                print("os",os_values)
+                ###
+            else:
+
+                p_path[actions_str_new][prefix]['p_parent'] = parent_ps
+                #old_os = current_level_dict["observation"]
+                #new_o = self.get1o(parent_state,agt_id)
+                #new_os =  old_os + [new_o]
+                ###
+                new_os = []
+                for temp_p in p:
+                    temp_o = self.get1o(temp_p,agt_id)
+                    new_os.append(temp_o)
+                ###
+                self.logger.debug("observation is not found [%s]",new_os)
+                p_path[actions_str_new][prefix]['observation'] = new_os 
+                
+                #######print
+                keyword = self.external.checkV()
+                os_values = [entry[keyword] for entry in new_os if keyword in entry]
+                print("os",os_values)
+            
+            if "perspectives" in p_path[actions_str_new][prefix].keys() and not p_path[actions_str_new][prefix]["perspectives"]==list():
+                
+                new_ps = []
+                for i in range(len(p)):
+                    temp_p = self.get1p(agt_id,p[i],new_os[:i+1:],parent_ps)
+                    new_p = self.external.updatep(new_os, i, temp_p, agt_id)
+                    new_ps.append(new_p)
+                p_path[actions_str_new][prefix]['perspectives'] = new_ps
+                
+                #######print
+                keyword = self.external.checkV()
+                ps_values = [entry[keyword] for entry in p_path[actions_str_new][prefix]['perspectives'] if keyword in entry]
+                print("ps",ps_values)
+                #####
+
+                return p_path[actions_str_new][prefix]['perspectives']
+            else:
+                #old_ps = current_level_dict["perspectives"]
+                #new_p = self.get1p(agt_id,parent_state,new_os,parent_ps)
+
+                new_ps = []
+                for i in range(len(p)):
+                    temp_p = self.get1p(agt_id,p[i],new_os[:i+1:],parent_ps)
+                    new_p = self.external.updatep(new_os, i, temp_p, agt_id)
+                    new_ps.append(new_p)
+
+                p_path[actions_str_new][prefix]['perspectives'] = new_ps
+
+                #print used
+                keyword = self.external.checkV()
+                ps_values = [entry[keyword] for entry in new_ps if keyword in entry]
+                print("ps",ps_values)
+                '''
+                keyword = self.external.checkV()
+                ps_values = [entry[keyword] for entry in new_ps if keyword in entry]
+                os_values = [entry[keyword] for entry in new_os if keyword in entry]
+                print(new_ps)
+                print("ps",ps_values)
+                print("os",os_values)
+                ##################
+                '''
+                return new_ps
+        else:
+            self.logger.debug("p_parent is the different, must be cb")
+            self.logger.debug("input p is: [%s]",p)
+            new_os = []
+            for temp_p in p:
+                temp_o = self.get1o(temp_p,agt_id)
+                new_os.append(temp_o)
+            
+            new_ps = []
+            for i in range(len(p)):
+                temp_p = self.get1p(agt_id,p[i],new_os[:i+1:],parent_ps)
+                new_ps.append(temp_p)
+
+            return new_ps
     
     def get1o(self,parent_state,agt_id):
         new_state = {}
@@ -371,9 +512,8 @@ class EpistemicModel:
             # self.logger.debug('\t [%s]"s value is: [%s]',v_index,value)
             new_state.update({v_index:value})
         return new_state 
-
-    def get1pIndex(self,agt_id,parent_state,os,old_ps):#
-        keyword = self.external.checkV()
+    '''
+    def get1pIndex(self,agt_id,os,old_ps):#
         new_p_index = len(old_ps)
         last_seen_index = None
         peeking_key = f'peeking-{agt_id}'
@@ -383,7 +523,7 @@ class EpistemicModel:
                 break
 
         return last_seen_index,new_p_index
-           
+    '''   
     def _identifyLastSeenTimestamp(self,observation_list:typing.List,v_index):
         ts_index_temp = len(observation_list) -1
         

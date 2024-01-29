@@ -26,6 +26,7 @@
 
     (:goal (and
         ;both a and b learn the rule
+        ;both a and b did not see the number but know the value
         (= (:epistemic b [a] (= (num c) 14)) 1)
         (= (:epistemic b [b] (= (num c) 14)) 1)
         (= (:ontic (= (peeking b) 'f')) 1)

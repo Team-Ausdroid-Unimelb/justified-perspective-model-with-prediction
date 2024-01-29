@@ -25,13 +25,12 @@
     )
 
     (:goal (and
-        ;a learn the rule
-        ;a know b learn the rule 
-        ;both a and b did not see the number but know the value
-        (= (:epistemic b [a] (= (num c) 14)) 1)
-        (= (:epistemic b [b] (= (num c) 14)) 1)
-        (= (:epistemic b [a] b [b] (= (num c) 14)) 1)
-        (= (:ontic (= (peeking a) 'f')) 1)
+        ;no one know the rule but a guess b see 5
+        (= (:epistemic b [a] (= (num c) 5)) 1)
+        (= (:epistemic b [a] b [b] (= (num c) 5)) 1)
+        (= (:ontic (= (peeking b) 'f')) 1)
+        
+
         
     ))
 
@@ -41,10 +40,7 @@
         (num integer [0,20])
     ;static, linear, sin, 2nd_poly
 
-    )       
-
-
-
-    ;un-comment the following line if metric is needed
-    ;(:metric minimize (???))
-)
+ 
+        
+           )  
+) 
