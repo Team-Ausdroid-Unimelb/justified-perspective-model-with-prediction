@@ -134,7 +134,7 @@ class ExternalFunction:
         else:
             return False
         
-    #y = ax+b
+    
     def updateRuleByLearn(self, observed_result,new_os, new_p_index):
         keyword = self.checkV()
         observed_list = []
@@ -144,19 +144,36 @@ class ExternalFunction:
                 value = new_os[i][keyword]
                 if value is not None:
                     observed_list.append([i, value])
+        #y = ax^2+bx+c
+        if observed_list and len(observed_list) > 2:  # Check if there are at least 3 points for quadratic fit 
+            x_values = [item[0] for item in observed_list]
+            y_values = [item[1] for item in observed_list]
+            #print(x_values,y_values)
+
+            coefficients = np.polyfit(x_values, y_values, 2)  # Fit a quadratic polynomial, if linear,a will be 0
+            a = coefficients[0]
+            b = coefficients[1]
+            c = coefficients[2]
+            #print(a,b,c)
+
+            x = new_p_index
+            result = round(a * x**2 + b * x + c)
         
-        if observed_list and len(observed_list)>1: #can update
+        #y = ax+b
+        elif observed_list and len(observed_list) > 1: #can update 
             x_values = [item[0] for item in observed_list]
             y_values = [item[1] for item in observed_list]
         
-            coefficients = np.polyfit(x_values, y_values, 1)    #change 2 poly
+            coefficients = np.polyfit(x_values, y_values, 1)    
             a = coefficients[0]
             b = coefficients[1]
-            ############# 
+
             x = new_p_index
             result = round(a * x + b)
+
         else: #can not update
             result = observed_result
+
         return result
     
     '''#sin
@@ -183,27 +200,36 @@ class ExternalFunction:
         else:
             result = observed_result
         return result
-    '''
+    
 
     def sin_function(x, a, b):
         return a * np.sin(b * x)
-
-    def update(self,value):
-        return value + 1
+    '''
+    def updatelinear(self,x):
+        return x + 2
+    
+    def update2Poly(self,x):
+        return x**2 + 1
     
     
     def checkV(self):
         v_index = 'num-c'
         return v_index
 
-    def update_state(self, succ_state, path,domains):
+    def update_state(self, succ_state, path, problem):
+        domains = problem.domains
+
         keyword = self.checkV()
+        x = len(path)
         updated_state = succ_state
         if succ_state is not None and keyword in succ_state:
-            updated_value = self.update(succ_state[keyword])
+            updated_value = self.updatelinear(x)    ###change model here
             updated_state[keyword] = updated_value
+            #print(x,updated_value)
             if self.is_value_in_domain(updated_state,domains):
                 return updated_state
+            else:
+                return None
         return succ_state
 
     def is_value_in_domain(self, state,domains):
@@ -218,10 +244,8 @@ class ExternalFunction:
     def learnRule(self, os,agt_id):
         keyword = self.checkV()
         num_c_count = 0
-
         for i in range(len(os)-1, -1, -1):
             if keyword in os[i]:
-                
                 num_c_count += 1
                 if num_c_count >= 2:
                     return True
@@ -229,19 +253,29 @@ class ExternalFunction:
             return False
 
     
-    def updatep(self, new_os, new_p_index, new_p, agt_id):
+    def updatep(self, new_os, new_p_index, new_p, agt_id,prefix,domains):
         keyword = self.checkV()
         memoryvalue = new_p[keyword] #initailize
+        unit_count = self.getUnitCount(prefix)
 
         for i in range(len(new_os) - 1, -1, -1):
             if keyword in new_os[i] and isinstance(new_os[i][keyword], (int, float)):
                 memoryvalue = new_os[i][keyword]
                 break
 
-        if self.checkKnowRule(agt_id, new_os): #in initialization, rule must correct
+        if self.checkKnowRule(agt_id, new_os)and unit_count == 1 and memoryvalue is not None: #in initialization, rule must correct
             #knows_rule_key = f'knows_rule-{agt_id}'
             #new_p[knows_rule_key] = 'yes'
-            updated_value = self.updateRuleByKnow(memoryvalue,new_os, new_p_index)
+            x = new_p_index
+            variable_type = domains.get("num", {}).get("variable_type", None)
+            if variable_type == 'linear':
+                updated_value = self.updateRuleByKnowLinear(memoryvalue,new_os, x)
+            elif variable_type == '2nd_poly':
+                updated_value = self.updateRuleByKnow2ndpoly(memoryvalue,new_os, x)
+            elif variable_type == 'static':
+                updated_value = memoryvalue
+            else:
+                updated_value = self.updateRuleByKnowLinear(memoryvalue,new_os, x)  #default linear
             new_p[keyword] = updated_value
 
         elif self.learnRule(new_os,agt_id): #see twice, rule can be wrong
@@ -254,22 +288,35 @@ class ExternalFunction:
             new_p[keyword] = memoryvalue
         return new_p
     
-    def updateRuleByKnow(self, memoryvalue, new_os, new_p_index):
+    def getUnitCount(self, prefix):
+        pattern = re.compile(r"b \[(.*)\]")
+        match = pattern.match(prefix)
+        if match:
+            units = match.group(1).split()
+            return len(units)
+        else:
+            return 0  
+
+    def updateRuleByKnowLinear(self, memoryvalue, new_os, x):
+        ruleValue = self.updatelinear(x)
+        '''
         keyword = self.checkV()
         observed_index = None
         observed_result = memoryvalue
-
         for i in range(len(new_os)-1, -1, -1):        
             if keyword in new_os[i] and new_os[i][keyword] == memoryvalue:
                 observed_index = i
                 break
-
         if memoryvalue is not None and new_p_index is not None and observed_index is not None:
             observed_result = memoryvalue+(new_p_index-observed_index)
-        #print("R",observed_result,"Rin",observed_index,"pin",new_p_index)
-        return observed_result
+        '''
+        return ruleValue
+    
+    def updateRuleByKnow2ndpoly(self, memoryvalue, new_os, x):
+        ruleValue = self.update2Poly(x)
+        return ruleValue
 
-        
+    
 
     # if __name__ == "__main__":
         

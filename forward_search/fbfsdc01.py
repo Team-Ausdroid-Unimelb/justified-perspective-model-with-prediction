@@ -151,9 +151,9 @@ class Search:
 
 
                         ##################################
-                        succ_state = self.external.update_state(succ_state, path,problem.domains)
+                        succ_state = self.external.update_state(succ_state, path, problem)
                         #print(succ_state)
-                        ###########################
+                        ##########################
                         
                         # self.visited.append(e_dict)
                         self.goal_checked += 1
@@ -164,6 +164,8 @@ class Search:
                             p,ep_dict = self._f(succ_node,problem,self.p_path)
                             
                             succ_node.remaining_goal = p - self._gn(succ_node)
+                            # print(max_goal_num)
+                            # print(succ_node.remaining_goal)
                             if succ_node.remaining_goal <= max_goal_num:
                                 succ_node.epistemic_item_set = ep_dict
                                 self.generated += 1
@@ -279,9 +281,11 @@ class Search:
         is_goal,epistemic_dict,goal_dict = problem.isGoal(state,path,p_path)
         
         remain_goal_number = list(goal_dict.values()).count(False)
-
+        # print(goal_dict)
+        
         for key,value in goal_dict.items():
-            if str(PDDL_TERNARY.UNKNOWN.value) in key and not value:
+            #if str(PDDL_TERNARY.UNKNOWN.value) == problem.goals.epistemic_dict[key].value and not value:
+            if key in problem.goals.epistemic_dict and str(PDDL_TERNARY.UNKNOWN.value) == problem.goals.epistemic_dict[key].value and not value:
                 self.logger.debug('Unknown been updated, goal is impossible')
                 return 9999,epistemic_dict      
         return remain_goal_number,epistemic_dict

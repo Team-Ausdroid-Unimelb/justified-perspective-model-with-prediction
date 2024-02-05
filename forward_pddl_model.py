@@ -12,7 +12,7 @@ import forward_epistemic_model
 
 LOGGER_NAME = "pddl_model"
 LOGGER_LEVEL = logging.INFO
-# LOGGER_LEVEL = logging.DEBUG
+LOGGER_LEVEL = logging.DEBUG
 
 
 from util import setup_logger,PDDL_TERNARY
@@ -111,7 +111,7 @@ class Problem:
         if belief_mode == 0:
             self.epistemic_model = epistemic_model.EpistemicModel(handlers,self.entities,self.variables,external)
         elif belief_mode == 1:
-            self.epistemic_model = forward_epistemic_model.EpistemicModel(handlers,self.entities,self.variables,external)
+            self.epistemic_model = forward_epistemic_model.EpistemicModel(handlers,self.entities,self.variables,external,domains)
         elif belief_mode == 2:
             assert False,"belief mode not defined yet" 
         elif belief_mode ==3:

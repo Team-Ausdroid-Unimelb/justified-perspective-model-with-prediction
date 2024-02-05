@@ -29,7 +29,6 @@
         ;a know is 5
         ;b think is 3
         ;b think a see 3
-        ;a know b think is 3
 
         (= (:epistemic b [a] (= (num c) 5)) 1)
         (= (:epistemic b [b] (= (num c) 3)) 1)

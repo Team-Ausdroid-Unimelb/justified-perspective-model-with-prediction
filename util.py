@@ -391,6 +391,13 @@ class EpistemicCondition():
         self.variable_name = variable_name
         self.v_value = v_value
         self.value =  value
+
+    def __repr__(self):
+        return f"{self.variable_name}, {self.v_value}, {self.value}"
+    
+    def __str__(self) -> str:
+        
+        return f"{self.variable_name}, {self.v_value}, {self.value}"
  
 # the following classes are for epistemic model
 class Q_TYPE(Enum):

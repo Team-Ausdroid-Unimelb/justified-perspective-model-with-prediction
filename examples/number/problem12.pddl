@@ -28,18 +28,18 @@
         ;a learn the rule
         ;a know b learn the rule 
         ;both a and b did not see the number but know the value
-        (= (:epistemic b [a] (= (num c) 14)) 1)
-        (= (:epistemic b [b] (= (num c) 14)) 1)
-        (= (:epistemic b [a] b [b] (= (num c) 14)) 1)
-        (= (:ontic (= (peeking a) 'f')) 1)
+        (= (:epistemic b [a] (= (num c) 10)) 1)
+        (= (:epistemic b [b] (= (num c) 10)) 1)
+        (= (:epistemic b [a] b [b] (= (num c) 10)) 1)
+        ;(= (:ontic (= (peeking a) 'f')) 1)
         
     ))
 
     (:domains
 
         (peeking enumerate ['t','f']) ;
-        (num integer [0,20])
-    ;static, linear, sin, 2nd_poly
+        (num integer [0,20] linear)
+        ;static, linear, sin, 2nd_poly ###ax+b
 
     )       
 

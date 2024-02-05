@@ -23,9 +23,10 @@ class EpistemicModel:
     common_iteration_list = list()
     entities = {}
     variables = {}
+    domains = None
     
     
-    def __init__(self, handlers, entities, variables, external):
+    def __init__(self, handlers, entities, variables, external,domains):
         self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=LOGGER_LEVEL) 
         self.entities = entities
         self.variables = variables
@@ -33,6 +34,7 @@ class EpistemicModel:
         self.goal_p_keys = None
         self.pre_p_keys = None
         self.all_p_keys = list()
+        self.domains = domains
 
     def epistemicGoalsHandler(self,epistemic_goals_dict, prefix, path, p_path):
 
@@ -403,7 +405,35 @@ class EpistemicModel:
         
         if p_path[actions_str_new][prefix]['p_parent'] == parent_ps:
             self.logger.debug("p_parent is the same")
-            
+            p_path[actions_str_new][prefix]['p_parent'] = parent_ps
+        else:
+            self.logger.debug("p_parent is the different, must be cb")
+            self.logger.debug("input p is: [%s]",p)
+
+        new_os = [self.get1o(temp_p, agt_id) for temp_p in p]
+        ###
+        self.logger.debug("observation is not found [%s]", new_os)
+        p_path[actions_str_new][prefix]['observation'] = new_os 
+
+        #######print
+        keyword = self.external.checkV()
+        os_values = [entry[keyword] for entry in new_os if keyword in entry]
+        print("os", os_values)
+        ########
+        domains = self.domains
+        new_ps = []
+        for i in range(len(p)):
+            temp_p = self.get1p(agt_id,p[i],new_os[:i+1:],parent_ps)
+            new_p = self.external.updatep(new_os, i, temp_p, agt_id,prefix,domains)
+            new_ps.append(new_p)
+        p_path[actions_str_new][prefix]['perspectives'] = new_ps
+        
+        #######print
+        keyword = self.external.checkV()
+        ps_values = [entry[keyword] for entry in p_path[actions_str_new][prefix]['perspectives'] if keyword in entry]
+        print("ps",ps_values)
+        #########
+        '''
             if "observation" in p_path[actions_str_new][prefix].keys() and not p_path[actions_str_new][prefix]["observation"]==list():
                 self.logger.debug("observation is not empty [%s]",p_path[actions_str_new][prefix]['observation'])
                 #new_os = p_path[actions_str_new][prefix]['observation']
@@ -420,10 +450,7 @@ class EpistemicModel:
             else:
 
                 p_path[actions_str_new][prefix]['p_parent'] = parent_ps
-                #old_os = current_level_dict["observation"]
-                #new_o = self.get1o(parent_state,agt_id)
-                #new_os =  old_os + [new_o]
-                ###
+
                 new_os = []
                 for temp_p in p:
                     temp_o = self.get1o(temp_p,agt_id)
@@ -436,7 +463,8 @@ class EpistemicModel:
                 keyword = self.external.checkV()
                 os_values = [entry[keyword] for entry in new_os if keyword in entry]
                 print("os",os_values)
-            
+                '''
+        '''
             if "perspectives" in p_path[actions_str_new][prefix].keys() and not p_path[actions_str_new][prefix]["perspectives"]==list():
                 
                 new_ps = []
@@ -469,7 +497,7 @@ class EpistemicModel:
                 keyword = self.external.checkV()
                 ps_values = [entry[keyword] for entry in new_ps if keyword in entry]
                 print("ps",ps_values)
-                '''
+                
                 keyword = self.external.checkV()
                 ps_values = [entry[keyword] for entry in new_ps if keyword in entry]
                 os_values = [entry[keyword] for entry in new_os if keyword in entry]
@@ -477,8 +505,10 @@ class EpistemicModel:
                 print("ps",ps_values)
                 print("os",os_values)
                 ##################
-                '''
+                
                 return new_ps
+            
+        
         else:
             self.logger.debug("p_parent is the different, must be cb")
             self.logger.debug("input p is: [%s]",p)
@@ -493,6 +523,9 @@ class EpistemicModel:
                 new_ps.append(temp_p)
 
             return new_ps
+        '''
+
+        return new_ps
     
     def get1o(self,parent_state,agt_id):
         new_state = {}
