@@ -201,6 +201,8 @@ class Search:
         self.logger.info(f'[number of node generated]: {self.generated}')
         self.logger.info(f'[number of epistemic formulas evaluation: {problem.epistemic_calls}]')
         self.logger.info(f'[time in epistemic formulas evaluation: {problem.epistemic_call_time}]')
+        self.logger.info(f'[avg time in epistemic formulas evaluation: {problem.epistemic_call_time.total_seconds()/problem.epistemic_calls}]')
+
         
         # file output
         self.result.update({'pruned':self.pruned})
@@ -211,6 +213,7 @@ class Search:
         self.result.update({'generated':self.generated})
         self.result.update({'epistemic_calls':problem.epistemic_calls})
         self.result.update({'epistemic_call_time':problem.epistemic_call_time.total_seconds()})
+        self.result.update({'epistemic_call_time_avg':problem.epistemic_call_time.total_seconds()/problem.epistemic_calls})
         
         ## added for common perspective iterations
         common_iteration_list = problem.epistemic_model.common_iteration_list

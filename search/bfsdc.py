@@ -198,6 +198,7 @@ class Search:
         self.logger.info(f'[number of node generated]: {self.generated}')
         self.logger.info(f'[number of epistemic formulas evaluation: {problem.epistemic_calls}]')
         self.logger.info(f'[time in epistemic formulas evaluation: {problem.epistemic_call_time}]')
+        self.logger.info(f'[average evaluation: {problem.epistemic_call_time.total_seconds()/problem.epistemic_call_time}]')
         # file output
         self.result.update({'pruned':self.pruned})
         self.result.update({'pruned_by_unknown':self.pruned_by_unknown})
@@ -207,6 +208,8 @@ class Search:
         self.result.update({'generated':self.generated})
         self.result.update({'epistemic_calls':problem.epistemic_calls})
         self.result.update({'epistemic_call_time':problem.epistemic_call_time.total_seconds()})
+        self.result.update({'epistemic_call_time':problem.epistemic_call_time.total_seconds()/problem.epistemic_call_time})
+
 
     def group_epistemic_goals(self,problem):
         group_eg_dict = {}
