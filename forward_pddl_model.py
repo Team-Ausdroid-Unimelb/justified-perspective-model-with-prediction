@@ -72,6 +72,7 @@ class Problem:
                 v_temp = Variable(var_name,d_name,v_parent)
                 self.variables.update({var_name:v_temp})
         self.logger.debug(self.variables)
+        print(self.variables)
             
         # grounding all abstract_actions or do not ground any abstract_actions?    
         # self.logger.debug("initialize abstract_actions")
@@ -91,13 +92,14 @@ class Problem:
         for d_name in domains.keys():
             values = domains[d_name]['values']
             d_type = dTypeConvert(self.logger,domains[d_name]['basic_type'])
-            if d_type == D_TYPE.INTEGER:
-                bound = domains[d_name]['values']
-                values = list(range(bound[0],bound[1]+1))
+            # if d_type == D_TYPE.INTEGER:
+            #     bound = domains[d_name]['values']
+            #     values = list(range(bound[0],bound[1]+1))
 
             domain_temp = Domain(d_name,values,d_name=='agent',d_type)
             self.domains.update({d_name:domain_temp})
         self.logger.debug(self.domains)
+        print(self.domains)
         
         self.logger.debug("input goals: [%s]",g_states)
         self.goals = Conditions(g_states['ontic_g'],g_states['epistemic_g'])
@@ -459,7 +461,15 @@ class Problem:
                     else:
                         param_list = param_list + [ [(i,k)]+ t for t in self._generateParams(next_param) ]
         return param_list
-                    
+
+    def intInDomain(self,v_name,value):
+        variable_obj = self.variables[v_name]
+        d_name = variable_obj.v_domain_name
+        domain_obj = self.domains[d_name]
+        bounds = domain_obj.d_values
+        return value >= bounds[0] and value <= bounds[1]
+
+
     # TODO adding action cost
     def generateSuccessor(self,state,action,path):
         
@@ -496,6 +506,8 @@ class Problem:
                     new_value = old_int - delta_value
                     # self.logger.debug('new_value: {new_value} in the domain: {self.domains[domain_name].d_values}')
                     new_state[v_name] = new_value
+                    if not self.intInDomain(v_name,new_value):
+                        return None
                     
             elif update.startswith('+'):
                 delta_value = int(update.split('+')[-1])
@@ -510,6 +522,8 @@ class Problem:
                     new_value = old_int + delta_value
                     self.logger.debug('new_value: [%s] in the domain: [%s]',new_value,self.domains[domain_name].d_values)
                     new_state[v_name] = new_value
+                    if not self.intInDomain(v_name,new_value):
+                        return None
             # if '-' in update:
             #     v2_name,value = update.split('-')
             #     v2_name = v2_name.replace('?','-')

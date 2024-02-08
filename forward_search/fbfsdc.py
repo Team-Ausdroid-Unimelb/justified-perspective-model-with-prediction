@@ -6,7 +6,7 @@ from util import setup_logger, PriorityQueue, PDDL_TERNARY
 
 LOGGER_NAME = "forward_search:bfsdc"
 LOGGER_LEVEL = logging.INFO
-# LOGGER_LEVEL = logging.DEBUG
+LOGGER_LEVEL = logging.DEBUG
 
 SPLIT_KEY_WORD = "@"
 
@@ -146,20 +146,21 @@ class Search:
                         self.logger.debug("action [%s] passed the precondition check", action_name)
                         # passed the precondition
                         succ_state = problem.generateSuccessor(state, action,path)
-                        # self.visited.append(e_dict)
-                        self.goal_checked += 1
-                        succ_node = self.SearchNode(succ_state,{},path + [(succ_state,action_name)])
-                        p,ep_dict = self._f(succ_node,problem,self.p_path)
-                        
-                        succ_node.remaining_goal = p - self._gn(succ_node)
-                        if succ_node.remaining_goal <= max_goal_num:
-                            succ_node.epistemic_item_set = ep_dict
-                            self.generated += 1
-                            open_list.push(item=succ_node, priority=self._gn(succ_node))
-                            temp_successor +=1
-                            temp_actions.append(action_name)
-                        else:
-                            self.pruned_by_unknown +=1
+                        if not succ_state == None:
+                            # self.visited.append(e_dict)
+                            self.goal_checked += 1
+                            succ_node = self.SearchNode(succ_state,{},path + [(succ_state,action_name)])
+                            p,ep_dict = self._f(succ_node,problem,self.p_path)
+                            
+                            succ_node.remaining_goal = p - self._gn(succ_node)
+                            if succ_node.remaining_goal <= max_goal_num:
+                                succ_node.epistemic_item_set = ep_dict
+                                self.generated += 1
+                                open_list.push(item=succ_node, priority=self._gn(succ_node))
+                                temp_successor +=1
+                                temp_actions.append(action_name)
+                            else:
+                                self.pruned_by_unknown +=1
 
 
                     else:

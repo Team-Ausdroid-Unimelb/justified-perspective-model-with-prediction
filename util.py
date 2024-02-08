@@ -242,10 +242,10 @@ class Variable():
         self.v_parent = v_parent
         
     def __str__(self): # show only in the print(object)
-        return f"<Variable: v_name: {self.v_name}; v_domain: {self.v_domain_name}; v_parent: {self.v_parent}>\n"
+        return f"<Variable: v_name: {self.v_name}; v_domain_name: {self.v_domain_name}; v_parent: {self.v_parent}>\n"
 
     def __repr__(self): # show when in a dictionary
-        return f"<Variable: v_name: {self.v_name}; v_domain: {self.v_domain_name}; v_parent: {self.v_parent}>\n"
+        return f"<Variable: v_name: {self.v_name}; v_domain_name: {self.v_domain_name}; v_parent: {self.v_parent}>\n"
         
 def eval_var_from_str(logger,eval_str,state):
     # for example(= (face c) 'head'))
@@ -336,10 +336,10 @@ class Domain():
         self.d_type = d_type
     
     def __str__(self): # show only in the print(object)
-        return f"<domain_name: {self.d_name}; Basic type: {self.d_type}; values: {self.d_values}; isAgent?: {self.agency}>\n"
+        return f"<d_name: {self.d_name}; d_values: {self.d_type}; d_values: {self.d_values}; isAgent?(agency): {self.agency}>\n"
 
     def __repr__(self): # show when in a dictionary
-        return f"<domain_name: {self.d_name}; Basic type: {self.d_type}; values: {self.d_values}; isAgent?: {self.agency}>\n"
+        return f"<d_name: {self.d_name}; d_values: {self.d_type}; d_values: {self.d_values}; isAgent?(agency): {self.agency}>\n"
     
     def isAgent(self):
         return self.agency
