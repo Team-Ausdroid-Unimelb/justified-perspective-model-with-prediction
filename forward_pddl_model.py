@@ -72,7 +72,7 @@ class Problem:
                 v_temp = Variable(var_name,d_name,v_parent)
                 self.variables.update({var_name:v_temp})
         self.logger.debug(self.variables)
-        print(self.variables)
+        # print(self.variables)
             
         # grounding all abstract_actions or do not ground any abstract_actions?    
         # self.logger.debug("initialize abstract_actions")
@@ -99,7 +99,7 @@ class Problem:
             domain_temp = Domain(d_name,values,d_name=='agent',d_type)
             self.domains.update({d_name:domain_temp})
         self.logger.debug(self.domains)
-        print(self.domains)
+        # print(self.domains)
         
         self.logger.debug("input goals: [%s]",g_states)
         self.goals = Conditions(g_states['ontic_g'],g_states['epistemic_g'])
