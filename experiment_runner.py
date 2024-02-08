@@ -30,6 +30,7 @@ import pytz
 
 import logging
 from util import setup_logger_handlers,setup_logger
+from latex_converter import LatexConverter
 import instance_runner
 
 TIMEZONE = pytz.timezone('Australia/Melbourne')
@@ -69,6 +70,7 @@ def loadParameter():
     # parser.add_option('-i','--input', dest="input_path", help='input directory for the experiments (default: examples/*)',default='examples')
     parser.add_option('-i','--input', dest="input_domain_names", help='input for the experiment config (default: examples/*)',default='examples/CONFIG')
     parser.add_option('-b', '--belief_mode', dest="belief_mode", type='int', help='should between 0-3', default=1)
+    parser.add_option('--latex_output', dest="latex_output", action='store_true', help='automatically generater latex tables', default=False)
     # parser.add_option('-s','--savefiles', action='store_true', help='keep the student repos', default=False)
     # parser.add_option('--tag', help='the tag for submission', default='submission')
     options, otherjunk = parser.parse_args(sys.argv[1:] )
@@ -163,5 +165,13 @@ if __name__ == '__main__':
                 end_time = datetime.datetime.now().astimezone(TIMEZONE)
                 used_time = end_time - start_time
                 logger.info(f"solving time: {used_time}")
+    
+        if options.latex_output:
+            logger.info("Generating Latex for domain:")
+            logger.info(domain_name)
+            latex_converter = LatexConverter(input_dir=output_path,output_dir="../jair/temp_table_contents")
+            latex_converter.table_generator()
+
+
     
     
