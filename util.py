@@ -384,12 +384,13 @@ class EpistemicCondition():
     symbol = ""
     query = ""
 
+    # "(= (:epistemic db [a,b,c,d] eb [a,b,c,d] (= (secret-a) 't')) 1)"
     def __init__(self,symbol,query,variable_name,v_value,value) -> None:
-        self.symbol = symbol
-        self.query = query
-        self.variable_name = variable_name
-        self.v_value = v_value
-        self.value =  value
+        self.symbol = symbol # = 
+        self.query = query # "db [a,b,c,d] eb [a,b,c,d] (= (secret-a) 't')"
+        self.variable_name = variable_name #"secret-a"
+        self.v_value = v_value # t
+        self.value =  value #1 
  
 # the following classes are for epistemic model
 class Q_TYPE(Enum):
