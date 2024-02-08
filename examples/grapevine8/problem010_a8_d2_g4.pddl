@@ -1,6 +1,6 @@
 
 (define 
-    (problem grapevine8_10) 
+    (problem grapevine810) 
     (:domain grapevine8)
 
     (:agents

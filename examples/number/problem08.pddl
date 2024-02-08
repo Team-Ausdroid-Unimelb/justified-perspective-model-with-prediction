@@ -1,5 +1,5 @@
 ( define 
-    (problem num_08) 
+    (problem num08) 
     (:domain number)
 
     (:agents

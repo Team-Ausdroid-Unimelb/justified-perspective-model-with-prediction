@@ -1,6 +1,6 @@
 ; depth 1 agent 3
 (define 
-    (problem corridor_01) 
+    (problem corridor01) 
     (:domain corridor)
 
     (:agents

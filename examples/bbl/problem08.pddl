@@ -1,7 +1,7 @@
 
 
 ( define 
-    (problem bbl_08) 
+    (problem bbl08) 
     (:domain bbl)
 
     (:agents

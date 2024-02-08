@@ -1,7 +1,7 @@
 
 
 ( define 
-    (problem coin_07) 
+    (problem coin07) 
     (:domain coin)
 
     (:agents

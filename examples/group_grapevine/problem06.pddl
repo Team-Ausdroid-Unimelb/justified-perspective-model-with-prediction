@@ -1,6 +1,6 @@
 
 (define 
-    (problem group_grapevine_06) 
+    (problem group_grapevine06) 
     (:domain group_grapevine)
 
     (:agents

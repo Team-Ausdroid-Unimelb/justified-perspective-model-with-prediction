@@ -1,5 +1,5 @@
 (define 
-    (problem group_bbl_01) 
+    (problem group_bbl01) 
     (:domain group_bbl)
 
     (:agents

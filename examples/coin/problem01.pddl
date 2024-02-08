@@ -1,5 +1,5 @@
 ( define 
-    (problem coin_01) 
+    (problem coin01) 
     (:domain coin)
 
     (:agents

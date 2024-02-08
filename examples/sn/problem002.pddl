@@ -1,6 +1,6 @@
 
 (define 
-    (problem sn_02) 
+    (problem sn02) 
     (:domain sn)
 
     (:agents
