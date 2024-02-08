@@ -5,7 +5,7 @@ import json
 from util import ActionList2DictKey,PDDL_TERNARY
 
 DEF_COL_FIELEDS = ['problem' ,'expanded' ,'generated','common_max','common_average' ,'epistemic_calls', 'epistemic_call_time_avg', 'search_time', 'plan_length','goals']
-COMMENTING_PREFIX = " \\\\ % "
+COMMENTING_PREFIX = "% "
 
 # this is for converting json results of one domain into latex table (content)
 # initialised by providing the directory that contents json files
@@ -41,7 +41,10 @@ class LatexConverter:
                                 json_item[key] = str(round(value,3))
                         # elif self.domain_name == "" and key == "domain_name":
                         #     self.domain_name = value
-                            
+                    
+                    if not json_item["solvable"]:
+                        del json_item["plan"]
+
                     # display plan as comments
                     if "plan" in json_item.keys():
                         plan = json_item['plan']
@@ -51,12 +54,18 @@ class LatexConverter:
                         plan_str = json_item['goals'] + COMMENTING_PREFIX + ActionList2DictKey(plan)
                         json_item.update({"goals":plan_str})
                     # search_str = json_item["search"] 
+                    
+                        
 
                     result_json.append(json_item)
         df_json = pandas.DataFrame.from_dict(result_json)
         # print(df_json.columns.values)
 # cols = list(new_df.columns.values)[1:]+['plan']
         new_df = df_json[self.cols]
+
+        try: new_df = new_df.astype({"plan_length":"Int64"})
+        except TypeError: pass
+
         pandas.set_option('display.max_colwidth', 1000)
 
 
@@ -78,7 +87,8 @@ def epgoal2latex(ep_cond_dict):
         query = item.query
         queryprefix = query.split("(")[0]
         qp_list = queryprefix.split(" ")
-        if ep_value == PDDL_TERNARY.FALSE.value:
+        # print(ep_value)
+        if ep_value == PDDL_TERNARY.FALSE:
             output_str = output_str + "\\neg "
         i = 0
         while i < len(qp_list)-1:
@@ -90,10 +100,10 @@ def epgoal2latex(ep_cond_dict):
                 output_str = output_str + qp_list[i+1].replace("[","").replace("]","")  + " "
             i = i+2 
         output_str = output_str + var_name + "=" + str(var_value) + " "
-        if ep_value == PDDL_TERNARY.UNKNOWN.value:
+        if ep_value == PDDL_TERNARY.UNKNOWN:
             output_str = output_str + " \\rightarrow \\unknown "
         
         output_str = output_str + "\\land "
     output_str = output_str[:len(output_str)-7]
-    output_str = output_str + " $ "
+    output_str = output_str + " $ \\\\"
     return output_str
