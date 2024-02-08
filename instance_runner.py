@@ -15,6 +15,7 @@ import forward_pddl_model as pddl_model
 # import pddl_model as pddl_model
 
 from pddl_parser import PDDLParser
+from latex_converter import epgoal2latex
 # import util
 from util import setup_logger_handlers,setup_logger
 
@@ -148,6 +149,9 @@ class Instance:
         init_time = start_search_time - start_time
         search_time = end_search_time - start_search_time
         
+        ep_dict = problem.goals.epistemic_dict
+        ep_goal_latex_str = epgoal2latex(ep_dict)
+
         logger.info(f'initialization time: { init_time}')
         logger.info(f'search time: {search_time }') 
             
@@ -157,6 +161,8 @@ class Instance:
         result.update({'search':self.instance_name.split('_')[0]})
         result.update({'init_time':init_time.total_seconds()})
         result.update({'search_time':search_time.total_seconds()})
+        # maybe ontic goal as well?
+        result.update({'goals':ep_goal_latex_str})
         
         
 
