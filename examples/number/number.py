@@ -223,7 +223,7 @@ class ExternalFunction:
         x = len(path)
         updated_state = succ_state
         if succ_state is not None and keyword in succ_state:
-            updated_value = self.updatelinear(x)    ###change model here
+            updated_value = self.update2Poly(x)    ##########change model here
             updated_state[keyword] = updated_value
             #print(x,updated_value)
             if self.is_value_in_domain(updated_state,domains):
@@ -253,7 +253,7 @@ class ExternalFunction:
             return False
 
     
-    def updatep(self, new_os, new_p_index, new_p, agt_id,prefix,domains):
+    def updatep(self, new_os, new_p_index, new_p, agt_id,prefix,domains, new_rs_i,rule_dict):
         keyword = self.checkV()
         memoryvalue = new_p[keyword] #initailize
         unit_count = self.getUnitCount(prefix)
@@ -262,11 +262,13 @@ class ExternalFunction:
             if keyword in new_os[i] and isinstance(new_os[i][keyword], (int, float)):
                 memoryvalue = new_os[i][keyword]
                 break
-
-        if self.checkKnowRule(agt_id, new_os)and unit_count == 1 and memoryvalue is not None: #in initialization, rule must correct
+        
+        ####
+        if self.checkKnowRule(agt_id, new_os)and new_rs_i is not None  and memoryvalue is not None: #in initialization, rule must correct
             #knows_rule_key = f'knows_rule-{agt_id}'
             #new_p[knows_rule_key] = 'yes'
             x = new_p_index
+            #print(domains)
             variable_type = domains.get("num", {}).get("variable_type", None)
             if variable_type == 'linear':
                 updated_value = self.updateRuleByKnowLinear(memoryvalue,new_os, x)

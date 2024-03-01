@@ -54,7 +54,7 @@ class PDDLParser:
         return str      
 
     def problemParser(self,file_path):
-        domains = {'agent':{'basic_type':'agent','values':[]},}
+        domains = {'agent':{'basic_type':'agent','values':[],'variable_type':'static'},}
         i_state = {}
         g_states = {}
         agent_index = []
@@ -285,7 +285,7 @@ class PDDLParser:
             try:
                 self.logger.debug(str)
                 
-                found = re.search('\(:domains(\([0-9a-z_ \[\],\'\"]*\))*\)',str).group(0)
+                found = re.search('\(:domains(\([0-9a-z_ \[\],\'\"]*\))*\)',str).group(0) #todo: \-
                 self.logger.debug( found)
                 domains_list = re.findall('\([0-9a-z_ \[\],\'\"]*\)',found[9:-1:])
                 self.logger.debug(domains_list)

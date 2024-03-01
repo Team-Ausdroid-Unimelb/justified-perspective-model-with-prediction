@@ -36,6 +36,9 @@ class Problem:
     epistemic_call_time = timedelta(0)
     epistemic_model = None
     logger = None
+    globle_rule = {'agent':{'rule_name':'static','rule_type':'enumerate','coefficient':[1]},\
+                   'peeking':{'rule_name':'static','rule_type':'enumerate','coefficient':[1]},\
+                    'num':{'rule_name':'2nd_poly','rule_type':'integer','coefficient':[1,0,1]}}
 
     def __init__(self, domains,i_state,g_states,agent_index,obj_index,variables, actions, external=None, belief_mode=-1,handlers=None):
         self.initial_state = dict()
@@ -43,6 +46,10 @@ class Problem:
         self.entities = dict() # agent indicators, should be unique
         self.variables = dict() #variable
         self.domains = dict()
+        self.globle_rule = {'agent':{'rule_name':'static','rule_type':'enumerate','coefficient':[1,0]},\
+                   'peeking':{'rule_name':'static','rule_type':'enumerate','coefficient':[1,0]},\
+                    'num':{'rule_name':'2nd_poly','rule_type':'integer','coefficient':[1,0,1]}}
+
         self.initial_state = dict()
         self.goals = None
         self.epistemic_calls = 0
@@ -88,7 +95,8 @@ class Problem:
         # self.logger.debug("initialize domains")
         self.domains = dict()
         self.logger.debug('input domains: [%s]',domains)
-        print(domains)
+
+
         for d_name in domains.keys():
             values = domains[d_name]['values']
             d_type = dTypeConvert(self.logger,domains[d_name]['basic_type'])
@@ -126,7 +134,7 @@ class Problem:
         # self.logger.debug("checking goal for state: {state} with path: {path}")
 
         # generate perspectives for duplicate check
-        action_list = [a for s,a in path]
+        action_list = [a for s,a,r in path]
         self.logger.debug(action_list)
         action_list_str = ActionList2DictKey(action_list)
         self.logger.debug(action_list_str)
@@ -316,7 +324,7 @@ class Problem:
         self.logger.debug('checking precondition for state: [%s]', state)
         # preconditions = action.a_precondition
 
-        action_list = [a for s,a in path]
+        action_list = [a for s,a,r in path]
         actions_str = ActionList2DictKey(action_list)
         # self.logger.info(actions_str)
         # if "move_right-b,sharing-a,move_right-c" in actions_str:
@@ -400,7 +408,7 @@ class Problem:
         self.logger.debug("pre_dict: [%s]",pre_dict)
         self.logger.debug("p_path.keys(): [%s]",p_path.keys())
         # generate perspectives for duplicate check
-        action_list = [a for s,a in path]
+        action_list = [a for s,a,r in path]
         action_list_str = ActionList2DictKey(action_list)
         
         

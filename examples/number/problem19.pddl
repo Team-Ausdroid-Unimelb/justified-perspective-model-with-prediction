@@ -20,16 +20,14 @@
         (= (peeking b) 'f')
         (= (num c) 1)
         (= (knows_rule a) 'yes') 
-        (= (knows_rule b) 'yes') 
+        (= (knows_rule b) 'no') 
         ;todo: put the initial state's facts and numeric values here
     )
 
     (:goal (and
-        ;a know the rule
-        ;a dont know if b know the rule 
-        ;no answer if b did not see at 5
+
         (= (:epistemic b [a] (= (num c) 37)) 1)
-        (= (:epistemic b [b] (= (num c) 37)) 1)
+        (= (:epistemic b [a] b [b] (= (num c) 37)) 1)
         
     ))
 

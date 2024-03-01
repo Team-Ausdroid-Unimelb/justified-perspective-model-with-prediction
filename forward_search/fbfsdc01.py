@@ -47,14 +47,14 @@ class Search:
     #BFS with duplicate check on the state + epistemic formula
     # for novelty checking purpose, we need to move the goal check process at where the node is generated
     def searching(self,problem, filterActionNames = None):
-        
-        
+
         self.logger.info("starting searching using %s",LOGGER_NAME)
         max_goal_num = len(problem.goals.ontic_dict)+len(problem.goals.epistemic_dict)
 
         # check whether the initial state is the goal state
         init_state = problem.initial_state
-        init_path = [(problem.initial_state,'')]
+        init_rule = problem.globle_rule
+        init_path = [(problem.initial_state,'',init_rule)]#####################################################################
         init_epistemic_item_set = dict()
         
         init_node = Search.SearchNode(init_state,init_epistemic_item_set,init_path)
@@ -77,7 +77,7 @@ class Search:
             state = current_node.state
             ep_goal_dict = current_node.epistemic_item_set
             path = current_node.path
-            actions = [ a  for s,a in path]
+            actions = [ a  for s,a,r in path]
             actions = actions[1:]
 
             
@@ -90,7 +90,7 @@ class Search:
             is_goal = (0 == current_node.remaining_goal)
             if is_goal:
                 # self.logger.info(path)
-                actions = [ a  for s,a in path]
+                actions = [ a  for s,a,r in path]
                 actions = actions[1:]
                 self.logger.info(f'plan is: {actions}')
                 self.logger.info(f'Goal found')
@@ -158,7 +158,7 @@ class Search:
                         # self.visited.append(e_dict)
                         self.goal_checked += 1
                         if succ_state is not None:
-                            succ_node = self.SearchNode(succ_state,{},path + [(succ_state,action_name)])
+                            succ_node = self.SearchNode(succ_state,{},path + [(succ_state,action_name,init_rule)])###############################
                         
 
                             p,ep_dict = self._f(succ_node,problem,self.p_path)

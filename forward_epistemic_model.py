@@ -24,6 +24,7 @@ class EpistemicModel:
     entities = {}
     variables = {}
     domains = None
+
     
     
     def __init__(self, handlers, entities, variables, external,domains):
@@ -36,14 +37,17 @@ class EpistemicModel:
         self.all_p_keys = list()
         self.domains = domains
 
+
     def epistemicGoalsHandler(self,epistemic_goals_dict, prefix, path, p_path):
 
         self.logger.debug('')
         self.logger.debug('epistemicGoalHandler')
         self.logger.debug('prefix: [%s]',prefix)
         
-        action_list = [a for s,a in path]
-        state_list = [s for s,a in path]
+        action_list = [a for s,a,r in path]
+        state_list = [s for s,a,r in path]
+        rule_list = [r for s,a,r in path]
+        dict1 = {}
         self.logger.debug(action_list)
         old_actions_str = ActionList2DictKey(action_list=action_list[:-1])
         actions_str = ActionList2DictKey(action_list=action_list)
@@ -55,25 +59,32 @@ class EpistemicModel:
         
        
         result_dict = dict()
-        
+
+        a = 1
         for key, item in epistemic_goals_dict.items():
             eq_str = item.query
             self.logger.debug(eq_str)
             # eq = self.partially_converting_to_eq(eq_str)
+            print("here",a)
+            a = a+1
+            
 
-            output = self.eval_eq_in_ps(eq_str,prefix, GLOBAL_PERSPECTIVE_INDEX, old_actions_str, actions_str, state_list, p_path,seeing_flag=False)
+            output = self.eval_eq_in_ps(eq_str,prefix, GLOBAL_PERSPECTIVE_INDEX, old_actions_str, actions_str, state_list,rule_list, p_path,dict1,seeing_flag=False)
             result_dict[key] = output
 
         # self.logger.setLevel(logging.INFO)
                 
         return result_dict
     
-    def eval_eq_in_pss(self,eq_str,prefix, parent_prefix, actions_str_old, actions_str_new, p_list, p_path,seeing_flag=False):
+    def eval_eq_in_pss(self,eq_str,prefix, parent_prefix, actions_str_old, actions_str_new, p_list,rule_list, p_path,seeing_flag=False):
         eq = self.partially_converting_to_eq(eq_str)
         value_list = []
+        dict1 = {}
+        n = 1
+
         for p in p_list:
-            
-            value = self.eval_eq_in_ps(eq_str,prefix, parent_prefix, actions_str_old, actions_str_new, p, p_path,seeing_flag)
+            #print(dict1)
+            value = self.eval_eq_in_ps(eq_str,prefix, parent_prefix, actions_str_old, actions_str_new, p,rule_list, p_path,dict1,seeing_flag)
             self.logger.debug("PSS: eq str: [%s] is [%s]",eq,value)
             value_list.append(value)
             
@@ -87,10 +98,13 @@ class EpistemicModel:
         else:
             raiseNotDefined()
     
-    def eval_eq_in_ps(self,eq_str,prefix, parent_prefix, actions_str_old, actions_str_new, p, p_path,seeing_flag=False):
+    def eval_eq_in_ps(self,eq_str,prefix, parent_prefix, actions_str_old, actions_str_new, p,rule_list, p_path,rule_dict,seeing_flag=False):
         eq = self.partially_converting_to_eq(eq_str)
         self.logger.debug("input perspectives: [%s]",p)
         self.logger.debug("last state: [%s]",p[-1])
+        ###########################################################################################################################
+        n = 1
+
         if type(eq) == str:
             # for knowledge and belief
             
@@ -100,6 +114,7 @@ class EpistemicModel:
         else:
             seeing_flag = True if eq.eq_type == EQ_TYPE.SEEING else False
             if len(eq.q_group) >1:
+                
                 new_ps = list()
                 if eq.q_type == Q_TYPE.COMMON:
                     new_ps = [p]
@@ -115,7 +130,7 @@ class EpistemicModel:
                             for agt_id in eq.q_group:
                                 new_prefix = prefix + eq.header_str + " " + EpistemicQuery.agtList2Str([agt_id]) + " "
                                 self.logger.debug("input perspective: [%s]",temp_p)
-                                new_temp_p = self.get1ps(agt_id,temp_p, new_prefix, actions_str_old, actions_str_new, p_path)
+                                new_temp_p = self.get1ps(agt_id,temp_p, new_prefix, actions_str_old, actions_str_new, rule_list, p_path)
                                 self.logger.debug("[%s]'s perspective: [%s]",agt_id,new_temp_p)
                                 new_t_p_str = str(new_temp_p)
                                 if not new_temp_p in new_ps:
@@ -128,7 +143,7 @@ class EpistemicModel:
                     temp_ps = list()
                     for agt_id in eq.q_group:
                         new_prefix = prefix + eq.header_str + " " + EpistemicQuery.agtList2Str([agt_id]) + " "
-                        new_temp_p = self.get1ps(agt_id,p, new_prefix, actions_str_old, actions_str_new, p_path)
+                        new_temp_p = self.get1ps(agt_id,p, new_prefix, actions_str_old, actions_str_new,rule_list,  p_path)
                         temp_ps.append(new_temp_p)
                         
                     # generate all possible values
@@ -225,7 +240,7 @@ class EpistemicModel:
                 self.logger.debug("[%s] generated ps: [%s]",eq_str,new_ps)
                 for p in new_ps:
                     
-                    value = self.eval_eq_in_ps(eq.q_content,prefix, parent_prefix, actions_str_old, actions_str_new, p, p_path,seeing_flag)
+                    value = self.eval_eq_in_ps(eq.q_content,prefix, parent_prefix, actions_str_old, actions_str_new, p, rule_list,p_path,rule_dict,seeing_flag)
                     self.logger.debug("PSS: eq str: [%s] is [%s]",eq,value)
                     result_list.append(value)
                     
@@ -244,15 +259,46 @@ class EpistemicModel:
             
             
             elif len(eq.q_group) == 1:
+                print("here",n)
+                n = n+1
+                print("prefix",prefix)
+                print(eq.q_group[0])
+
                 new_prefix = prefix + eq.header_str + " " + EpistemicQuery.agtList2Str(eq.q_group) + " "
                 self.logger.debug("input perspective: [%s]",p)
-                new_p = self.get1ps(eq.q_group[0],p,new_prefix, actions_str_old, actions_str_new,p_path)
+                print("new_prefix",new_prefix)
+                ################################################################################################################update rule
+            
+                rule_dict[new_prefix] = self.updateRuleDict(rule_dict,p,eq.q_group[0],new_prefix,prefix,rule_list[0] if rule_list else None)
+                print('rule dict',rule_dict)
+
+                new_p = self.get1ps(eq.q_group[0],p,new_prefix, actions_str_old, actions_str_new,rule_list, p_path,rule_dict)
                 self.logger.debug("[%s]'s perspective: [%s]",eq.q_group[0],new_p)
-                return self.eval_eq_in_ps(eq.q_content,new_prefix,prefix, actions_str_old, actions_str_new, new_p, p_path,seeing_flag)
+
+
+                return self.eval_eq_in_ps(eq.q_content,new_prefix,prefix, actions_str_old, actions_str_new, new_p,rule_list, p_path,rule_dict,seeing_flag)
             else:
                 self.logger.error("group size is wrong")
                 raiseNotDefined()
+    
 
+
+    def updateRuleDict(self,rule_dict,p,agt_id,prefix,parent_prefix,global_rule):
+        if rule_dict.get(parent_prefix) is None and self.external.checkKnowRule(agt_id, p):#####################none
+            print(agt_id,"know rule ",parent_prefix,"is none")
+            return global_rule
+        elif rule_dict.get(parent_prefix) is not None and self.external.checkKnowRule(agt_id, p):
+            print(agt_id,"know rule ",parent_prefix,"is not none")
+            rule_dict[prefix] = rule_dict[parent_prefix]
+            return rule_dict
+        else:
+            rule_dict[prefix] = None################
+            print(agt_id,"don't know rule ")
+            return rule_dict
+
+
+
+    
     '''
     def get1ps(self,agt_id,p,prefix, actions_str_old, actions_str_new,p_path):
         parent_state = p[-1]
@@ -355,7 +401,7 @@ class EpistemicModel:
             return new_ps
     '''
 
-    def get1ps(self,agt_id,p,prefix, actions_str_old, actions_str_new,p_path):
+    def get1ps(self,agt_id,p,prefix, actions_str_old, actions_str_new,rule_list, p_path,rule_dict):
         parent_state = p[-1]
         parent_ps = p
         p_str = str(p)
@@ -367,8 +413,9 @@ class EpistemicModel:
         self.logger.debug("prefix [%s]",prefix)
         ################
         print("###################")
-        print("agt_id",agt_id)
+        print("agt_id",agt_id,rule_dict)
         print("prefix",prefix)
+        
 
         if actions_str_new == ActionList2DictKey([ROOT_NODE_ACTION]):
 
@@ -377,14 +424,19 @@ class EpistemicModel:
                 p_path[actions_str_old]["p_parent"] = list({})
                 p_path[actions_str_old]["observation"] = list({})
                 p_path[actions_str_old]["perspectives"] = list({})
+                p_path[actions_str_old]["rule"] = list({})
+                
             current_level_dict = dict()
             current_level_dict["p_parent"] = list()
             current_level_dict["observation"] = list()
             current_level_dict["perspectives"] = list()
+            current_level_dict["rule"] = list({})
+
         else:
             existing_p_dict = p_path[actions_str_old]
             current_level_dict = existing_p_dict[prefix]
-            
+
+
             
         self.logger.debug("actions_str_old [%s]",actions_str_old)
         self.logger.debug("current_level_dict [%s]",current_level_dict)
@@ -411,20 +463,27 @@ class EpistemicModel:
             self.logger.debug("input p is: [%s]",p)
 
         new_os = [self.get1o(temp_p, agt_id) for temp_p in p]
+
         ###
         self.logger.debug("observation is not found [%s]", new_os)
         p_path[actions_str_new][prefix]['observation'] = new_os 
+
+        ###########################################################
+        new_rs = [self.get1r(temp_p, agt_id,rule_list) for temp_p in p]
+        p_path[actions_str_new][prefix]['rule'] = new_rs
+        print("rs", new_rs)
 
         #######print
         keyword = self.external.checkV()
         os_values = [entry[keyword] for entry in new_os if keyword in entry]
         print("os", os_values)
+
         ########
         domains = self.domains
         new_ps = []
         for i in range(len(p)):
             temp_p = self.get1p(agt_id,p[i],new_os[:i+1:],parent_ps)
-            new_p = self.external.updatep(new_os, i, temp_p, agt_id,prefix,domains)
+            new_p = self.external.updatep(new_os, i, temp_p, agt_id,prefix,domains, new_rs[i],rule_dict)
             new_ps.append(new_p)
         p_path[actions_str_new][prefix]['perspectives'] = new_ps
         
@@ -432,6 +491,7 @@ class EpistemicModel:
         keyword = self.external.checkV()
         ps_values = [entry[keyword] for entry in p_path[actions_str_new][prefix]['perspectives'] if keyword in entry]
         print("ps",ps_values)
+        print("#############")
         #########
         '''
             if "observation" in p_path[actions_str_new][prefix].keys() and not p_path[actions_str_new][prefix]["observation"]==list():
@@ -532,8 +592,18 @@ class EpistemicModel:
         for var_index,value in parent_state.items():
             if self.external.checkVisibility(parent_state,agt_id,var_index,self.entities,self.variables)==PDDL_TERNARY.TRUE:
                 new_state.update({var_index: value})
+        
         return new_state
     # def get1o(self,agt_id,p,prefix, actions_str_old, actions_str_new,p_path):
+
+
+    def get1r(self,parent_state,agt_id,rule_list):
+        r = None
+        if self.external.checkKnowRule(agt_id, [parent_state]):
+            domains = self.domains
+            r = 2
+        return r
+    
 
     def get1p(self,agt_id,parent_state,os,parent_ps):
         new_state = {}
