@@ -283,6 +283,7 @@ class EpistemicModel:
                     
                 p_path[actions_str_new][prefix]['rule'] = new_rs
                 p_path[actions_str_new][prefix]['perspectives'] = new_ps
+                rule_list = new_rs  ##?update value of rule_list
 
 
                 #######print
@@ -292,7 +293,7 @@ class EpistemicModel:
                 print("##########")
                 print("agt_id",agt_id)
                 print("os", os_values)
-                print("rs", new_rs)  ##type is wrong
+                print("rs", new_rs)  ##type is wrong when >2 ??
                 print("ps",ps_values)
 
                 #new_p = self.get1ps(eq.q_group[0],p,new_prefix, actions_str_old, actions_str_new,rule_list, p_path,rule_dict)

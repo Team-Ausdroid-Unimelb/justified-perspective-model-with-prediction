@@ -159,7 +159,10 @@ class ExternalFunction:
 
             x = new_p_index
             result = round(a * x**2 + b * x + c)
-            return {'rule_name': '2nd_poly','coefficients': {'a': a,'b': b,'c': c}},result
+            if a < 0.0001:
+                return {'rule_name': 'linear','coefficients': {'a': a,'b': b}},result
+            else:
+                return {'rule_name': '2nd_poly','coefficients': {'a': a,'b': b,'c': c}},result
         #y = ax+b
         elif observed_list and len(observed_list) > 1: #can update 
             x_values = [item[0] for item in observed_list]
