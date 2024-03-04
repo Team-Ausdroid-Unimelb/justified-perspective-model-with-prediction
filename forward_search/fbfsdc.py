@@ -6,7 +6,7 @@ from util import setup_logger, PriorityQueue, PDDL_TERNARY
 
 LOGGER_NAME = "forward_search:bfsdc"
 LOGGER_LEVEL = logging.INFO
-# LOGGER_LEVEL = logging.DEBUG
+LOGGER_LEVEL = logging.DEBUG
 
 SPLIT_KEY_WORD = "@"
 
@@ -81,8 +81,8 @@ class Search:
             actions = [ a  for s,a in path]
             actions = actions[1:]
 
-            # if len(path) > 5:
-            #     exit()
+            if len(path) > 3:
+                exit()
             self.logger.debug("path: %s",actions)
 
             is_goal = (0 == current_node.remaining_goal)
@@ -117,7 +117,7 @@ class Search:
             e_pre_dict.update(pre_dict)
             
             self.logger.debug("flag_dict is [%s]",flag_dict)
-            # assert(len(path) <=2)
+
             ep_state_str = state_to_string(e_pre_dict)
             if not ep_state_str in self.visited:
                 # self.logger.debug(epistemic_item_set)
@@ -272,26 +272,23 @@ class Search:
         
         remain_goal_number = list(goal_dict.values()).count(False)
 
+        # for key,value in goal_dict.items():
+        #     if str(PDDL_TERNARY.UNKNOWN.value) in key and not value:
+        #         self.logger.debug('Unknown been updated, goal is impossible')
+        #         return 9999,epistemic_dict      
+        # return remain_goal_number,epistemic_dict
+
+
         for key,value in goal_dict.items():
-            if str(PDDL_TERNARY.UNKNOWN.value) in key and not value:
+            
+            # if str(PDDL_TERNARY.UNKNOWN.value) in key and not value:
+            if key in problem.goals.epistemic_dict.keys() \
+                and problem.goals.epistemic_dict[key].value == PDDL_TERNARY.UNKNOWN \
+                    and not value:
                 self.logger.debug('Unknown been updated, goal is impossible')
+                print('goal is impossible')
                 return 9999,epistemic_dict      
         return remain_goal_number,epistemic_dict
-
-        # {'secret-b': [("b [a] ('secret-b','t')", 1), ("b [d] b [a] ('secret-b','f')", 1)], 
-        #  'secret-c': [("b [b] ('secret-c','t')", 1), ("b [c] b [b] ('secret-c','f')", 1)], 
-        #  'secret-d': [("b [c] ('secret-d','t')", 1), ("b [b] b [c] ('secret-d','f')", 1)], 
-        #  'secret-a': [("b [d] ('secret-a','t')", 1), ("b [a] b [d] ('secret-a','f')", 1)]}
-
-        # {"b [a] ('secret-b','t') 1": False, 
-        #  "b [b] ('secret-c','t') 1": False, 
-        #  "b [c] ('secret-d','t') 1": False, 
-        #  "b [d] ('secret-a','t') 1": False, 
-        #  "b [d] b [a] ('secret-b','f') 1": False, 
-        #  "b [c] b [b] ('secret-c','f') 1": False, 
-        #  "b [b] b [c] ('secret-d','f') 1": False, 
-        #  "b [a] b [d] ('secret-a','f') 1": False}
-        # exit()
         heuristic_value = remain_goal_number
         
         # landmark_constrain = []
