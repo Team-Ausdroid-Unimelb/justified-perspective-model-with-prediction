@@ -6,7 +6,7 @@ from util import setup_logger, PriorityQueue, PDDL_TERNARY
 
 LOGGER_NAME = "forward_search:bfsdc"
 LOGGER_LEVEL = logging.INFO
-LOGGER_LEVEL = logging.DEBUG
+# LOGGER_LEVEL = logging.DEBUG
 
 SPLIT_KEY_WORD = "@"
 
@@ -81,8 +81,8 @@ class Search:
             actions = [ a  for s,a in path]
             actions = actions[1:]
 
-            if len(path) > 3:
-                exit()
+            # if len(path) > 3:
+            #     exit()
             self.logger.debug("path: %s",actions)
 
             is_goal = (0 == current_node.remaining_goal)
@@ -124,8 +124,9 @@ class Search:
             # if True:
                 # self.branch_factors.append(flag_dict.values().count(True))
                 self.logger.debug("path [%s] get in visited",actions)
-                self.logger.debug("ep_state_str is [%s]",ep_state_str)
+                self.logger.info("ep_state_str is [%s]",ep_state_str)
                 self.expanded +=1
+                # print(self.expanded)
                 temp_successor = 0
                 temp_actions = []
                 # update the visited list

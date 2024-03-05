@@ -8,7 +8,7 @@ import traceback
 import re
 
 from util import PDDL_TERNARY,convertBooltoPDDL_TERNARY
-from util import EpistemicQuery,E_TYPE
+from util import E_TYPE
 
 
 AGENT_ID_PREFIX = "peeking_"

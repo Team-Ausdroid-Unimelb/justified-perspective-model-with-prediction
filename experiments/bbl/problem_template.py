@@ -65,3 +65,7 @@ class PDDL_Template:
     agent_index_list = ["a","b"]
     # object_value_dict = {"(face c)":["'head'","'tail'"]}
     object_value_dict = {"(v p)":["'t'"]}
+
+    # the ternary list does not contain -1, which means false value does not make sense in BBL
+    # because the the value of v is not changable
+    ternary_list = [0,1]

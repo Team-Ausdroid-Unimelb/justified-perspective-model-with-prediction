@@ -407,6 +407,7 @@ class EpistemicQuery:
     q_type = None
     q_content = None
     eq_type = None
+    ep_value = None
     header_str = ""
     agents_str = ""
     q_group = []
@@ -425,8 +426,8 @@ class EpistemicQuery:
         'cb': (Q_TYPE.COMMON, EQ_TYPE.BELIEF),
     }
     
-    def __init__(self,header_str,agents_str,content):
-        
+    # def __init__(self,header_str,agents_str,value,content):
+    def __init__(self,header_str,agents_str,content):    
         self.q_type,self.eq_type = self.mapping[header_str]
         self.header_str = header_str
         self.agents_str = agents_str

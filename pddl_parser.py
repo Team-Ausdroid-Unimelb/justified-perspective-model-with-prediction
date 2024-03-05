@@ -4,6 +4,8 @@ import datetime
 import pytz
 import re
 import traceback
+
+from util import EpistemicQuery
 TIMEZONE = pytz.timezone('Australia/Melbourne')
 DATE_FORMAT = '%d-%m-%Y_%H-%M-%S'
 timestamp = datetime.datetime.now().astimezone(TIMEZONE).strftime(DATE_FORMAT)
@@ -52,6 +54,88 @@ class PDDLParser:
         str = re.sub('\n'," ",str,flags=re.MULTILINE)
         self.logger.debug(repr(str)) 
         return str      
+
+
+    # # assuming the input is one line of the epistemic string
+    # def epistemic_decoder(self,ep_str):
+    #     self.logger.debug("extract epistemic formulea")
+    #     self.logger.debug("input epistemic str: [%s]",ep_str)
+    #                     # preconditions["epistemic_p"] = list()
+    #     # ep_components = re.findall('\(= \(:epistemic[\? 0-9a-z_\[\],]*\((?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)\) [0-9a-z-]*\)',ep_str)  
+    #     epistemic_prefix = "(= (:epistemic "
+    #     epistemic_surfix = ")"
+
+    # def epistemic_converter(self,ep_content):
+    #     self.logger.debug("epistemic converter: [%s]",ep_content)
+    #     header_index = ep_content.find(" ")
+    #     header_str =  ep_content[1:header_index]
+    #     self.logger.debug("header string: [%s]",header_str)
+    #     ep_content = ep_content[:header_index]
+    #     agent_index = ep_content.find(" ")
+    #     agents_str = ep_content[2:agent_index-1]
+
+    #     ep = EpistemicQuery(header_str,agents_str,value,content)
+
+    #     ep_value = 
+    #     self.logger.debug(epistemic_pre_list)
+    #                     for pre_str in epistemic_pre_list:
+    #                         key = pre_str.replace(' ?',"?")
+    #                         self.logger.debug(pre_str)
+    #                         pre_str = pre_str[len(epistemic_prefix):-len(epistemic_surfix):]
+    #                         self.logger.debug(pre_str)
+    #                         pre_str_list = pre_str.split(" ")
+    #                         # symbol  = goal_str_list[0]
+    #                         value = pre_str_list[-1]
+    #                         pre_str = pre_str[:-(len(value)+2):]
+    #                         value = int(value)
+    #                         query = pre_str
+    #                         self.logger.debug(pre_str)
+                            
+    #                         # i,j = re.search('\)\) .*',goal_str).span()
+    #                         # value1 = int(goal_str[i+3:j:])
+                            
+    #                         p,q = re.search('(?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)',pre_str).span()
+    #                         # query = pre_str[:p-1]
+    #                         pre_str = pre_str[p:q-1]
+                            
+                            
+    #                         pre_str_list = pre_str.split(' ')
+    #                         symbol = pre_str_list[0]
+    #                         pre_str = pre_str[(len(symbol)+2)::]
+    #                         pre_str_list = pre_str.split(') ')
+    #                         old_variable = pre_str_list[0]
+    #                         variable = pre_str_list[0].replace(' ?','?').replace(' ','-')
+    #                         self.logger.debug("old variable string: [%s]",old_variable)
+    #                         self.logger.debug("new variable string: [%s]",variable)
+    #                         self.logger.debug("query string: [%s]",query)
+    #                         query = query.replace(old_variable,variable) 
+    #                         self.logger.debug("query string: [%s]",query)
+    #                         key = key.replace(old_variable,variable)
+    #                         v_value = pre_str_list[1]
+    #                         if "'" in v_value:
+    #                             v_value = v_value.replace("'","")
+    #                         elif '"' in v_value:
+    #                             v_value = v_value.replace('"',"")
+    #                         elif '?' in v_value:
+    #                             v_value = v_value.replace(' ?',"?").replace(')','').replace('(','')
+    #                         elif "(" in v_value and ")" in v_value:
+    #                             old_v_value = v_value
+    #                             v_value = v_value[1:-1]
+    #                             v_value = v_value.replace(" ","-")
+    #                             query = query.replace(old_v_value,v_value)
+                                
+                                
+    #                         else:
+    #                             v_value =int(v_value)
+    #                         self.logger.debug("epistemic_p: [%s]",(key,symbol,query,variable,v_value,value))
+    #                         preconditions["epistemic_p"].append((key,symbol,query,variable,v_value,value))
+    #                 except AttributeError:
+                        
+    #                     self.logger.error("error when extract precondition")
+    #                     self.logger.error(traceback.format_exc())
+    #                     traceback.print_exc()
+    #                     exit() 
+
 
     def problemParser(self,file_path):
         domains = {'agent':{'basic_type':'agent','values':[]},}
@@ -310,7 +394,9 @@ class PDDLParser:
                 exit()
                 
             return domains,i_state,g_states,agent_index,obj_index,variables,d_name,p_name
-        
+
+
+
     def domainParser(self,file_path):
         actions = {}
         d_name = ""

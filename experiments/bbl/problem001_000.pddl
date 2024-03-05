@@ -27,10 +27,12 @@
             (= (y p) 1)
             (= (v p) 't')
         )
-    
+
         (:goal (and 
-          (= (:epistemic b [b] (= (v p) 't')) -1) 
-     ))
+        ;   (= (:epistemic (= (b [a] (= (b [b] (= (v p) 't')) 0) 1) 1) 
+            (= (:epistemic b [b] (= (v p) 't')) -1) 
+
+        ))
 
         (:domains
             (dir enumerate ['w','nw','n','ne','e','se','s','sw'])
