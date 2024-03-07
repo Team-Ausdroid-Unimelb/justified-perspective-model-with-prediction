@@ -68,4 +68,4 @@ class PDDL_Template:
 
     # the ternary list does not contain -1, which means false value does not make sense in BBL
     # because the the value of v is not changable
-    ternary_list = [0,1]
+    ternary_list = ['+','$','-']

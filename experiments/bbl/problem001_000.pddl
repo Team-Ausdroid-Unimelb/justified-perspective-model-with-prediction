@@ -30,8 +30,11 @@
 
         (:goal (and 
         ;   (= (:epistemic (= (b [a] (= (b [b] (= (v p) 't')) 0) 1) 1) 
-            (= (:epistemic b [b] (= (v p) 't')) -1) 
-
+            ; (= (:epistemic b [b] (= (v p) 't')) -1) 
+            ; (= (:epistemic + b [b] (= (v p) 't')) 1) 
+            ; (:epistemic + b [a,b] - b [b] (= (v p) 't'))
+            (:epistemic + b [b] (= (v p) 't'))
+            ; (:ontic (= (v p) (v p)))
         ))
 
         (:domains

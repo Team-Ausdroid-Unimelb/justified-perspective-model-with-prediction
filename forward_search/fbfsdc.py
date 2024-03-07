@@ -6,7 +6,7 @@ from util import setup_logger, PriorityQueue, PDDL_TERNARY
 
 LOGGER_NAME = "forward_search:bfsdc"
 LOGGER_LEVEL = logging.INFO
-# LOGGER_LEVEL = logging.DEBUG
+LOGGER_LEVEL = logging.DEBUG
 
 SPLIT_KEY_WORD = "@"
 
@@ -98,8 +98,10 @@ class Search:
                 return self.result
             
             all_actions = problem.getAllActions(state,path)
+            self.logger.debug("finding all actions: [%s]" % (all_actions))
             # self.logger.debug(actions)
             filtered_action_names = filterActionNames(problem,all_actions)
+            self.logger.debug("finding all actions: [%s]" % (list(filtered_action_names)))
             
             ontic_pre_dict = {}
             epistemic_pre_dict = {}
@@ -126,7 +128,7 @@ class Search:
                 self.logger.debug("path [%s] get in visited",actions)
                 self.logger.info("ep_state_str is [%s]",ep_state_str)
                 self.expanded +=1
-                # print(self.expanded)
+                # self.logger.debug(self.expanded)
                 temp_successor = 0
                 temp_actions = []
                 # update the visited list
@@ -134,8 +136,7 @@ class Search:
                 self.visited.append(ep_state_str)
 
                 
-                # self.logger.debug("finding legal actions:")
-
+                
 
                 
                 for action_name in filtered_action_names:
@@ -287,7 +288,7 @@ class Search:
                 and problem.goals.epistemic_dict[key].value == PDDL_TERNARY.UNKNOWN \
                     and not value:
                 self.logger.debug('Unknown been updated, goal is impossible')
-                print('goal is impossible')
+                self.logger.debug('goal is impossible')
                 return 9999,epistemic_dict      
         return remain_goal_number,epistemic_dict
         heuristic_value = remain_goal_number

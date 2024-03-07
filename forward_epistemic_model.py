@@ -10,12 +10,12 @@ from util import EpistemicQuery,EQ_TYPE,Q_TYPE
 
 LOGGER_NAME = "forward_epistemic_model"
 LOGGER_LEVEL = logging.INFO
-# LOGGER_LEVEL = logging.DEBUG
+LOGGER_LEVEL = logging.DEBUG
 from util import setup_logger
 from util import ActionList2DictKey,GLOBAL_PERSPECTIVE_INDEX, ROOT_NODE_ACTION
 from util import raiseNotDefined,eval_var_from_str,Queue
 PRE_INIT_PDICT_KEY = ActionList2DictKey([])
-
+EQ_PREFIX = "((?:\$|\+|\-) [a-z]* \[[a-z0-9,]*\] )"
 
 class EpistemicModel:
     logger = None
@@ -131,12 +131,7 @@ class EpistemicModel:
                         temp_ps.append(new_temp_p)
                         
                     # generate all possible values
-                    
-                    
 
-                            
-                    
-                    
                     
                     temp_v_dict_list = [dict() for i in range(len(temp_ps[0]))]
                     for temp_p in temp_ps:
@@ -232,6 +227,7 @@ class EpistemicModel:
                     int_list = [v.value for v in result_list]
                     minimum = min(result_list)
                     self.logger.debug(" the value list is: [%s] with values [%s] and min value is [%s]",result_list,int_list,minimum)
+                    # todo: to be changed for inner ternary
                     return min(result_list)
                 elif eq.q_type == Q_TYPE.DISTRIBUTION:
                     return max(result_list)
@@ -247,7 +243,14 @@ class EpistemicModel:
                 self.logger.debug("input perspective: [%s]",p)
                 new_p = self.get1ps(eq.q_group[0],p,new_prefix, actions_str_old, actions_str_new,p_path)
                 self.logger.debug("[%s]'s perspective: [%s]",eq.q_group[0],new_p)
-                return self.eval_eq_in_ps(eq.q_content,new_prefix,prefix, actions_str_old, actions_str_new, new_p, p_path,seeing_flag)
+                result = self.eval_eq_in_ps(eq.q_content,new_prefix,prefix, actions_str_old, actions_str_new, new_p, p_path,seeing_flag)
+                self.logger.debug("query [%s] is [%s]" % (eq_str,result))
+                if result == eq.value_type:
+                    self.logger.debug("query [%s] is [%s] so parent [%s] returns True" % (eq.q_content,result,eq_str))
+                    return PDDL_TERNARY.TRUE
+                else:
+                    self.logger.debug("query [%s] is [%s] so parent [%s] returns False" % (eq.q_content,result,eq_str))
+                    return PDDL_TERNARY.FALSE 
             else:
                 self.logger.error("group size is wrong")
                 raiseNotDefined()
@@ -471,25 +474,22 @@ class EpistemicModel:
 
     
     
-    
-    
-    
-    
-    
-    
 
 
     def partially_converting_to_eq(self,eq_str):
-        match = re.search("[edc]?[ksb] \[[0-9a-z_,]*\] ",eq_str)
+        self.logger.debug(eq_str)
+        match = re.search(EQ_PREFIX,eq_str)
         if match == None:
+            self.logger.debug("match not found")
             # it means this might be a variable = value string instead of a eq_string
             # for example(= (face c) 'head'))
             # self.logger.debug("return eq string [%s]",eq_str)
             return eq_str
         else:
             eq_list = eq_str.split(" ")
-            header_str = eq_list[0]
-            agents = eq_list[1]
-            content = eq_str[len(header_str)+len(agents)+2:]
-            return EpistemicQuery(header_str,agents,content)
+            value_type = eq_list[0]
+            header_str = eq_list[1]
+            agents = eq_list[2]
+            content = eq_str[len(header_str)+len(agents)+len(value_type)+3:]
+            return EpistemicQuery(value_type,header_str,agents,content)
         

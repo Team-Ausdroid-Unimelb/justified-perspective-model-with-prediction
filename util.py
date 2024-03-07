@@ -8,6 +8,7 @@ formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s')
 import inspect
 import sys
 import re
+import traceback
 
 
 GLOBAL_PERSPECTIVE_INDEX = ""
@@ -160,7 +161,7 @@ class Action():
     def __init__(self,a_name, a_parameters, a_preconditions, a_effects):
         self.a_name = a_name
         self.a_parameters = a_parameters
-        self.a_preconditions = Conditions(a_preconditions['ontic_p'],a_preconditions['epistemic_p'])
+        self.a_preconditions = Conditions(a_preconditions['ontic'],a_preconditions['epistemic'])
         self.a_effects = a_effects
 
     def __str__(self): # show only in the print(object)
@@ -248,7 +249,8 @@ class Variable():
         return f"<Variable: v_name: {self.v_name}; v_domain_name: {self.v_domain_name}; v_parent: {self.v_parent}>\n"
         
 def eval_var_from_str(logger,eval_str,state):
-    # for example(= (face c) 'head'))
+    # for example(= (face c) 'head'))\
+    logger.debug("eval_str: [%s]" % (eval_str))
     while eval_str[0] == "(":
         # removing top level brackets
         eval_str = eval_str[1:-1]
@@ -310,8 +312,17 @@ def eval_var_from_str(logger,eval_str,state):
             return PDDL_TERNARY.TRUE
         else:
             return PDDL_TERNARY.FALSE
+    elif symbol == "-=":
+        # not equal
+        if value1 == EP_VALUE.NOT_SEEING or value2 == EP_VALUE.NOT_SEEING or value1 == None or value2 == None:
+            return PDDL_TERNARY.UNKNOWN
+        elif not value1 == value2:
+            return PDDL_TERNARY.TRUE
+        else:
+            return PDDL_TERNARY.FALSE
     else:
-        raiseNotDefined()
+        traceback.print_exc()
+        raise ValueError()
         # equality relation
         # equality relation
         # equality relation
@@ -354,13 +365,15 @@ class Conditions():
 
         for ontic_tuple in ontic_list:
             # print(ontic_tuple)
-            key,symbol,variable,v_value,value = ontic_tuple
-            value = PDDL_TERNARY(int(value))
-            self.ontic_dict[key] = OnticCondition(symbol,variable,v_value,value)
+            (key,symbol,variable,value)
+            key,symbol,variable,value = ontic_tuple
+            # value = PDDL_TERNARY(int(value))
+            self.ontic_dict[key] = OnticCondition(symbol,variable,value)
         for epistemic_tuple in epistemic_list:
-            key,symbol,query,variable,v_value,value = epistemic_tuple
-            value = PDDL_TERNARY(int(value))
-            self.epistemic_dict[key] = EpistemicCondition(symbol,query,variable,v_value,value)
+            # (key,query_str,query_prefix,symbol,variable,value)
+            key,query_str,query_prefix,symbol,variable,value = epistemic_tuple
+            # value = PDDL_TERNARY(int(value))
+            self.epistemic_dict[key] = EpistemicCondition(query_str,query_prefix,symbol,variable,value)
 
     def __str__(self) -> str:
         return f"Conditions: \n Ontic: {self.ontic_dict} \n Epistemic: {self.epistemic_dict}"
@@ -371,10 +384,9 @@ class OnticCondition():
     value = ""
     symbol = ""
     
-    def __init__(self,symbol,variable_name,v_value,value) -> None:
+    def __init__(self,symbol,variable_name,value) -> None:
         self.symbol = symbol
         self.variable_name = variable_name
-        self.v_value = v_value
         self.value =  value
         
 class EpistemicCondition():
@@ -384,13 +396,14 @@ class EpistemicCondition():
     symbol = ""
     query = ""
 
-    # "(= (:epistemic db [a,b,c,d] eb [a,b,c,d] (= (secret-a) 't')) 1)"
-    def __init__(self,symbol,query,variable_name,v_value,value) -> None:
+    # "(:epistemic + db [a,b,c,d] + eb [a,b,c,d] (= (secret-a) 't'))"
+    # query_str,query_prefix,symbol,variable,value
+    def __init__(self,query_str,query_prefix,symbol,variable,value) -> None:
         self.symbol = symbol # = 
-        self.query = query # "db [a,b,c,d] eb [a,b,c,d] (= (secret-a) 't')"
-        self.variable_name = variable_name #"secret-a"
-        self.v_value = v_value # t
-        self.value =  value #1 
+        self.query = query_str # "+ db [a,b,c,d] + eb [a,b,c,d] (= (secret-a) 't')"
+        self.query_prefix = query_prefix # "+ db [a,b,c,d] + eb [a,b,c,d]"
+        self.variable_name = variable #"secret-a"
+        self.value =  value # 't'
  
 # the following classes are for epistemic model
 class Q_TYPE(Enum):
@@ -408,9 +421,16 @@ class EpistemicQuery:
     q_content = None
     eq_type = None
     ep_value = None
+    value_type = None
     header_str = ""
     agents_str = ""
     q_group = []
+    value_type_mapping = {
+        '+': PDDL_TERNARY.TRUE,
+        '-': PDDL_TERNARY.FALSE,
+        '$': PDDL_TERNARY.UNKNOWN
+    }
+    
     mapping = {
         'k': (Q_TYPE.MUTUAL, EQ_TYPE.KNOWLEDGE),
         'ek': (Q_TYPE.MUTUAL, EQ_TYPE.KNOWLEDGE),
@@ -427,12 +447,13 @@ class EpistemicQuery:
     }
     
     # def __init__(self,header_str,agents_str,value,content):
-    def __init__(self,header_str,agents_str,content):    
+    def __init__(self,value_type_str,header_str,agents_str,content):    
         self.q_type,self.eq_type = self.mapping[header_str]
         self.header_str = header_str
         self.agents_str = agents_str
         self.q_group = agents_str[1:-1].split(",")
         self.q_content = content
+        self.value_type = self.value_type_mapping[value_type_str]
         
     def show(self):
         # for debug purpose

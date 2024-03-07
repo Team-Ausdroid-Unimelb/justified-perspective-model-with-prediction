@@ -12,7 +12,7 @@ import forward_epistemic_model
 
 LOGGER_NAME = "pddl_model"
 LOGGER_LEVEL = logging.INFO
-# LOGGER_LEVEL = logging.DEBUG
+LOGGER_LEVEL = logging.DEBUG
 
 
 from util import setup_logger,PDDL_TERNARY
@@ -72,11 +72,11 @@ class Problem:
                 v_temp = Variable(var_name,d_name,v_parent)
                 self.variables.update({var_name:v_temp})
         self.logger.debug(self.variables)
-        # print(self.variables)
+        # self.logger.debug(self.variables)
             
         # grounding all abstract_actions or do not ground any abstract_actions?    
-        # self.logger.debug("initialize abstract_actions")
-        # self.logger.debug(actions )
+        self.logger.debug("initialize abstract_actions")
+        self.logger.debug(actions )
         for a_name, parts in actions.items():
             
             p = [ (i,eTypeConvert(self.logger,t))for i,t in parts['parameters']]
@@ -99,10 +99,10 @@ class Problem:
             domain_temp = Domain(d_name,values,d_name=='agent',d_type)
             self.domains.update({d_name:domain_temp})
         self.logger.debug(self.domains)
-        # print(self.domains)
+        # self.logger.debug(self.domains)
         
         self.logger.debug("input goals: [%s]",g_states)
-        self.goals = Conditions(g_states['ontic_g'],g_states['epistemic_g'])
+        self.goals = Conditions(g_states['ontic'],g_states['epistemic'])
         self.logger.debug(self.goals)
         self.initial_state = i_state
         self.logger.debug(self.initial_state)
@@ -160,13 +160,14 @@ class Problem:
             self.epistemic_model.epistemicGoalsHandler(self.goals.epistemic_dict,"",path,p_path)
         self.epistemic_call_time += datetime.now() - current_time
         
-        for k,ep_obj in self.goals.epistemic_dict.items():
-            v = ep_obj.value
-            if not epistemic_dict[k] == v:
+        for k,_ in self.goals.epistemic_dict.items():
+            if epistemic_dict[k] == PDDL_TERNARY.FALSE:
                 # is_goal = False
                 goal_dict.update({k:False})
-            else:
+            elif epistemic_dict[k] == PDDL_TERNARY.TRUE:
                 goal_dict.update({k:True})
+            else:
+                raise ValueError("This should not happen in checking epistemic goal")
                 
         # self.logger.debug("epistemic_dict {epistemic_dict}")
         # self.logger.debug("p_dict {p_dict}")
@@ -193,7 +194,7 @@ class Problem:
     
     def getAllActions(self,state,path):
         all_actions = dict()
-        
+        self.logger.debug("abstract actions %s" % (self.abstract_actions))
         # get all type of actions
         for a_name, abstract_a in self.abstract_actions.items():
             # # self.logger.debug('action: {a} ')
@@ -206,7 +207,7 @@ class Problem:
                 a_temp_name = a_name
                 a_temp_parameters = copy.deepcopy(abstract_a.a_parameters)
                 a_temp_pre = copy.deepcopy(abstract_a.a_preconditions)
-                a_temp_pre_dict = {'ontic_p':a_temp_pre.ontic_dict,'epistemic_p':a_temp_pre.epistemic_dict}
+                a_temp_pre_dict = {'ontic':a_temp_pre.ontic_dict,'epistemic':a_temp_pre.epistemic_dict}
                 # a_temp_ontic_p = copy.deepcopy(list(abstract_a.a_precondition.ontic_dict))
                 # a_temp_epistemic_p = copy.deepcopy(list(abstract_a.a_precondition.epistemic_dict))
                 a_temp_effects = copy.deepcopy(abstract_a.a_effects)
@@ -298,12 +299,12 @@ class Problem:
                             v_effects = v_effects.replace(f'{i}',f'-{v}')
                             a_temp_effects[j] = (v_name,v_effects)
 
-                    a_temp_pre_dict = {'ontic_p':temp_ontic_tuple_list,'epistemic_p':temp_epistemic_tuple_list}
+                    a_temp_pre_dict = {'ontic':temp_ontic_tuple_list,'epistemic':temp_epistemic_tuple_list}
 
                     self.logger.debug('a_temp_name [%s]',a_temp_name)
-                    self.logger.debug('ontic_p [%s]',temp_ontic_tuple_list)
-                    self.logger.debug('epistemic_p [%s]',temp_epistemic_tuple_list)
-                    
+                    self.logger.debug('ontic [%s]',temp_ontic_tuple_list)
+                    self.logger.debug('epistemic [%s]',temp_epistemic_tuple_list)
+                    self.logger.debug(a_temp_name)
                     
                     all_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_pre_dict,a_temp_effects)})
                     # # self.logger.debug('legal action before precondition check: {all_actions}') 
@@ -382,16 +383,26 @@ class Problem:
 
 
         for action_name,ep_dict in epistemic_pre_dict.items():
-
-            for k,ep_obj in ep_dict.items():
-                v = ep_obj.value
-                if not epistemic_dict[k] == v:
-                    flag_dict[action_name] = False
-                    pre_dict[action_name].update({k:False})
-                    # pre_flag = False
-                    # pre_dict.update({k+" "+str(v):False})
-                else:
+            flag_dict[action_name]=True
+            for k in ep_dict.keys():
+                if epistemic_dict[k] == PDDL_TERNARY.TRUE:
                     pre_dict[action_name].update({k:True})
+                elif  epistemic_dict[k] == PDDL_TERNARY.TRUE:
+                    pre_dict[action_name].update({k:False})
+                    flag_dict[action_name]=False
+                    
+                else:
+                    raise ValueError("this should not happen in check ep precondition")
+                     
+            # for k,ep_obj in ep_dict.items():
+            #     v = ep_obj.value
+            #     if not epistemic_dict[k] == v:
+            #         flag_dict[action_name] = False
+            #         pre_dict[action_name].update({k:False})
+            #         # pre_flag = False
+            #         # pre_dict.update({k+" "+str(v):False})
+            #     else:
+            #         pre_dict[action_name].update({k:True})
         
         
         self.logger.debug("flag_dict: [%s]",flag_dict)

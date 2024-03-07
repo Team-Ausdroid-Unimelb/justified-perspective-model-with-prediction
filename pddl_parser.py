@@ -18,6 +18,14 @@ LOGGER_LEVEL = logging.INFO
 # LOGGER_LEVEL = logging.DEBUG
 from util import setup_logger
 
+
+ONTIC_RE_PREFIX = "\(:ontic"
+ONTIC_STR_PREFIX = "(:ontic"
+EPISTEMIC_RE_PREFIX = "\(:epistemic"
+EPISTEMIC_STR_PREFIX = "(:epistemic"
+BOTH_RE_PREFIX = "\(:(?:epistemic|ontic)"
+PREDICATE_RE = " ((?:\$|\+|\-) [a-z]* \[[a-z0-9,]*\] )*\((?:>|<|=|>=|<=|\-=)+ \([ 0-9a-z_]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)\)"
+
 class PDDLParser:
     logger = None
     def __init__(self,handlers):
@@ -35,7 +43,7 @@ class PDDLParser:
         # ^ match any start of the newline in multiline mode
         str = re.sub('^ *| *$|^\n',"",str,flags=re.MULTILINE)
         str = re.sub(' *, *',",",str,flags=re.MULTILINE)
-        str = re.sub(' *- *',"-",str,flags=re.MULTILINE)
+        # str = re.sub(' *- *',"-",str,flags=re.MULTILINE)
         str = re.sub('\[ *',"[",str,flags=re.MULTILINE)
         str = re.sub(' *\]',"]",str,flags=re.MULTILINE)
         str = re.sub(':goal *',":goal",str,flags=re.MULTILINE)
@@ -56,14 +64,124 @@ class PDDLParser:
         return str      
 
 
-    # # assuming the input is one line of the epistemic string
+    # assuming the input is one epistemic string
     # def epistemic_decoder(self,ep_str):
     #     self.logger.debug("extract epistemic formulea")
     #     self.logger.debug("input epistemic str: [%s]",ep_str)
     #                     # preconditions["epistemic_p"] = list()
-    #     # ep_components = re.findall('\(= \(:epistemic[\? 0-9a-z_\[\],]*\((?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)\) [0-9a-z-]*\)',ep_str)  
+    #     p,q = re.search('\(= \(:epistemic [\?+\- 0-9a-z_\[\],]*\((?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)\) [0-9a-z-]*\)',ep_str).span()
     #     epistemic_prefix = "(= (:epistemic "
     #     epistemic_surfix = ")"
+        
+    #     ep_str = ep_str[p+len(epistemic_prefix):q+len(epistemic_surfix)]
+    #     self.logger.debug(ep_str)
+    #     import sys
+    #     sys.exit()
+    
+    
+    def predicator_convertor(self,pred_list):
+        result = dict()
+        result["ontic"] = list()
+        result["epistemic"] = list()
+        
+        for pred_str in pred_list:
+            self.logger.debug(pred_str)
+            self.logger.debug(ONTIC_STR_PREFIX)
+            #  this is for precondition, it is also fine with the goal for now
+            key = pred_str.replace(' ?',"?")
+            if ONTIC_STR_PREFIX[1:] in pred_str:
+                # this is an ontic predictor
+                
+                self.logger.debug(pred_str)
+                
+                
+                
+                
+                pred_str = pred_str[len(ONTIC_STR_PREFIX)+1:-1]
+                self.logger.debug(pred_str)
+                self.logger.debug(pred_str)
+                pre_comp_list = pred_str.split(" ")
+                symbol  = pre_comp_list[0]
+                # value = goal_str_list[-1]
+                pred_str = pred_str[(len(symbol)+2):]
+                self.logger.debug(pred_str)
+                
+                # self.logger.debug(goal_str)
+                temp_list = pred_str.split(')')
+                old_variable = temp_list[0]
+                variable = old_variable.replace(' ?','?').replace(' ','-')
+                key = key.replace(old_variable,variable)
+                if len(temp_list)==2:
+                    value = temp_list[1][1:]
+                    if "'" in value:
+                        value = value.replace("'","")
+                    elif '"' in value:
+                        value = value.replace('"',"")
+                    else:
+                        value =int(value)      
+                elif len(temp_list)==3:
+                    # it means the second argument is also a variable
+                    value = temp_list[1][2:].replace(' ?','?').replace(' ','-')
+                else:
+                    raise ValueError("error in decoding ontic [%s]",key)
+                self.logger.debug("ontic: [%s]",(key,symbol,variable,value))
+
+                result["ontic"].append((key,symbol,variable,value))
+            elif EPISTEMIC_STR_PREFIX[1:] in pred_str:
+                # this is an epistemic predictor
+                
+                self.logger.debug(pred_str)
+                
+                # this is for precondition, it is also fine with the goal for now
+                
+                
+                query_str = key[len(EPISTEMIC_STR_PREFIX):]
+                self.logger.debug("query string: [%s]",query_str)
+                separator_index = query_str.index("(")
+                query_prefix = query_str[:separator_index]
+                self.logger.debug("query prefix [%s]" % (query_prefix))
+                query_suffix_str = query_str[separator_index:]
+                self.logger.debug("query suffix [%s]" % (query_suffix_str))
+                self.logger.debug(pred_str)
+                self.logger.debug(pred_str)
+                
+                # pre_comp_list = pred_str.split("(")
+                
+                symbol  = query_suffix_str[1:].split(" ")[0]
+                # pre_comp_list[0]
+                # value = goal_str_list[-1]
+                query_suffix_str = query_suffix_str[(len(symbol)+3):]
+                self.logger.debug(query_suffix_str)
+                
+                # self.logger.debug(goal_str)
+                temp_list = query_suffix_str.split(')')
+                old_variable = temp_list[0]
+                variable = old_variable.replace(' ?','?').replace(' ','-')
+                key = key.replace(old_variable,variable)
+                query_str = query_str.replace(old_variable,variable)
+                if len(temp_list)==2:
+                    value = temp_list[1][1:]
+                    if "'" in value:
+                        value = value.replace("'","")
+                    elif '"' in value:
+                        value = value.replace('"',"")
+                    else:
+                        value =int(value)      
+                elif len(temp_list)==3:
+                    # it means the second argument is also a variable
+                    value = temp_list[1][2:].replace(' ?','?').replace(' ','-')
+                else:
+                    raise ValueError("error in decoding ontic [%s]",key)
+                self.logger.debug("epistemic:(%s,%s,%s,%s,%s,%s)" % (key,query_str,query_prefix,symbol,variable,value))
+
+                result["epistemic"].append((key,query_str,query_prefix,symbol,variable,value))
+            elif pred_str == "":
+                pass
+            else:
+                raise ValueError("[predicate type not found] error in decoding [%s]",key)
+        
+        return result
+                
 
     # def epistemic_converter(self,ep_content):
     #     self.logger.debug("epistemic converter: [%s]",ep_content)
@@ -79,6 +197,7 @@ class PDDLParser:
     #     ep_value = 
     #     self.logger.debug(epistemic_pre_list)
     #                     for pre_str in epistemic_pre_list:
+    
     #                         key = pre_str.replace(' ?',"?")
     #                         self.logger.debug(pre_str)
     #                         pre_str = pre_str[len(epistemic_prefix):-len(epistemic_surfix):]
@@ -256,106 +375,124 @@ class PDDLParser:
 
             self.logger.debug("extract goal")
             try:
+                self.logger.debug(str)
                 
-                found = re.search("\(:goal\(and\([=><] \([:0-9a-z_ \- \[\],]*(\(.*\)\)|\))[0-9a-z_ \"\'\-]*\)*\)\)",str).group(0)
-                self.logger.debug( found)
-                
-                # loading ontic goals
-                self.logger.debug("extract ontic goal propositions")
-                g_states["ontic_g"] = list()
-                # ontic_goal_list = re.findall('\(= \([0-9a-z_ ]*\) [0-9a-z_\'\"]*\)',found[10:-1:])
-                ontic_goal_list = re.findall('\(= \(:ontic[ 0-9a-z_\[\],]*\([=><] \([ 0-9a-z_]*\) [0-9a-z_\'\"-]*\)\) [0-9a-z_\'\"-]*\)',found[10:-1:])  
-                ontic_prefix = "(= (:ontic ("
-                ontic_surfix = ")"
-                self.logger.debug('ontic goal list: [%s]',ontic_goal_list)
-                for goal_str in ontic_goal_list:
-                    self.logger.debug(goal_str)
-                    key = goal_str.replace(' ?',"?")
-                    goal_str = goal_str[len(ontic_prefix):-len(ontic_surfix):]
-                    self.logger.debug(goal_str)
-                    goal_str_list = goal_str.split(" ")
-                    symbol  = goal_str_list[0]
-                    value = goal_str_list[-1]
-                    goal_str = goal_str[(len(symbol)+2):-(len(value)+3):]
-                    self.logger.debug(goal_str)
-                    goal_list = goal_str.split(') ')
-                    variable = goal_list[0].replace(' ?','?').replace(' ','-')
-                    v_value = goal_list[1]
-                    if "'" in v_value:
-                        v_value = v_value.replace("'","")
-                    elif '"' in v_value:
-                        v_value = v_value.replace('"',"")
-                    elif '?' in v_value:
-                        v_value = v_value.replace(' ?',"?").replace(')','').replace('(','')
-                    else:
-                        v_value =int(v_value)                            
-                    
-                    self.logger.debug("ontic_g: [%s]",(key,symbol,variable,v_value,value))
+                # \(:goal\(and(\(:[a-z]* ((?:\?|\+\-)+ [a-z]* \[[a-z0-9,]*\] )*\((?:>|<|=|>=|<=)+ \([ 0-9a-z_]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\)))\)\)
+                # (\(:[a-z]* ((?:\?|\+|\-) [a-z]* \[[a-z0-9,]*\] )+\((?:>|<|=|>=|<=)+ \([ 0-9a-z_]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)\))+
 
-                    g_states["ontic_g"].append((key,symbol,variable,v_value,value))
+                goal_str_prefix = "(:goal(and"
+                goal_str_suffix = "))"
+                goal_re_str = "\(:goal\(and"+ "(" + BOTH_RE_PREFIX + PREDICATE_RE + ")*" +"\)\)"
                 
-                # loading epismetic goals
-                self.logger.debug("extract epistemic goal propositions")
-                g_states["epistemic_g"] = list()
-                self.logger.debug("found [%s]",found)
-                self.logger.debug("found[10:-1:] [%s]",found[10:-1:])
-                self.logger.debug("found replaced [%s]",found[10:-1:].replace(")-1)",") -1)"))
-                epistemic_goal_list = re.findall('\(= \(:epistemic[\? 0-9a-z_\[\],]*\((?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)\) [0-9a-z-]*\)',found[10:-1:].replace(")-1)",") -1)"))  
-                epistemic_prefix = "(= (:epistemic "
-                epistemic_surfix = ")"
-                self.logger.debug(epistemic_goal_list)
-                for goal_str in epistemic_goal_list:
-                    self.logger.debug("goal string 1: [%s]",goal_str)
-                    key = goal_str.replace(' ?',"?")
-                    goal_str = goal_str[len(epistemic_prefix):-len(epistemic_surfix):]
-                    self.logger.debug("goal string 2: [%s]",goal_str)
-                    goal_str_list = goal_str.split(" ")
-                    # symbol  = goal_str_list[0]
-                    value = goal_str_list[-1]
-                    goal_str = goal_str[:-(len(value)+2):]
-                    value = int(value)
-                    query = goal_str
-                    self.logger.debug("goal string 3: [%s]",goal_str)
+                found = re.search(goal_re_str,str).group(0)
+                self.logger.debug(found)
+                found = found[len(goal_str_prefix)+1:-len(goal_str_suffix)-1]
+                predicate_list = found.split(")(")
+                self.logger.debug(predicate_list)
+                g_states = self.predicator_convertor(predicate_list)
+                # self.logger.debug(found)
+                
+                # # loading ontic goals
+                # self.logger.debug("extract ontic goal propositions")
+                # g_states["ontic_g"] = list()
+                # # ontic_goal_list = re.findall('\(= \([0-9a-z_ ]*\) [0-9a-z_\'\"]*\)',found[10:-1:])
+                # ontic_goal_list = re.findall(ontic_re_prefix+predicate_re,found[10:-1:])  
+                # ontic_prefix = "(:ontic ("
+                # ontic_surfix = ")"
+                # self.logger.debug('ontic goal list: [%s]',ontic_goal_list)
+                # for goal_str in ontic_goal_list:
+                #     self.logger.debug(goal_str)
+                #     key = goal_str.replace(' ?',"?")
+                #     goal_str = goal_str[len(ontic_prefix):-len(ontic_surfix):]
+                #     self.logger.debug(goal_str)
+                #     goal_str_list = goal_str.split(" ")
+                #     symbol  = goal_str_list[0]
+                #     value = goal_str_list[-1]
+                #     goal_str = goal_str[(len(symbol)+2):-(len(value)+3):]
+                #     self.logger.debug(goal_str)
+                #     goal_list = goal_str.split(') ')
+                #     variable = goal_list[0].replace(' ?','?').replace(' ','-')
+                #     v_value = goal_list[1]
+                #     if "'" in v_value:
+                #         v_value = v_value.replace("'","")
+                #     elif '"' in v_value:
+                #         v_value = v_value.replace('"',"")
+                #     elif '?' in v_value:
+                #         v_value = v_value.replace(' ?',"?").replace(')','').replace('(','')
+                #     else:
+                #         v_value =int(v_value)                            
                     
-                    # i,j = re.search('\)\) .*',goal_str).span()
-                    # value1 = int(goal_str[i+3:j:])
+                #     self.logger.debug("ontic_g: [%s]",(key,symbol,variable,v_value,value))
+
+                #     g_states["ontic_g"].append((key,symbol,variable,v_value,value))
+                
+                # # loading epismetic goals
+                # self.logger.debug("extract epistemic goal propositions")
+                # g_states["epistemic_g"] = list()
+                # # self.logger.debug("found [%s]",found)
+                # # self.logger.debug("found[10:-1:] [%s]",found[10:-1:])
+                # # self.logger.debug("found replaced [%s]",found[10:-1:].replace(")-1)",") -1)"))
+                # self.logger.debug(found)
+                # epistemic_goal_list = re.findall(epistemic_re_prefix+predicate_re,found)  
+                # epistemic_prefix = "(= (:epistemic "
+                # epistemic_surfix = ")"
+                # self.logger.debug(epistemic_goal_list)
+                # self.logger.debug(epistemic_goal_list)
+                # for goal_str in epistemic_goal_list:
+                #     self.logger.debug(goal_str)
+                #     self.epistemic_decoder(goal_str)
                     
-                    p,q = re.search('(?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)',goal_str).span()
-                    # query = goal_str[:p-1]
-                    goal_str = goal_str[p:q-1]
-                    self.logger.debug("goal string 4: [%s]",goal_str)
+                #     self.logger.debug("goal string 1: [%s]",goal_str)
+                #     key = goal_str.replace(' ?',"?")
+                #     goal_str = goal_str[len(epistemic_prefix):-len(epistemic_surfix):]
+                #     self.logger.debug("goal string 2: [%s]",goal_str)
+                #     goal_str_list = goal_str.split(" ")
+                #     # symbol  = goal_str_list[0]
+                #     value = goal_str_list[-1]
+                #     goal_str = goal_str[:-(len(value)+2):]
+                #     value = int(value)
+                #     query = goal_str
+                #     self.logger.debug("goal string 3: [%s]",goal_str)
+                    
+                #     # i,j = re.search('\)\) .*',goal_str).span()
+                #     # value1 = int(goal_str[i+3:j:])
+                    
+                #     p,q = re.search('(?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)',goal_str).span()
+                #     # query = goal_str[:p-1]
+                #     goal_str = goal_str[p:q-1]
+                #     self.logger.debug("goal string 4: [%s]",goal_str)
                     
                     
-                    goal_list = goal_str.split(' ')
-                    symbol = goal_list[0]
-                    goal_str = goal_str[(len(symbol)+2)::]
-                    goal_list = goal_str.split(') ')
-                    old_variable = goal_list[0]
-                    variable = goal_list[0].replace(' ?','?').replace(' ','-')
-                    self.logger.debug("old variable string: [%s]",old_variable)
-                    self.logger.debug("new variable string: [%s]",variable)
-                    self.logger.debug("query string: [%s]",query)
-                    query = query.replace(old_variable,variable) 
-                    self.logger.debug("query string: [%s]",query)
-                    key = key.replace(old_variable,variable)
-                    v_value = goal_list[1]
-                    if "'" in v_value:
-                        v_value = v_value.replace("'","")
-                    elif '"' in v_value:
-                        v_value = v_value.replace('"',"")
-                    elif '?' in v_value:
-                        v_value = v_value.replace(' ?',"?").replace(')','').replace('(','')
-                    elif "(" in v_value and ")" in v_value:
+                #     goal_list = goal_str.split(' ')
+                #     symbol = goal_list[0]
+                #     goal_str = goal_str[(len(symbol)+2)::]
+                #     goal_list = goal_str.split(') ')
+                #     old_variable = goal_list[0]
+                #     variable = goal_list[0].replace(' ?','?').replace(' ','-')
+                #     self.logger.debug("old variable string: [%s]",old_variable)
+                #     self.logger.debug("new variable string: [%s]",variable)
+                #     self.logger.debug("query string: [%s]",query)
+                #     query = query.replace(old_variable,variable) 
+                #     self.logger.debug("query string: [%s]",query)
+                #     key = key.replace(old_variable,variable)
+                #     v_value = goal_list[1]
+                #     if "'" in v_value:
+                #         v_value = v_value.replace("'","")
+                #     elif '"' in v_value:
+                #         v_value = v_value.replace('"',"")
+                #     elif '?' in v_value:
+                #         v_value = v_value.replace(' ?',"?").replace(')','').replace('(','')
+                #     elif "(" in v_value and ")" in v_value:
                         
-                        v_value = v_value[1:-1]
-                        old_v_value = v_value
-                        v_value = v_value.replace(" ","-")
-                        query = query.replace(old_v_value,v_value)
-                    else:
-                        v_value =int(v_value)
+                #         v_value = v_value[1:-1]
+                #         old_v_value = v_value
+                #         v_value = v_value.replace(" ","-")
+                #         query = query.replace(old_v_value,v_value)
+                #     else:
+                #         v_value =int(v_value)
 
-                    self.logger.debug("epistemic_p: [%s]",(key,symbol,query,variable,v_value,value))
-                    g_states["epistemic_g"].append((key,symbol,query,variable,v_value,value))
+                #     self.logger.debug("epistemic_p: [%s]",(key,symbol,query,variable,v_value,value))
+                #     g_states["epistemic_g"].append((key,symbol,query,variable,v_value,value))
 
                     
                 self.logger.debug(g_states)
@@ -452,6 +589,7 @@ class PDDLParser:
                         if p_str == '':
                             continue
                         self.logger.debug('single parameters_str: [%s]',p_str)
+                        p_str = p_str.replace(" ","")
                         p = p_str.split("-")
                         parameters.append((p[0],p[1]))
                     self.logger.debug('parameters: [%s]',parameters)
@@ -463,103 +601,107 @@ class PDDLParser:
                         preconditions_str = preconditions_str[17:-8:]
                         self.logger.debug(preconditions_str)
                         
-                        # loading ontic precondition
-                        self.logger.debug("extract ontic preconditions propositions")
+                        predicator_list = preconditions_str.split(")(")
+                        self.logger.debug("precondition list: %s" % (predicator_list))
+                        preconditions = self.predicator_convertor(predicator_list)
+                        
+                        # # loading ontic precondition
+                        # self.logger.debug("extract ontic preconditions propositions")
 
-                        preconditions["ontic_p"] = list()
-                        # ontic_goal_list = re.findall('\(= \([0-9a-z_ ]*\) [0-9a-z_\'\"]*\)',found[10:-1:])
-                        # (= (:ontic (= (agent_at-a) (secret_at ?s))) 1)
-                        ontic_pre_list = re.findall('\(= \(:ontic[ 0-9a-z_\[\],]*\([=><] \([ 0-9a-z_\-\?]*\) [\(\)\?0-9a-z_\'\" ]*\)\) [0-9a-z_\'\"-]*\)',preconditions_str)  
+                        # preconditions["ontic_p"] = list()
+                        # # ontic_goal_list = re.findall('\(= \([0-9a-z_ ]*\) [0-9a-z_\'\"]*\)',found[10:-1:])
+                        # # (= (:ontic (= (agent_at-a) (secret_at ?s))) 1)
+                        # ontic_pre_list = re.findall('\(= \(:ontic[ 0-9a-z_\[\],]*\([=><] \([ 0-9a-z_\-\?]*\) [\(\)\?0-9a-z_\'\" ]*\)\) [0-9a-z_\'\"-]*\)',preconditions_str)  
 
-                        ontic_prefix = "(= (:ontic ("
-                        ontic_surfix = ")"
-                        self.logger.debug('ontic preconditions list: [%s]',ontic_pre_list)
-                        for pre_str in ontic_pre_list:
-                            key = pre_str.replace(' ?',"?")
-                            self.logger.debug(pre_str)
-                            pre_str = pre_str[len(ontic_prefix):-len(ontic_surfix):]
-                            self.logger.debug(pre_str)
-                            pre_str_list = pre_str.split(" ")
-                            symbol  = pre_str_list[0]
-                            value = pre_str_list[-1]
-                            pre_str = pre_str[(len(symbol)+2):-(len(value)+3):]
-                            self.logger.debug(pre_str)
+                        # ontic_prefix = "(= (:ontic ("
+                        # ontic_surfix = ")"
+                        # self.logger.debug('ontic preconditions list: [%s]',ontic_pre_list)
+                        # for pre_str in ontic_pre_list:
+                        #     key = pre_str.replace(' ?',"?")
+                        #     self.logger.debug(pre_str)
+                        #     pre_str = pre_str[len(ontic_prefix):-len(ontic_surfix):]
+                        #     self.logger.debug(pre_str)
+                        #     pre_str_list = pre_str.split(" ")
+                        #     symbol  = pre_str_list[0]
+                        #     value = pre_str_list[-1]
+                        #     pre_str = pre_str[(len(symbol)+2):-(len(value)+3):]
+                        #     self.logger.debug(pre_str)
                             
-                            self.logger.debug('single goal_str [%s]',pre_str)
+                        #     self.logger.debug('single goal_str [%s]',pre_str)
                             
-                            goal_list = pre_str.split(') ')
-                            variable = goal_list[0].replace(' ?','?').replace(' ','-')
-                            v_value = goal_list[1]
-                            if "'" in v_value:
-                                v_value = v_value.replace("'","")
-                            elif '"' in v_value:
-                                v_value = v_value.replace('"',"")
-                            elif '?' in v_value:
-                                v_value = v_value.replace(' ?',"?").replace(')','').replace('(','')
-                            else:
-                                v_value =int(v_value)
-                            self.logger.debug("ontic_p: [%s]",(key,symbol,variable,v_value,value))
-                            preconditions["ontic_p"].append((key,symbol,variable,v_value,value))
+                        #     goal_list = pre_str.split(') ')
+                        #     variable = goal_list[0].replace(' ?','?').replace(' ','-')
+                        #     v_value = goal_list[1]
+                        #     if "'" in v_value:
+                        #         v_value = v_value.replace("'","")
+                        #     elif '"' in v_value:
+                        #         v_value = v_value.replace('"',"")
+                        #     elif '?' in v_value:
+                        #         v_value = v_value.replace(' ?',"?").replace(')','').replace('(','')
+                        #     else:
+                        #         v_value =int(v_value)
+                        #     self.logger.debug("ontic_p: [%s]",(key,symbol,variable,v_value,value))
+                        #     preconditions["ontic_p"].append((key,symbol,variable,v_value,value))
                                 
-                        # loading epismetic goals
-                        self.logger.debug("extract epistemic precondition propositions")
-                        self.logger.debug("input pre str: [%s]",preconditions_str)
-                        preconditions["epistemic_p"] = list()
-                        epistemic_pre_list = re.findall('\(= \(:epistemic[\? 0-9a-z_\[\],]*\((?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)\) [0-9a-z-]*\)',preconditions_str)  
-                        epistemic_prefix = "(= (:epistemic "
-                        epistemic_surfix = ")"
-                        self.logger.debug(epistemic_pre_list)
-                        for pre_str in epistemic_pre_list:
-                            key = pre_str.replace(' ?',"?")
-                            self.logger.debug(pre_str)
-                            pre_str = pre_str[len(epistemic_prefix):-len(epistemic_surfix):]
-                            self.logger.debug(pre_str)
-                            pre_str_list = pre_str.split(" ")
-                            # symbol  = goal_str_list[0]
-                            value = pre_str_list[-1]
-                            pre_str = pre_str[:-(len(value)+2):]
-                            value = int(value)
-                            query = pre_str
-                            self.logger.debug(pre_str)
+                        # # loading epismetic goals
+                        # self.logger.debug("extract epistemic precondition propositions")
+                        # self.logger.debug("input pre str: [%s]",preconditions_str)
+                        # preconditions["epistemic_p"] = list()
+                        # epistemic_pre_list = re.findall('\(= \(:epistemic[\? 0-9a-z_\[\],]*\((?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)\) [0-9a-z-]*\)',preconditions_str)  
+                        # epistemic_prefix = "(= (:epistemic "
+                        # epistemic_surfix = ")"
+                        # self.logger.debug(epistemic_pre_list)
+                        # for pre_str in epistemic_pre_list:
+                        #     key = pre_str.replace(' ?',"?")
+                        #     self.logger.debug(pre_str)
+                        #     pre_str = pre_str[len(epistemic_prefix):-len(epistemic_surfix):]
+                        #     self.logger.debug(pre_str)
+                        #     pre_str_list = pre_str.split(" ")
+                        #     # symbol  = goal_str_list[0]
+                        #     value = pre_str_list[-1]
+                        #     pre_str = pre_str[:-(len(value)+2):]
+                        #     value = int(value)
+                        #     query = pre_str
+                        #     self.logger.debug(pre_str)
                             
-                            # i,j = re.search('\)\) .*',goal_str).span()
-                            # value1 = int(goal_str[i+3:j:])
+                        #     # i,j = re.search('\)\) .*',goal_str).span()
+                        #     # value1 = int(goal_str[i+3:j:])
                             
-                            p,q = re.search('(?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)',pre_str).span()
-                            # query = pre_str[:p-1]
-                            pre_str = pre_str[p:q-1]
+                        #     p,q = re.search('(?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)',pre_str).span()
+                        #     # query = pre_str[:p-1]
+                        #     pre_str = pre_str[p:q-1]
                             
                             
-                            pre_str_list = pre_str.split(' ')
-                            symbol = pre_str_list[0]
-                            pre_str = pre_str[(len(symbol)+2)::]
-                            pre_str_list = pre_str.split(') ')
-                            old_variable = pre_str_list[0]
-                            variable = pre_str_list[0].replace(' ?','?').replace(' ','-')
-                            self.logger.debug("old variable string: [%s]",old_variable)
-                            self.logger.debug("new variable string: [%s]",variable)
-                            self.logger.debug("query string: [%s]",query)
-                            query = query.replace(old_variable,variable) 
-                            self.logger.debug("query string: [%s]",query)
-                            key = key.replace(old_variable,variable)
-                            v_value = pre_str_list[1]
-                            if "'" in v_value:
-                                v_value = v_value.replace("'","")
-                            elif '"' in v_value:
-                                v_value = v_value.replace('"',"")
-                            elif '?' in v_value:
-                                v_value = v_value.replace(' ?',"?").replace(')','').replace('(','')
-                            elif "(" in v_value and ")" in v_value:
-                                old_v_value = v_value
-                                v_value = v_value[1:-1]
-                                v_value = v_value.replace(" ","-")
-                                query = query.replace(old_v_value,v_value)
+                        #     pre_str_list = pre_str.split(' ')
+                        #     symbol = pre_str_list[0]
+                        #     pre_str = pre_str[(len(symbol)+2)::]
+                        #     pre_str_list = pre_str.split(') ')
+                        #     old_variable = pre_str_list[0]
+                        #     variable = pre_str_list[0].replace(' ?','?').replace(' ','-')
+                        #     self.logger.debug("old variable string: [%s]",old_variable)
+                        #     self.logger.debug("new variable string: [%s]",variable)
+                        #     self.logger.debug("query string: [%s]",query)
+                        #     query = query.replace(old_variable,variable) 
+                        #     self.logger.debug("query string: [%s]",query)
+                        #     key = key.replace(old_variable,variable)
+                        #     v_value = pre_str_list[1]
+                        #     if "'" in v_value:
+                        #         v_value = v_value.replace("'","")
+                        #     elif '"' in v_value:
+                        #         v_value = v_value.replace('"',"")
+                        #     elif '?' in v_value:
+                        #         v_value = v_value.replace(' ?',"?").replace(')','').replace('(','')
+                        #     elif "(" in v_value and ")" in v_value:
+                        #         old_v_value = v_value
+                        #         v_value = v_value[1:-1]
+                        #         v_value = v_value.replace(" ","-")
+                        #         query = query.replace(old_v_value,v_value)
                                 
                                 
-                            else:
-                                v_value =int(v_value)
-                            self.logger.debug("epistemic_p: [%s]",(key,symbol,query,variable,v_value,value))
-                            preconditions["epistemic_p"].append((key,symbol,query,variable,v_value,value))
+                        #     else:
+                        #         v_value =int(v_value)
+                        #     self.logger.debug("epistemic_p: [%s]",(key,symbol,query,variable,v_value,value))
+                        #     preconditions["epistemic_p"].append((key,symbol,query,variable,v_value,value))
                     except AttributeError:
                         
                         self.logger.error("error when extract precondition")
