@@ -119,7 +119,7 @@ class Problem:
         if belief_mode == 0:
             self.epistemic_model = epistemic_model.EpistemicModel(handlers,self.entities,self.variables,external)
         elif belief_mode == 1:
-            self.epistemic_model = forward_epistemic_model.EpistemicModel(handlers,self.entities,self.variables,external,domains)
+            self.epistemic_model = forward_epistemic_model.EpistemicModel(handlers,self.entities,self.variables,external,self.domains)
         elif belief_mode == 2:
             assert False,"belief mode not defined yet" 
         elif belief_mode ==3:
@@ -563,6 +563,7 @@ class Problem:
                 if value not in domain:
                     return None
         ########
+        new_state = self.external.update_state(new_state, path, self)        
         return new_state
         
         

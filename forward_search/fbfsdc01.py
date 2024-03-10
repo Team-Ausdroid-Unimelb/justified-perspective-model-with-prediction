@@ -150,8 +150,8 @@ class Search:
                         succ_state = problem.generateSuccessor(state, action,path)
 
 
-                        ##################################
-                        succ_state = self.external.update_state(succ_state, path, problem)
+                        ##################################挪进problem.generateSuccessor
+                        #succ_state = self.external.update_state(succ_state, path, problem)
                         #print(succ_state)
                         ##########################
                         

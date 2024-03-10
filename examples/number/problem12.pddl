@@ -19,8 +19,7 @@
         (= (peeking a) 'f')
         (= (peeking b) 'f')
         (= (num c) 2)
-        (= (knows_rule a) 'no') 
-        (= (knows_rule b) 'no') 
+
         ;todo: put the initial state's facts and numeric values here
     )
 

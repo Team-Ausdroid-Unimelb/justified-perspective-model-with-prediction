@@ -135,18 +135,22 @@ class ExternalFunction:
             return False
         
     
-    def updateRuleByLearn(self, new_os, new_p_index):
-        keyword = self.checkV()
+    def updateRuleByLearn(self, new_os, new_p_index,rule_dict,v_name,memoryvalue):
+        keyword = v_name #peeking-a
         observed_list = []
-
+        v_name = v_name.split('-')[0] #peeking
+        v_rult_type = str(rule_dict[v_name])
+        #print(v_rult_type)
+        #print(v_name,v_rult_type)
 
         for i in range(len(new_os)-1, -1, -1):
             if keyword in new_os[i]:
                 value = new_os[i][keyword]
                 if value is not None:
                     observed_list.append([i, value])
-        #y = ax^2+bx+c
-        if observed_list and len(observed_list) > 2:  # Check if there are at least 3 points for quadratic fit 
+
+        #y = ax^2+bx+c;observed_list and len(observed_list) > 2:  # Check if there are at least 3 points for quadratic fit 
+        if observed_list and v_rult_type ==' 2nd_poly':
             x_values = [item[0] for item in observed_list]
             y_values = [item[1] for item in observed_list]
             #print(x_values,y_values)
@@ -155,16 +159,17 @@ class ExternalFunction:
             a = coefficients[0]
             b = coefficients[1]
             c = coefficients[2]
-            #print(a,b,c)
+            #print(a,b,c) 精度问题
 
             x = new_p_index
             result = round(a * x**2 + b * x + c)
-            if a < 0.0001:
-                return {'rule_name': 'linear','coefficients': {'a': a,'b': b}},result
-            else:
-                return {'rule_name': '2nd_poly','coefficients': {'a': a,'b': b,'c': c}},result
-        #y = ax+b
-        elif observed_list and len(observed_list) > 1: #can update 
+            #if a < 0.0001:
+                #return {'rule_name': 'linear','coefficients': {'a': a,'b': b}},result
+            #else:
+                
+            return {'name':keyword,'rule_name': '2nd_poly','coefficients': {'a': a,'b': b,'c': c}},result
+        #y = ax+b;observed_list and len(observed_list) > 1: #can update 
+        elif observed_list and v_rult_type ==' linear':
             x_values = [item[0] for item in observed_list]
             y_values = [item[1] for item in observed_list]
         
@@ -174,11 +179,21 @@ class ExternalFunction:
 
             x = new_p_index
             result = round(a * x + b)
-            return {'rule_name': 'linear','coefficients': {'a': a,'b': b}},result
+            return {'name':keyword,'rule_name': 'linear','coefficients': {'a': a,'b': b}},result
+        
+        elif observed_list and v_rult_type ==' static':
+            result = observed_list[-1] if observed_list else None
+            return {'name':keyword,'rule_name': 'static','coefficients': {'a': 1}},result
+        
+        elif observed_list and v_rult_type ==' undefined':
+            result = "?"
+            return {'name':keyword,'rule_name': 'undefined','coefficients': {}},result
+        
 
         else: #can not update
-            result = observed_list[-1] if observed_list else None
-            return {'rule_name': 'static','coefficients': {'a': 1}},result
+            result = memoryvalue # new_os[-1][keyword] if new_os[-1].get(keyword)  else None
+            #print(v_rult_type)
+            return {'name':keyword,'rule_name': v_rult_type,'coefficients': {}},result
 
     
     '''#sin
@@ -259,15 +274,23 @@ class ExternalFunction:
 
     
     def updatep(self, new_os, new_p_index, new_p, agt_id,prefix,domains, rule_dict):
-        keyword = self.checkV()
-        memoryvalue = new_p[keyword] #initailize
-        unit_count = self.getUnitCount(prefix)
+        #keyword = self.checkV()
+        #memoryvalue = new_p[keyword] #initailize
+        #unit_count = self.getUnitCount(prefix)
+        for v_name in domains:
+            variable_dict  = domains[v_name]
+            dict_list = str(variable_dict).split(';')
+            v_rule_type = dict_list[-1].split(':')
+            type_name = str(v_rule_type[1])[:-2]
+            rule_dict[v_name] = type_name
+            #print("hereere",type_name )
 
+        '''
         for i in range(len(new_os) - 1, -1, -1): #find not none os
             if keyword in new_os[i] and isinstance(new_os[i][keyword], (int, float)):
                 memoryvalue = new_os[i][keyword]
                 break
-        
+        '''
         ####delete
         """
         if self.checkKnowRule(agt_id, new_os)and new_rs_i is not None  and memoryvalue is not None: #in initialization, rule must correct
@@ -290,12 +313,19 @@ class ExternalFunction:
         if self.learnRule(new_os,agt_id): #see twice, rule can be wrong
             #knows_rule_key = f'knows_rule-{agt_id}'
             #new_p[knows_rule_key] = 'yes'
-            update_rule, updated_result = self.updateRuleByLearn(new_os, new_p_index)
-            new_p[keyword] = updated_result
-            return new_p, update_rule
+            #print("learnnnnnnn")
+            temp_rule = {}
+            for v_name in new_p: 
+                memoryvalue = new_p[v_name]
+                update_rule, updated_result = self.updateRuleByLearn(new_os, new_p_index,rule_dict,v_name,memoryvalue)
+                temp_rule[v_name] = update_rule
+                new_p[v_name] = updated_result
+            return new_p, temp_rule
         else:
-            new_p[keyword] = memoryvalue
-            return new_p, {'rule_name': 'static','coefficients': {'a': 1}}
+            for v_name in new_p: 
+                memoryvalue = new_p[v_name]
+                new_p[v_name] = memoryvalue
+            return new_p, rule_dict
         
 
     
