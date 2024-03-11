@@ -150,7 +150,7 @@ class ExternalFunction:
                     observed_list.append([i, value])
 
         #y = ax^2+bx+c;observed_list and len(observed_list) > 2:  # Check if there are at least 3 points for quadratic fit 
-        if observed_list and v_rult_type ==' 2nd_poly':
+        if observed_list and v_rult_type =='2nd_poly':
             x_values = [item[0] for item in observed_list]
             y_values = [item[1] for item in observed_list]
             #print(x_values,y_values)
@@ -169,7 +169,7 @@ class ExternalFunction:
                 
             return {'name':keyword,'rule_name': '2nd_poly','coefficients': {'a': a,'b': b,'c': c}},result
         #y = ax+b;observed_list and len(observed_list) > 1: #can update 
-        elif observed_list and v_rult_type ==' linear':
+        elif observed_list and v_rult_type =='linear':
             x_values = [item[0] for item in observed_list]
             y_values = [item[1] for item in observed_list]
         
@@ -179,13 +179,13 @@ class ExternalFunction:
 
             x = new_p_index
             result = round(a * x + b)
-            return {'name':keyword,'rule_name': 'linear','coefficients': {'a': a,'b': b}},result
+            return {'name':keyword,'rule_name': 'linear','coefficients': {'a': round(a),'b': round(b)}},result
         
-        elif observed_list and v_rult_type ==' static':
+        elif observed_list and v_rult_type =='static':
             result = observed_list[-1] if observed_list else None
             return {'name':keyword,'rule_name': 'static','coefficients': {'a': 1}},result
         
-        elif observed_list and v_rult_type ==' undefined':
+        elif observed_list and v_rult_type =='undefined':
             result = "?"
             return {'name':keyword,'rule_name': 'undefined','coefficients': {}},result
         
@@ -238,19 +238,28 @@ class ExternalFunction:
 
     def update_state(self, succ_state, path, problem):
         domains = problem.domains
-
-        keyword = self.checkV()
+        rule_dict = self.get_rule_dict(domains)
+        #keyword = self.checkV()
         x = len(path)
         updated_state = succ_state
-        if succ_state is not None and keyword in succ_state:
-            updated_value = self.updatelinear(x)    ##########change model here
-            updated_state[keyword] = updated_value
-            #print(x,updated_value)
-            if self.is_value_in_domain(updated_state,domains):
-                return updated_state
-            else:
-                return None
-        return succ_state
+        for keyword in succ_state:
+            v_name = keyword.split('-')[0]
+            v_rult_type = str(rule_dict[v_name])
+            if succ_state is not None and keyword in succ_state and v_rult_type =='linear':
+                updated_value = self.updatelinear(x)    ##########change model here
+                updated_state[keyword] = updated_value
+                #print(x,updated_value)
+                
+            if succ_state is not None and keyword in succ_state and v_rult_type =='2nd_poly':
+                updated_value = self.update2Poly(x)    ##########change model here
+                updated_state[keyword] = updated_value
+                #print(x,updated_value)
+
+        if self.is_value_in_domain(updated_state,domains):
+            return updated_state
+        else:
+            return None
+        #return succ_state
 
     def is_value_in_domain(self, state,domains):
         for var_name, value in state.items():
@@ -272,11 +281,23 @@ class ExternalFunction:
         else:
             return False
 
-    
+    def get_rule_dict(self,domains):
+        rule_dict = {}
+        for v_name in domains:
+            variable_dict  = domains[v_name]
+            dict_list = str(variable_dict).split(';')
+            v_rule_type = dict_list[-1].split(':')
+            type_name = str(v_rule_type[1])[:-2].strip()
+            rule_dict[v_name] = type_name
+        return rule_dict
+
+
     def updatep(self, new_os, new_p_index, new_p, agt_id,prefix,domains, rule_dict):
         #keyword = self.checkV()
         #memoryvalue = new_p[keyword] #initailize
         #unit_count = self.getUnitCount(prefix)
+        rule_dict = self.get_rule_dict(domains)
+        '''
         for v_name in domains:
             variable_dict  = domains[v_name]
             dict_list = str(variable_dict).split(';')
@@ -285,7 +306,7 @@ class ExternalFunction:
             rule_dict[v_name] = type_name
             #print("hereere",type_name )
 
-        '''
+        
         for i in range(len(new_os) - 1, -1, -1): #find not none os
             if keyword in new_os[i] and isinstance(new_os[i][keyword], (int, float)):
                 memoryvalue = new_os[i][keyword]
