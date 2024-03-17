@@ -277,8 +277,136 @@ class ExternalFunction:
                                             if state not in land_marks[v_name]:
                                                 land_marks[v_name].append(state)
         return land_marks
-            
+
+
+    def getp(self, new_os,i,temp_p, domains, rule_dict):
+        rule_dict = self.get_rule_dict(domains)
+        new_p = {}
+        temp_rule = {}
+        for v_name, value in temp_p.items():
+            if v_name.startswith("num"):
+                update_rule, result = self.updateRuleByLearn(new_os,i,rule_dict,v_name)
+            else:
+                update_rule = rule_dict
+                result = new_os[i].get(v_name)
+            temp_rule[v_name] = update_rule
+            new_p[v_name] = result
+        return new_p, temp_rule
+    
+    
+    def get_rule_dict(self,domains):
+        rule_dict = {}
+        for v_name in domains:
+            variable_dict  = domains[v_name]
+            dict_list = str(variable_dict).split(';')
+            v_rule_type = dict_list[-1].split(':')
+            type_name = str(v_rule_type[1])[:-2].strip()
+            rule_dict[v_name] = type_name
+        return rule_dict       
+
+    def update_state(self, succ_state, path, problem):
+        domains = problem.domains
+        rule_dict = self.get_rule_dict(domains)
+        #keyword = self.checkV()
+        x = len(path)
+        updated_state = succ_state
+        for keyword in succ_state:
+            v_name = keyword.split('-')[0]
+            v_rult_type = str(rule_dict[v_name])
+            if succ_state is not None and keyword in succ_state and v_rult_type =='linear':
+                updated_value = self.updatelinear(x)    ##########change model here
+                updated_state[keyword] = updated_value
+                #print(x,updated_value)
                 
+            if succ_state is not None and keyword in succ_state and v_rult_type =='2nd_poly':
+                updated_value = self.update2Poly(x)    ##########change model here
+                updated_state[keyword] = updated_value
+                #print(x,updated_value)
+
+        if self.is_value_in_domain(updated_state,domains):
+            return updated_state
+        else:
+            return None
+    def is_value_in_domain(self, state,domains):
+        for var_name, value in state.items():
+            clean_var_name = var_name.split('-')[0]
+            if clean_var_name in domains:
+                domain = domains[clean_var_name].d_values
+                if value not in domain:
+                    return False
+        return True 
+
+
+    def updateRuleByLearn(self, new_os, new_p_index,rule_dict,v_name):
+        keyword = v_name #peeking-a
+        observed_list = []
+        v_name = v_name.split('-')[0] #peeking
+        v_rult_type = str(rule_dict[v_name])
+        #print(v_rult_type)
+        #print(v_name,v_rult_type)
+
+        for i in range(len(new_os)-1, -1, -1):
+            if keyword in new_os[i]:
+                value = new_os[i][keyword]
+                if value is not None:
+                    observed_list.append([i, value])
+
+
+        #y = ax^2+bx+c;observed_list and len(observed_list) > 2:  # Check if there are at least 3 points for quadratic fit 
+        if observed_list and len(observed_list) >=3 and v_rult_type =='2nd_poly':
+            x_values = [item[0] for item in observed_list]
+            y_values = [item[1] for item in observed_list]
+            #print(x_values,y_values)
+
+            coefficients = np.polyfit(x_values, y_values, 2)  # Fit a quadratic polynomial, if linear,a will be 0
+            a = coefficients[0]
+            b = coefficients[1]
+            c = coefficients[2]
+            #print(a,b,c) miaccuracy problem here
+
+            x = new_p_index
+            result = round(a * x**2 + b * x + c)
+            #if a < 0.0001:
+                #return {'rule_name': 'linear','coefficients': {'a': a,'b': b}},result
+            #else:
+                
+            return {'name':keyword,'rule_name': '2nd_poly','coefficients': {'a': a,'b': b,'c': c}},result
+        #y = ax+b;observed_list and len(observed_list) > 1: #can update 
+        elif observed_list and len(observed_list) >=2 and v_rult_type =='linear':
+            x_values = [item[0] for item in observed_list]
+            y_values = [item[1] for item in observed_list]
+        
+            coefficients = np.polyfit(x_values, y_values, 1)    
+            a = coefficients[0]
+            b = coefficients[1]
+
+            x = new_p_index
+            result = round(a * x + b)
+            return {'name':keyword,'rule_name': 'linear','coefficients': {'a': round(a),'b': round(b)}},result
+        
+        elif observed_list and len(observed_list) >=1 and v_rult_type =='static':
+            result = observed_list[-1] if observed_list else None
+            return {'name':keyword,'rule_name': 'static','coefficients': {'a': 1}},result
+        
+        elif observed_list and v_rult_type =='undetermined':
+            result = "?"
+            return {'name':keyword,'rule_name': 'undetermined','coefficients': {}},result
+        else: #can not update
+            for o in reversed(new_os):
+                if keyword in o:
+                    if o[keyword] is not None:
+                        memoryvalue = o[keyword]
+                        break 
+                    else:
+                        memoryvalue = None
+                else:
+                    memoryvalue = None
+            result = memoryvalue 
+            return {'name':keyword,'rule_name': v_rult_type,'coefficients': {}},result
+    
+    
+    def updatelinear(self,x):
+        return x + 2           
 def get_valid_states(agents,states,problem,ep_goals,obj_name):
     valid_states = []
     for state in states:

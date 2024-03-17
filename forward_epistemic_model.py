@@ -276,30 +276,31 @@ class EpistemicModel:
                 #print(domains)
                 new_ps = []
                 new_rs = []
-                for i in range(len(p)):
-                    temp_p = self.get1p(agt_id,p[i],new_os[:i+1:],parent_ps)
-                    new_p, update_rule= self.external.updatep(new_os, i, temp_p, agt_id,prefix,domains,rule_dict)
+                for i,temp_p in enumerate(p):
+                    #temp_p = self.get1p(agt_id,p[i],new_os[:i+1:],parent_ps)
+                    new_p, update_rule= self.external.getp(new_os, i,temp_p,domains,rule_dict)
                     new_rs.append(update_rule)
                     new_ps.append(new_p)
-                    
+
+                
                 p_path[actions_str_new][prefix]['rule'] = new_rs
                 p_path[actions_str_new][prefix]['perspectives'] = new_ps
                 rule_list = new_rs  ##?update value of rule_list
 
 
                 #######print
-                keyword = self.external.checkV()
+                keyword = 'num-e'
                 ps_values = [entry[keyword] for entry in new_ps if keyword in entry]
                 os_values = [entry[keyword] for entry in new_os if keyword in entry]
                 print("##########")
                 print("agt_id",agt_id)
                 print("os", os_values)
-                print("rs", new_rs)  ##type is wrong when >2 ??
+                #print("rs", new_rs)  ##type is wrong when >2 ??
                 print("ps",ps_values)
 
                 #new_p = self.get1ps(eq.q_group[0],p,new_prefix, actions_str_old, actions_str_new,rule_list, p_path,rule_dict)
                 ###################################################################################################################
-                self.logger.debug("[%s]'s perspective: [%s]",eq.q_group[0],new_p)
+                #self.logger.debug("[%s]'s perspective: [%s]",eq.q_group[0],new_p)
 
 
                 return self.eval_eq_in_ps(eq.q_content,new_prefix,prefix, actions_str_old, actions_str_new, new_ps,rule_list, p_path,rule_dict,seeing_flag)
