@@ -50,11 +50,11 @@ def write_all_problems(problem_template,ternary_goal_list,prefix):
         if not os.path.isdir( os.path.join(problem_template.problem_path,file_name)):
             if "problem" in file_name and  ".pddl" in file_name:
                 index_str = file_name.split(".")[0].split("_")[-1]
-                print(index_str)
+                # print(index_str)
                 index_int = int(index_str)
                 if index_int > max_index:
                     max_index = index_int
-    print(max_index)
+    # print(max_index)
     
     for i in range(len(ternary_goal_list)):
         problem_index = f"{prefix}_{i+max_index+1:05d}"
@@ -89,7 +89,7 @@ def enumerate_variables(goal_list,base_case_list):
     return list_goal_list
 
 def grapevine_variable(goal_list):
-    print(goal_list)
+    print("goal list {}".format(goal_list))
     # sys.exit()
     list_goal_list = []
     for i in range(len(goal_list)):
@@ -101,11 +101,11 @@ def grapevine_variable(goal_list):
             # (= (:epistemic b [a] (= (face c) 'head')) 1)
             goal_str = "(:epistemic "
             # goal_str = goal_str+"".join([ f"b [{a}] " for a in goal_list[i]])
-            goal_str = goal_str+goal_list[i]
+            goal_str = goal_str+goal_list[i][agent_index+3:]
             goal_str = goal_str+ f"(= (secret {agent}) 't')"
             goal_str = goal_str+") "
             list_goal_list.append(goal_str)
-    print(list_goal_list)
+    # print(list_goal_list)
     return [list_goal_list]
 # def enumerate_ternary(goal_list,ternary_list):
 #     # print(f"input {goal_list}")
@@ -155,15 +155,28 @@ if __name__ == '__main__':
             index_goal_list = index_goal_list+random_goal_list
 
     print(index_goal_list)
-
+    if problem_template.problem_path == os.path.join("experiments","grapevine"):
+        bound = rqg.agent_num_list[0]
+        filtered_list = []
+        for goal_list in index_goal_list:
+            new_goal_list = [element for element in goal_list if element > bound]
+            if not new_goal_list == []:
+                filtered_list.append(new_goal_list)
+    else:
+        filtered_list = index_goal_list
+    
+    print(filtered_list)
     var_goal_list = []
-    for goal_list in index_goal_list:
+    for goal_list in filtered_list:
         ep_prefix_list = [rqg.decode_agt_num(i) for i in goal_list]
         if problem_template.problem_path == os.path.join("experiments","grapevine"):
             temp_var_goal = grapevine_variable(ep_prefix_list)
         else:    
             temp_var_goal = enumerate_variables(ep_prefix_list,base_cases)
-        var_goal_list= var_goal_list+ temp_var_goal
+
+        for temp_goal in temp_var_goal:
+            if temp_goal not in var_goal_list:
+                var_goal_list.append(temp_goal)
     
     print(var_goal_list)
     print(len(var_goal_list))

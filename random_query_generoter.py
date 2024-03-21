@@ -34,7 +34,7 @@ class RandomQueryGenerator:
         # print(query_agent_len)
         # print(self.agent_num_list[:query_agent_len-1])
         num = num - sum(self.agent_num_list[:query_agent_len-1])-1
-        print(f"after cal {num}")
+        # print(f"after cal {num}")
         if num < 0:
             raise ValueError(f"this number {num} should not be smaller than 0, decoding fail.")
         agent_size = len(self.agent_list)
@@ -52,7 +52,7 @@ class RandomQueryGenerator:
             # print(f"remain_len {remain_len}")
             # print(f"before cal num {num} agent_size {agent_size}")
             at_num = num // ((agent_size-1)*ternary_size) ** remain_len
-            print(at_num)
+            # print(at_num)
             # if agent_size > ternary_size:
             #     ternary_index = at_num // (agent_size-1)
             #     new_agent_index = at_num % (agent_size-1)
@@ -60,7 +60,7 @@ class RandomQueryGenerator:
             new_agent_index = at_num // ternary_size
             ternary_index = at_num % ternary_size
             # print((f"new_agent {new_agent_index} temp_agent {temp_agent_index}"))
-            print(ternary_index,agent_size)
+            # print(ternary_index,agent_size)
             if new_agent_index >= temp_agent_index:
                 new_agent_index = new_agent_index +1
             query_agent_index_list.append((ternary_index,new_agent_index))
@@ -71,7 +71,7 @@ class RandomQueryGenerator:
         # print(query_agent_index_list)
         result = ""
         for t,i in query_agent_index_list:
-            print(t,i)
+            # print(t,i)
             result = result + "%s b [%s] " % (self.ternary_list[t],self.agent_list[i])
         return result
     
