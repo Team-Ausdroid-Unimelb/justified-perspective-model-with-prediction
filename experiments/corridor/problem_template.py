@@ -62,7 +62,7 @@ class PDDL_Template:
 
 
 
-    MAX_DEPTH = 5
+    MAX_DEPTH = 4
     UNIFORM = True
     UNIFORM = False
     # this is a agent indifference domain
