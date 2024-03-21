@@ -49,7 +49,7 @@ class PDDL_Template:
 
 
 
-    MAX_DEPTH = 5
+    MAX_DEPTH = 4
 
     agent_index_list = ["a","b"]
     # object_value_dict = {"(face c)":["'head'","'tail'"]}

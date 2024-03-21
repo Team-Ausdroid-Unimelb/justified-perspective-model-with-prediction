@@ -59,7 +59,7 @@ class PDDL_Template:
 
 
 
-    MAX_DEPTH = 5
+    MAX_DEPTH = 4
     # this is a agent indifference domain
 
     agent_index_list = ["a","b"]
