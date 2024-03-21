@@ -75,3 +75,4 @@ class PDDL_Template:
          "(secret b)":["'t'"],
          "(secret c)":["'t'"],
         "(secret d)":["'t'"]}
+    ternary_list = ['+','$','-']

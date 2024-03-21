@@ -15,7 +15,7 @@ timestamp = datetime.datetime.now().astimezone(TIMEZONE).strftime(DATE_FORMAT)
 
 LOGGER_NAME = "pddl_parser"
 LOGGER_LEVEL = logging.INFO
-# LOGGER_LEVEL = logging.DEBUG
+LOGGER_LEVEL = logging.DEBUG
 from util import setup_logger
 
 
@@ -24,7 +24,7 @@ ONTIC_STR_PREFIX = "(:ontic"
 EPISTEMIC_RE_PREFIX = "\(:epistemic"
 EPISTEMIC_STR_PREFIX = "(:epistemic"
 BOTH_RE_PREFIX = "\(:(?:epistemic|ontic)"
-PREDICATE_RE = " ((?:\$|\+|\-) [a-z]* \[[a-z0-9,]*\] )*\((?:>|<|=|>=|<=|\-=)+ \([ 0-9a-z_]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)\)"
+PREDICATE_RE = " ((?:\$|\+|\-) [a-z]* \[[a-z0-9,]*\] )*\((?:>|<|=|>=|<=|\-=)+ \([\? 0-9a-z_]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)\)"
 
 class PDDLParser:
     logger = None
@@ -141,10 +141,7 @@ class PDDLParser:
                 query_prefix = query_str[:separator_index]
                 self.logger.debug("query prefix [%s]" % (query_prefix))
                 query_suffix_str = query_str[separator_index:]
-                self.logger.debug("query suffix [%s]" % (query_suffix_str))
-                self.logger.debug(pred_str)
-                self.logger.debug(pred_str)
-                
+                self.logger.debug("query suffix [%s]" % (query_suffix_str))                
                 # pre_comp_list = pred_str.split("(")
                 
                 symbol  = query_suffix_str[1:].split(" ")[0]
@@ -171,7 +168,7 @@ class PDDLParser:
                     # it means the second argument is also a variable
                     value = temp_list[1][2:].replace(' ?','?').replace(' ','-')
                 else:
-                    raise ValueError("error in decoding ontic [%s]",key)
+                    raise ValueError("error in decoding epistemic [%s]",key)
                 self.logger.debug("epistemic:(%s,%s,%s,%s,%s,%s)" % (key,query_str,query_prefix,symbol,variable,value))
 
                 result["epistemic"].append((key,query_str,query_prefix,symbol,variable,value))
@@ -598,9 +595,9 @@ class PDDLParser:
                     try:
                         
                         preconditions_str = re.search(':precondition\(and.*\):effect', action_str).group()
-                        preconditions_str = preconditions_str[17:-8:]
+                        preconditions_str = preconditions_str[18:-9:]
                         self.logger.debug(preconditions_str)
-                        
+                        # preconditions_str = preconditions_str[len(goal_str_prefix)+1:-len(goal_str_suffix)-1]
                         predicator_list = preconditions_str.split(")(")
                         self.logger.debug("precondition list: %s" % (predicator_list))
                         preconditions = self.predicator_convertor(predicator_list)

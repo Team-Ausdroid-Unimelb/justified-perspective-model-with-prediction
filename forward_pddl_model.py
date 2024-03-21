@@ -12,7 +12,7 @@ import forward_epistemic_model
 
 LOGGER_NAME = "pddl_model"
 LOGGER_LEVEL = logging.INFO
-LOGGER_LEVEL = logging.DEBUG
+# LOGGER_LEVEL = logging.DEBUG
 
 
 from util import setup_logger,PDDL_TERNARY
@@ -224,18 +224,19 @@ class Problem:
                     for key,con_obj in abstract_a.a_preconditions.ontic_dict.items():
                         symbol = con_obj.symbol
                         variable_name = con_obj.variable_name
-                        v_value = con_obj.v_value
                         value = con_obj.value
-                        temp_ontic_tuple_list.append((key,symbol,variable_name,v_value,value))
+                        # key,symbol,variable,value
+                        temp_ontic_tuple_list.append((key,symbol,variable_name,value))
                         
                     temp_epistemic_tuple_list = list()
                     for key,con_obj in abstract_a.a_preconditions.epistemic_dict.items():
                         symbol = con_obj.symbol
                         query = con_obj.query
                         variable_name = con_obj.variable_name
-                        v_value = con_obj.v_value
+                        query_prefix = con_obj.query_prefix
                         value = con_obj.value
-                        temp_epistemic_tuple_list.append((key,symbol,query,variable_name,v_value,value))
+                        # key,query_str,query_prefix,symbol,variable,value
+                        temp_epistemic_tuple_list.append((key,query,query_prefix,symbol,variable_name,value))
                     # self.logger.debug(temp_ontic_tuple_list)
                     # self.logger.debug(temp_epistemic_tuple_list)
                     
@@ -254,7 +255,7 @@ class Problem:
                         
                         # update parameters in the ontic precondition
                         for j in range(len(temp_ontic_tuple_list)):
-                            key,symbol,variable_name,v_value,value = temp_ontic_tuple_list[j]
+                            key,symbol,variable_name,value = temp_ontic_tuple_list[j]
 
                             old_variable_name = variable_name
                             new_variable_name = old_variable_name.replace(f'{i}',f'-{v}')
@@ -262,27 +263,28 @@ class Problem:
                             key = key.replace(old_variable_name,new_variable_name).replace(f'{i}',f'{v}')
                             # symbol = symbol.replace(f'{i}',f'-{v}')
 
-                            v_value = v_value.replace(f'{i}',f'-{v}') if type(v_value) == str else v_value
+                            # v_value = v_value.replace(f'{i}',f'-{v}') if type(v_value) == str else v_value
                             # self.logger.debug(type(value))
                             value = value.replace(f'{i}',f'-{v}')  if type(value) == str else value if type(value) ==int else value.value
-                            temp_ontic_tuple_list[j]  = (key,symbol,new_variable_name,v_value,value)
+                            temp_ontic_tuple_list[j]  = (key,symbol,variable_name,value)
 
 
                         # update parameters in the epistemic precondition
                         for j in range(len(temp_epistemic_tuple_list)):
-                            key,symbol,query,variable_name,v_value,value = temp_epistemic_tuple_list[j]
+                            key,query,query_prefix,symbol,variable_name,value = temp_epistemic_tuple_list[j]
 
                             old_variable_name = variable_name
                             new_variable_name = old_variable_name.replace(f'{i}',f'-{v}')
 
                             key = key.replace(old_variable_name,new_variable_name).replace(f'{i}',f'{v}')
                             query = query.replace(old_variable_name,new_variable_name).replace(f'{i}',f'{v}')
+                            query_prefix = query_prefix.replace(old_variable_name,new_variable_name).replace(f'{i}',f'{v}')
                             # symbol = symbol.replace(f'{i}',f'-{v}')
 
-                            v_value = v_value.replace(f'{i}',f'-{v}') if type(v_value) == str else v_value
+                            # v_value = v_value.replace(f'{i}',f'-{v}') if type(v_value) == str else v_value
                             # self.logger.debug(type(value))
                             value = value.replace(f'{i}',f'-{v}')  if type(value) == str else value if type(value) ==int else value.value
-                            temp_epistemic_tuple_list[j]  = (key,symbol,query,new_variable_name,v_value,value)
+                            temp_epistemic_tuple_list[j]  = (key,query,query_prefix,symbol,variable_name,value)
                         # # update parameters in the epistemic precondition
                         # for j in range(len(a_temp_epistemic_p_list)):
                         #     v_name, v_effects = a_temp_epistemic_p_list[j]
@@ -387,7 +389,7 @@ class Problem:
             for k in ep_dict.keys():
                 if epistemic_dict[k] == PDDL_TERNARY.TRUE:
                     pre_dict[action_name].update({k:True})
-                elif  epistemic_dict[k] == PDDL_TERNARY.TRUE:
+                elif  epistemic_dict[k] == PDDL_TERNARY.FALSE:
                     pre_dict[action_name].update({k:False})
                     flag_dict[action_name]=False
                     

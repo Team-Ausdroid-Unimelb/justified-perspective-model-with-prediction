@@ -365,7 +365,7 @@ class Conditions():
 
         for ontic_tuple in ontic_list:
             # print(ontic_tuple)
-            (key,symbol,variable,value)
+            # (key,symbol,variable,value)
             key,symbol,variable,value = ontic_tuple
             # value = PDDL_TERNARY(int(value))
             self.ontic_dict[key] = OnticCondition(symbol,variable,value)

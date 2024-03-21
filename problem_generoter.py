@@ -43,8 +43,20 @@ def loadParameter():
     return options
 
 def write_all_problems(problem_template,ternary_goal_list,prefix):
+    max_index = -1
+    file_list = os.listdir(problem_template.problem_path)
+    for file_name in file_list:
+        if not os.path.isdir( os.path.join(problem_template.problem_path,file_name)):
+            if "problem" in file_name and  ".pddl" in file_name:
+                index_str = file_name.split(".")[0].split("_")[-1]
+                print(index_str)
+                index_int = int(index_str)
+                if index_int > max_index:
+                    max_index = index_int
+    print(max_index)
+    
     for i in range(len(ternary_goal_list)):
-        problem_index = f"{prefix}_{i:03d}"
+        problem_index = f"{prefix}_{i+max_index+1:05d}"
         output_str = problem_template.problem_prefix1
         output_str=output_str + problem_index
         output_str=output_str + problem_template.problem_prefix2
@@ -66,29 +78,49 @@ def enumerate_variables(goal_list,base_case_list):
         temp_goal_list = []
         for i in range(len(goal_list)):
             # (= (:epistemic b [a] (= (face c) 'head')) 1)
-            goal_str = "(= (:epistemic "
-            goal_str = goal_str+"".join([ f"b [{a}] " for a in goal_list[i]])
+            goal_str = "(:epistemic "
+            # goal_str = goal_str+"".join([ f"b [{a}] " for a in goal_list[i]])
+            goal_str = goal_str+goal_list[i]
             goal_str = goal_str+ base_case_list[i]
             goal_str = goal_str+") "
             temp_goal_list.append(goal_str)
         list_goal_list.append(temp_goal_list)
     return list_goal_list
 
-def enumerate_ternary(goal_list,ternary_list):
-    # print(f"input {goal_list}")
+def grapevine_variable(goal_list):
+    print(goal_list)
+    # sys.exit()
     list_goal_list = []
-    ternary_permutations = list(itertools.product(ternary_list, repeat=len(goal_list)))
-    # print(f"pre {ternary_permutations}")
-    for ternary_permutation in ternary_permutations:
-        temp_goal_list = []
-        for i in range(len(goal_list)):
+    for i in range(len(goal_list)):
+        if goal_list[i].count("[") >1:
+            agent_index = goal_list[i].index("]") -1
+            agent = goal_list[i][agent_index]
+            print(agent)
+            print(goal_list[i][agent_index+3:])
             # (= (:epistemic b [a] (= (face c) 'head')) 1)
-            goal_str = goal_list[i]
-            goal_str = goal_str+ ternary_permutation[i]
+            goal_str = "(:epistemic "
+            # goal_str = goal_str+"".join([ f"b [{a}] " for a in goal_list[i]])
+            goal_str = goal_str+goal_list[i]
+            goal_str = goal_str+ f"(= (secret {agent}) 't')"
             goal_str = goal_str+") "
-            temp_goal_list.append(goal_str)
-        list_goal_list.append(temp_goal_list)
-    return list_goal_list
+            list_goal_list.append(goal_str)
+    print(list_goal_list)
+    return [list_goal_list]
+# def enumerate_ternary(goal_list,ternary_list):
+#     # print(f"input {goal_list}")
+#     list_goal_list = []
+#     ternary_permutations = list(itertools.product(ternary_list, repeat=len(goal_list)))
+#     # print(f"pre {ternary_permutations}")
+#     for ternary_permutation in ternary_permutations:
+#         temp_goal_list = []
+#         for i in range(len(goal_list)):
+#             # (= (:epistemic b [a] (= (face c) 'head')) 1)
+#             goal_str = goal_list[i]
+#             goal_str = goal_str+ ternary_permutation[i]
+#             goal_str = goal_str+") "
+#             temp_goal_list.append(goal_str)
+#         list_goal_list.append(temp_goal_list)
+#     return list_goal_list
 
 if __name__ == '__main__':
 
@@ -110,7 +142,7 @@ if __name__ == '__main__':
         for value in values:
             base_cases.append(f"(= {key} {value})")
 
-    rqg = RandomQueryGenerator(problem_template.agent_index_list,problem_template.MAX_DEPTH)
+    rqg = RandomQueryGenerator(problem_template.agent_index_list,problem_template.ternary_list,problem_template.MAX_DEPTH)
 
     index_goal_list = []
     for i in range(options.max_goal_size):
@@ -121,22 +153,25 @@ if __name__ == '__main__':
 
     var_goal_list = []
     for goal_list in index_goal_list:
-        agent_goal_list = [rqg.decode_agt_num(i) for i in goal_list]
-        temp_var_goal = enumerate_variables(agent_goal_list,base_cases)
+        ep_prefix_list = [rqg.decode_agt_num(i) for i in goal_list]
+        if problem_template.problem_path == os.path.join("experiments","grapevine"):
+            temp_var_goal = grapevine_variable(ep_prefix_list)
+        else:    
+            temp_var_goal = enumerate_variables(ep_prefix_list,base_cases)
         var_goal_list= var_goal_list+ temp_var_goal
     
     print(var_goal_list)
-
-    ternary_goal_list = []
-    counter = 0
-    for goal_list in var_goal_list:
-        counter +=1
-        temp_var_goal = enumerate_ternary(goal_list,['-1','0','1'])
-        # write_all_problems(problem_template,temp_var_goal,f"{counter:03d}")
-        ternary_goal_list= ternary_goal_list+ temp_var_goal
-        if counter > 999:
-            raise ValueError("there are more than 1000 problems")
-    print(len(ternary_goal_list))
+    write_all_problems(problem_template,var_goal_list,f"_maxd{problem_template.MAX_DEPTH}")
+    # ternary_goal_list = []
+    # counter = 0
+    # for goal_list in var_goal_list:
+    #     counter +=1
+    #     temp_var_goal = enumerate_ternary(goal_list,['-1','0','1'])
+    #     # write_all_problems(problem_template,temp_var_goal,f"{counter:03d}")
+    #     ternary_goal_list= ternary_goal_list+ temp_var_goal
+    #     if counter > 999:
+    #         raise ValueError("there are more than 1000 problems")
+    # print(len(ternary_goal_list))
     # print(ternary_goal_list)
 
 

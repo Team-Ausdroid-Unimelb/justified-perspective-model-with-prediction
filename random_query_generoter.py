@@ -7,18 +7,20 @@ class RandomQueryGenerator:
     agent_num_list=[]
     max_num_of_query = 0
 
-    def __init__(self,agent_list,max_depth) -> None:
+    def __init__(self,agent_list,ternary_list,max_depth) -> None:
         self.agent_list = agent_list
+        self.ternary_list = ternary_list
         self.max_depth=max_depth
         self._init_agent_num_list()
         print(self.agent_num_list)
 
     def _init_agent_num_list(self):
         agent_size = len(self.agent_list)
-        counter = agent_size
+        ternary_size = len(self.ternary_list)
+        counter = agent_size*ternary_size
         self.agent_num_list.append(counter)
         for i in range(self.max_depth-1):
-            counter = counter * (agent_size-1)
+            counter = counter * (agent_size-1)*ternary_size
             self.agent_num_list.append(counter)
         self.max_num_of_query = sum(self.agent_num_list)
 
@@ -32,10 +34,11 @@ class RandomQueryGenerator:
         # print(query_agent_len)
         # print(self.agent_num_list[:query_agent_len-1])
         num = num - sum(self.agent_num_list[:query_agent_len-1])-1
-        # print(f"after cal {num}")
+        print(f"after cal {num}")
         if num < 0:
             raise ValueError(f"this number {num} should not be smaller than 0, decoding fail.")
         agent_size = len(self.agent_list)
+        ternary_size = len(self.ternary_list)
         query_agent_index_list= []
 
         remain_len = query_agent_len-1 
@@ -48,17 +51,29 @@ class RandomQueryGenerator:
         while remain_len >=0 :
             # print(f"remain_len {remain_len}")
             # print(f"before cal num {num} agent_size {agent_size}")
-            new_agent_index = num // (agent_size-1) ** remain_len
+            at_num = num // ((agent_size-1)*ternary_size) ** remain_len
+            print(at_num)
+            # if agent_size > ternary_size:
+            #     ternary_index = at_num // (agent_size-1)
+            #     new_agent_index = at_num % (agent_size-1)
+            # else:
+            new_agent_index = at_num // ternary_size
+            ternary_index = at_num % ternary_size
             # print((f"new_agent {new_agent_index} temp_agent {temp_agent_index}"))
+            print(ternary_index,agent_size)
             if new_agent_index >= temp_agent_index:
                 new_agent_index = new_agent_index +1
-            query_agent_index_list.append(new_agent_index)
+            query_agent_index_list.append((ternary_index,new_agent_index))
             temp_agent_index = new_agent_index
-            num = num % (agent_size-1)**remain_len
+            num = num % ((agent_size-1)*ternary_size) ** remain_len
             remain_len = remain_len -1
             # break
         # print(query_agent_index_list)
-        return [self.agent_list[i] for i in query_agent_index_list]
+        result = ""
+        for t,i in query_agent_index_list:
+            print(t,i)
+            result = result + "%s b [%s] " % (self.ternary_list[t],self.agent_list[i])
+        return result
     
     def select_n_random_query(self,n):
         maximum = sum(self.agent_num_list)

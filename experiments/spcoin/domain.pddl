@@ -35,8 +35,8 @@
     (:action single_peek
         :parameters (?i - agent)
         :precondition (and 
-            (= (:ontic (= (peeking-a) 'f')) 1)
-            (= (:ontic (= (peeking-b) 'f')) 1)
+            (:ontic (= (peeking-a) 'f'))
+            (:ontic (= (peeking-b) 'f'))
         )
         :effect (and 
             (= (peeking ?i) 't')
@@ -48,7 +48,7 @@
         :parameters (?i - agent)
         :precondition (and 
             ; (= (peeking ?i) 't')
-            (= (:ontic (= (peeking ?i) 't')) 1)
+            (:ontic (= (peeking ?i) 't'))
         )
         :effect (and 
             (= (peeking ?i) 'f')

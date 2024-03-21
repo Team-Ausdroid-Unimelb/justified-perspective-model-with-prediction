@@ -54,3 +54,4 @@ class PDDL_Template:
     agent_index_list = ["a","b"]
     # object_value_dict = {"(face c)":["'head'","'tail'"]}
     object_value_dict = {"(face c)":["'head'"]}
+    ternary_list = ['+','$','-']

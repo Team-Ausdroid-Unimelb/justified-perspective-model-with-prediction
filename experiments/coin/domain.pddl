@@ -8,7 +8,7 @@
         :parameters (?i - agent)
         :precondition (and 
             ;(= (peeking ?i) 'f')
-            (= (:ontic (= (peeking ?i) 'f')) 1)
+            (:ontic (= (peeking ?i) 'f'))
         )
         :effect (and 
             (= (peeking ?i) 't')
@@ -32,7 +32,7 @@
         :parameters (?i - agent)
         :precondition (and 
             ; (= (peeking ?i) 't')
-            (= (:ontic (= (peeking ?i) 't')) 1)
+            (:ontic (= (peeking ?i) 't'))
         )
         :effect (and 
             (= (peeking ?i) 'f')

@@ -38,7 +38,7 @@
     (:action sense
         :parameters (?s - object)
         :precondition (and 
-            (= (:ontic (= (agent_at-a) (secret_at ?s))) 1)
+            (:ontic (= (agent_at-a) (secret_at ?s)))
         )
         :effect (and 
             (= (sensed ?s) 't') 
@@ -48,7 +48,7 @@
     (:action shout
         :parameters (?s - object)
         :precondition (and 
-            (= (:ontic (= (sensed ?s) 't')) 1)
+            (:ontic (= (sensed ?s) 't'))
         )
         :effect (and 
             (= (shared ?s) (agent_at-a))
@@ -59,7 +59,7 @@
     (:action shout_lie
         :parameters (?s - object)
         :precondition (and 
-            (= (:ontic (= (sensed ?s) 't')) 1)
+            (:ontic (= (sensed ?s) 't'))
         )
         :effect (and 
             (= (shared ?s) (agent_at-a))

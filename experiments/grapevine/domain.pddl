@@ -7,7 +7,9 @@
     ;define actions here
     (:action move_right
         :parameters (?a - agent)
-        :precondition (and (= (:ontic (= (agent_at ?a) 1)) 1))
+        :precondition (and 
+            (:ontic (= (agent_at ?a) 1))
+        )
         :effect (and 
             (= (agent_at ?a) (+1))
             (= (shared-a) 0)
@@ -28,7 +30,7 @@
     (:action move_left
         :parameters (?a - agent)
         :precondition (and 
-            (= (:ontic (= (agent_at ?a) 2)) 1)
+             (:ontic (= (agent_at ?a) 2))
         )
         :effect (and 
             (= (agent_at ?a) (-1))
@@ -49,7 +51,9 @@
 
     (:action sharing_truth
         :parameters (?a - agent, ?s - agent)
-        :precondition (and (= (:epistemic b [?a] (= (secret ?s) 't')) 1))
+        :precondition (and 
+            (:epistemic + b [?a] (= (secret ?s) 't'))
+        )
         :effect (and 
             (= (shared-a) 0)
             (= (shared-b) 0)
@@ -72,7 +76,9 @@
 
     (:action sharing_false
         :parameters (?a - agent, ?s - agent)
-        :precondition (and (= (:epistemic b [?a] (= (secret ?s) 'f')) 1))
+        :precondition (and 
+            (:epistemic + b [?a] (= (secret ?s) 'f'))
+        )
         :effect (and 
             (= (shared-a) 0)
             (= (shared-b) 0)

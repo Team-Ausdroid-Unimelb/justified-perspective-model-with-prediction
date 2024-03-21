@@ -55,6 +55,9 @@ class PDDL_Template:
     # object_value_dict = {"(face c)":["'head'","'tail'"]}
     object_value_dict = {"(face c)":["'head'"]}
 
+    ternary_list = ['+','$','-']
+    
+
     @staticmethod
     def static_method():
         return "This is a static method."
