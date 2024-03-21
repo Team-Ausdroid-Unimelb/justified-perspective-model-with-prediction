@@ -93,4 +93,12 @@ class RandomQueryGenerator:
             if new_query_list not in goal_list:
                 goal_list.append(new_query_list)
         return goal_list
+    
+    def problem_enumerate(self):
+        goal_list = []
+        maximum = sum(self.agent_num_list)
+        for i in range(1,maximum+1):
+            goal_list.append([i])
+            
+        return goal_list
 

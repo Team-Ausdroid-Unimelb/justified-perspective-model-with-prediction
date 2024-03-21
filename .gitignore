@@ -138,4 +138,4 @@ results/
 temp/
 
 
-.xlsx
+*.xlsx

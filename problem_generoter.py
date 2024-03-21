@@ -36,6 +36,7 @@ def loadParameter():
     parser.add_option('-d', '--domain', dest="domain_path", help='path to the domain folder, which contains problem_template.py', default='experiments/coin')
     parser.add_option('-g', '--max_goal_size', dest="max_goal_size", type='int', help='should be larger than 1 and smaller than |agt|*|agt-1|^(depth-1), also affected by |V|^|goal|', default=1)
     parser.add_option('-k', '--k_samples', dest="sample_size", type='int', help='should be larger than 1 and smaller than ?', default=5)
+    parser.add_option('-e', dest="enumerate", action='store_true', help='generate all problems', default=False)
 
     options, otherjunk = parser.parse_args(sys.argv[1:] )
     assert len(otherjunk) == 0, "Unrecognized options: " + str(otherjunk)
@@ -145,9 +146,13 @@ if __name__ == '__main__':
     rqg = RandomQueryGenerator(problem_template.agent_index_list,problem_template.ternary_list,problem_template.MAX_DEPTH)
 
     index_goal_list = []
-    for i in range(options.max_goal_size):
-        random_goal_list = rqg.select_n_random_query_k_times(i+1,options.sample_size)
-        index_goal_list = index_goal_list+random_goal_list
+    
+    if options.enumerate:
+        index_goal_list = rqg.problem_enumerate()
+    else:
+        for i in range(options.max_goal_size):
+            random_goal_list = rqg.select_n_random_query_k_times(i+1,options.sample_size)
+            index_goal_list = index_goal_list+random_goal_list
 
     print(index_goal_list)
 
@@ -161,7 +166,10 @@ if __name__ == '__main__':
         var_goal_list= var_goal_list+ temp_var_goal
     
     print(var_goal_list)
+    print(len(var_goal_list))
     write_all_problems(problem_template,var_goal_list,f"_maxd{problem_template.MAX_DEPTH}")
+    
+    
     # ternary_goal_list = []
     # counter = 0
     # for goal_list in var_goal_list:
