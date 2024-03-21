@@ -217,7 +217,7 @@ class Search:
         self.result.update({'epistemic_calls':problem.epistemic_calls})
         self.result.update({'epistemic_call_time':problem.epistemic_call_time.total_seconds()})
         self.result.update({'epistemic_call_time_avg':problem.epistemic_call_time.total_seconds()/problem.epistemic_calls})
-        self.result.update({'goals':problem.goals.epistemic_dict.keys()})
+        self.result.update({'pddl_goals':list(problem.goals.epistemic_dict.keys())})
         
         ## added for common perspective iterations
         common_iteration_list = problem.epistemic_model.common_iteration_list
