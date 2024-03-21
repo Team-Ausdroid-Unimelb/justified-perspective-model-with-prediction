@@ -7,7 +7,7 @@
         :parameters (?a - agent)
         :precondition (and 
         ; to do
-            (= (:ontic (= (friended a ?a) 0)) 1)
+            (:ontic (= (friended a ?a) 0))
         )
         :effect (and 
             (= (friended a ?a) 1)
@@ -19,7 +19,7 @@
         :parameters (?a - agent)
         :precondition (and 
         ; to do
-            (= (:ontic (= (friended a ?a) 1)) 1)
+            (:ontic (= (friended a ?a) 1))
         )
         :effect (and 
             (= (friended a ?a) 0)
@@ -31,8 +31,8 @@
         :parameters (?a - agent, ?p - object)
         :precondition (and 
         ; to do
-            (= (:ontic (= (friended a ?a) 1)) 1)
-            (= (:ontic (= (post ?p ?a) 0)) 1)
+            (:ontic (= (friended a ?a) 1))
+            (:ontic (= (post ?p ?a) 0))
         )
         :effect (and 
             (= (post ?p ?a) 1)
@@ -43,8 +43,8 @@
         :parameters (?a - agent, ?p - object)
         :precondition (and 
         ; to do
-            (= (:ontic (= (friended a ?a) 1)) 1)
-            (= (:ontic (= (post ?p ?a) 1)) 1)
+            (:ontic (= (friended a ?a) 1))
+            (:ontic (= (post ?p ?a) 1))
         )
         :effect (and 
             (= (post ?p ?a) 0)
