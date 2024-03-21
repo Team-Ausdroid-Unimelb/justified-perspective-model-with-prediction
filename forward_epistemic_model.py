@@ -10,7 +10,7 @@ from util import EpistemicQuery,EQ_TYPE,Q_TYPE
 
 LOGGER_NAME = "forward_epistemic_model"
 LOGGER_LEVEL = logging.INFO
-LOGGER_LEVEL = logging.DEBUG
+# LOGGER_LEVEL = logging.DEBUG
 from util import setup_logger
 from util import ActionList2DictKey,GLOBAL_PERSPECTIVE_INDEX, ROOT_NODE_ACTION
 from util import raiseNotDefined,eval_var_from_str,Queue

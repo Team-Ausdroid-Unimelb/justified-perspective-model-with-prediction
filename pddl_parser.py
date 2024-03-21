@@ -15,7 +15,7 @@ timestamp = datetime.datetime.now().astimezone(TIMEZONE).strftime(DATE_FORMAT)
 
 LOGGER_NAME = "pddl_parser"
 LOGGER_LEVEL = logging.INFO
-LOGGER_LEVEL = logging.DEBUG
+# LOGGER_LEVEL = logging.DEBUG
 from util import setup_logger
 
 
@@ -111,6 +111,7 @@ class PDDLParser:
                 old_variable = temp_list[0]
                 variable = old_variable.replace(' ?','?').replace(' ','-')
                 key = key.replace(old_variable,variable)
+                self.logger.debug(temp_list)
                 if len(temp_list)==2:
                     value = temp_list[1][1:]
                     if "'" in value:
