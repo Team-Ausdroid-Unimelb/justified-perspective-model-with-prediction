@@ -37,7 +37,7 @@
 
     
         (:goal (and 
-          (:epistemic $ b [a] + b [d] - b [a] (= (secret a) 't')) 
+          (:epistemic + b [d] - b [b] (= (secret c) 't')) 
      ))
 
         (:domains

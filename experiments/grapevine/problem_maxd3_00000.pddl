@@ -37,6 +37,7 @@
 
     
         (:goal (and 
+          (:epistemic + b [b] (= (secret a) 't')) 
      ))
 
         (:domains
