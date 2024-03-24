@@ -274,29 +274,34 @@ class EpistemicModel:
 
                 domains = self.domains
                 #print(domains)
+                print("##########")
+                print("agt_id",agt_id)
+                new_rs = self.external.getrs(new_os,p,domains)
+                new_ps = self.external.getps(new_os,new_rs, p)
+                '''
                 new_ps = []
-                new_rs = []
+                
                 for i,temp_p in enumerate(p):
                     #temp_p = self.get1p(agt_id,p[i],new_os[:i+1:],parent_ps)
                     new_p, update_rule= self.external.getp(new_os, i,temp_p,domains,rule_dict)
-                    new_rs.append(update_rule)
+                    
                     new_ps.append(new_p)
 
-                
+                '''
                 p_path[actions_str_new][prefix]['rule'] = new_rs
                 p_path[actions_str_new][prefix]['perspectives'] = new_ps
                 rule_list = new_rs  ##?update value of rule_list
 
 
                 #######print
-                keyword = 'num-e'
-                ps_values = [entry[keyword] for entry in new_ps if keyword in entry]
-                os_values = [entry[keyword] for entry in new_os if keyword in entry]
-                print("##########")
-                print("agt_id",agt_id)
-                print("os", os_values)
+                #keyword = 'num-c'
+                #ps_values = [entry[keyword] for entry in new_ps if keyword in entry]
+                #os_values = [entry[keyword] for entry in new_os if keyword in entry]
+                #print("##########")
+                #print("agt_id",agt_id)
+                #print("os", new_os)
                 #print("rs", new_rs)  ##type is wrong when >2 ??
-                print("ps",ps_values)
+                #print("ps",new_ps)
 
                 #new_p = self.get1ps(eq.q_group[0],p,new_prefix, actions_str_old, actions_str_new,rule_list, p_path,rule_dict)
                 ###################################################################################################################

@@ -16,7 +16,8 @@
         (shared [a,b,c,d])
         (secret [a,b,c,d])
         (peeking [ a , b ,c,d])
-        (num [e])
+        (numl [e])
+        (nump [f])
     )
 
     (:init
@@ -24,6 +25,8 @@
         (= (agent_at b) 1)
         (= (agent_at c) 1)
         (= (agent_at d) 1)
+        (= (object_at e) 1)
+        (= (object_at f) 2)
 
 
         (= (shared a) 0)
@@ -42,15 +45,16 @@
         (= (peeking c) 'f')
         (= (peeking d) 'f')
 
-        (= (num e) 2)      
+        (= (numl e) 2)     
+        (= (nump f) 1)  
     )
 
     (:goal (and
         ; (= (:ontic (= (agent_at a) 2)) 1)
         ; (= (:ontic (= (shared a) 2)) 1)
-        ;(= (:epistemic b [b] (= (secret a) 't')) 1)
+        (= (:epistemic b [b] (= (secret a) 't')) 1)
         (= (:epistemic b [c] (= (secret a) 'f')) 1)
-        (= (:epistemic b [a] (= (num e) 4)) 1)
+        ;(= (:epistemic b [a] (= (numl e) 5)) 1)
         ; (= (:epistemic b [d] (= (secret a) 't')) 0)
         ; (= (:epistemic k [b] k [a] (= (v p) 't')) 0)
         ; (= (:epistemic s [b] s [a] (= (v p) 't')) 2)
@@ -62,11 +66,13 @@
     ))
 
     (:domains
-        (agent_at integer [1,2])
-        (shared integer [0,2])
-        (secret enumerate ['t','f'])
-        (peeking enumerate ['t','f']) ;
-        (num integer [0,20] linear)
+        (agent_at integer [1,3] static)
+        (object_at integer [1,3] static)
+        (shared integer [0,3] static)
+        (secret enumerate ['t','f'] static)
+        (peeking enumerate ['t','f'] static) ;
+        (numl integer [0,20] linear)
+        (nump integer [0,50] 2nd_poly)
         ;(epistemic epistemic ['1','0','2']) true false unknown
     )
 

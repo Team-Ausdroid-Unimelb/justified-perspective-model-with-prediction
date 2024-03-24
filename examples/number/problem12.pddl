@@ -37,7 +37,7 @@
 
     (:domains
 
-        (peeking enumerate ['t','f']) ;
+        (peeking enumerate ['t','f'] static) ;
         (num integer [0,20] linear)
         ;static, linear, sin, 2nd_poly ###ax+b
 

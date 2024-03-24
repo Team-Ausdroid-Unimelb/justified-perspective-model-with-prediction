@@ -6,7 +6,7 @@ import re
 
 LOGGER_NAME = "forward_search:bfsdc"
 LOGGER_LEVEL = logging.INFO
-# LOGGER_LEVEL = logging.DEBUG
+LOGGER_LEVEL = logging.DEBUG
 
 SPLIT_KEY_WORD = "@"
 
