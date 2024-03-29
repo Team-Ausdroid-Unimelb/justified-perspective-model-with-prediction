@@ -63,7 +63,7 @@ def loadParameter():
     
     parser.add_option('-t', '--timeout', dest="timeout", help='timeout, default 300s', type='int', default=300)
     parser.add_option('-o','--output', dest="output_path", help='output directory for the running results (default: output/<timestamp>)',default='')
-    parser.add_option('-s', '--search', dest="search_path", help='the name of the search algorithm', default='bfs')
+    parser.add_option('-s', '--search_path', dest="search_path", help='the path of the search algorithm', default='')
     # parser.add_option('-d','--debug', dest="log_debug", action='store_true', help='enable logging level to debug', default=False)
     parser.add_option('--console_debug', dest="console_debug", action='store_true', help='enable logging level to debug', default=False)
     # parser.add_option('--time_debug', dest="time_debug", action='store_true', help='enable logging level to debug', default=False)
@@ -99,31 +99,24 @@ if __name__ == '__main__':
     
     
     # loading search algorithm
-    search = options.search_path
-    # search_name = search
-    
-    search_name = os.path.split(options.search_path)[-1].replace('.py','')
-    # if '\\' in search:
-    #     search_name = search.split('\\')[-1].replace('.py','')
-    # elif '/' in search:
-    #     search_name = search.split('/')[-1].replace('.py','')   
+    search_path = options.search_path.replace('.py','')
+    module_list = os.path.normpath(search_path).split(os.sep)
+    search_name = module_list[-1]
+    module_path = ".".join(module_list)
+    print(search_name)
         
-    if type(search) ==str:
-        logger.info(f"loading search algorithm: {search}")
-        search_path = search
-        search_path = search_path.replace('.py','').replace('\\','.').replace('/','.').replace('..','')
+
         
-        try:
-            search = importlib.import_module(search_path)
-            logger.info(f"finish loading search algorithm:")
-        except (NameError, ImportError, IOError):
-            traceback.print_exc()
-            exit()
-        except:
-            traceback.print_exc()
-            exit()
-    else:
-        logger.info(f"Search algorithm exists")
+    try:
+        search_module = importlib.import_module(module_path)
+        logger.info(f"finish loading search algorithm:")
+    except (NameError, ImportError, IOError):
+        traceback.print_exc()
+        exit()
+    except:
+        traceback.print_exc()
+        exit()
+
     
     
     domain_name_list = []
@@ -160,7 +153,14 @@ if __name__ == '__main__':
                 instance_name = f"{search_name}_{domain_name}_{problem_name}"
                 logger.info(f"solving {instance_name} - {problem_folder}")
                 start_time = datetime.datetime.now().astimezone(TIMEZONE)
-                ins = instance_runner.Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search= search)
+                ins = instance_runner.Instance(
+                    instance_name=instance_name,
+                    problem_path=problem_path,
+                    domain_path=domain_path,
+                    external_function= external_function,
+                    search_module= search_module,
+                    search_name=search_name
+                    )
                 ins.solve(timeout=options.timeout,log_debug = options.console_debug, output_path = output_path,belief_mode=options.belief_mode)
                 end_time = datetime.datetime.now().astimezone(TIMEZONE)
                 used_time = end_time - start_time

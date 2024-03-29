@@ -4,26 +4,32 @@ from util import setup_logger, PriorityQueue, PDDL_TERNARY
 # import util
 
 
-LOGGER_NAME = "forward_search:bfsdc"
+# LOGGER_NAME = "forward_search:bfsdc"
 LOGGER_LEVEL = logging.INFO
 # LOGGER_LEVEL = logging.DEBUG
 
 SPLIT_KEY_WORD = "@"
 
 class Search:
-    def __init__(self,handlers):        
-        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=LOGGER_LEVEL) 
+    def __init__(self,handlers,search_name):
+        self.search_name = search_name      
+        self.logger = setup_logger(search_name,handlers,logger_level=LOGGER_LEVEL) 
         self.expanded = 0
         self.goal_checked = 0
         self.generated = 0
         self.pruned = 0
         self.pruned_by_unknown = 0
         self.pruned_by_visited = 0
-        self.visited = []
+        self.visited = set()
         self.short_visited = []
         self.result = dict()
         self.branch_factors = []
+        self.filtered_branching_factors = []
         self.p_path = {}
+        self.heuristic = self.goal_counting
+        self.h_weight = 1
+        self.g_weight = 1
+        self.max_goal_num = 0
 
     class SearchNode:
         state = None
@@ -36,19 +42,43 @@ class Search:
             self.epistemic_item_set = epistemic_item_set
             self.path = path
 
+    def _h(self,node,problem,p_path):
+        h,es = self.heuristic(node,problem,p_path)
+        return h,es
+    
+    def _f(self,h,g):
+        f = g*self.g_weight+h*self.h_weight
+        return f
 
+    def _remaining_goal(self,h):
+        self.goal_checked += 1
+        return h
+    # def _isGoal(self,current_p, current_node):
+    #     return (current_p - self._gn(current_node)*1) == 0
 
+    def _gn(self,node):
+        path = node.path
+        return len(path)-1
+    
+    def _duplication_check(self,ep_state_str):
+        if not ep_state_str in self.visited:
+            self.visited.add(ep_state_str)
+            return True
+        else:
+            return False
+        # return True
+
+    def _unknown_check(self,succ_node):
+        if succ_node.remaining_goal <= self.max_goal_num:
+            return True
+        else:
+            return False
 
     #BFS with duplicate check on the state + epistemic formula
     # for novelty checking purpose, we need to move the goal check process at where the node is generated
-    def searching(self,problem, filterActionNames = None):
-        
-        
-        self.logger.info("starting searching using %s",LOGGER_NAME)
-        max_goal_num = len(problem.goals.ontic_dict)+len(problem.goals.epistemic_dict)
-        # self.logger.info(f'the initial is {problem.initial_state}')
-        # self.logger.info(f'the variables are {problem.variables}')
-        # self.logger.info(f'the domains are {problem.domains}')
+    def searching(self,problem):
+        self.logger.info("starting searching using [%s]",self.search_name)
+        self.max_goal_num = len(problem.goals.ontic_dict)+len(problem.goals.epistemic_dict)
         
         # check whether the initial state is the goal state
         init_state = problem.initial_state
@@ -57,24 +87,19 @@ class Search:
         
         init_node = Search.SearchNode(init_state,init_epistemic_item_set,init_path)
         # self.group_eg_dict = self.group_epistemic_goals(problem)
-        
         # self.landmarks_dict = problem.external.generate_constrain_dict(problem,self.group_eg_dict)
 
-        
-        
-        
         open_list = PriorityQueue()
-        p,es = self._f(init_node,problem,self.p_path)
-        init_node.remaining_goal =  p-self._gn(init_node)
+        h,es = self._h(init_node,problem,self.p_path)
+        g = self._gn(init_node)
+        fn = self._f(h,g)
+        init_node.remaining_goal =  self._remaining_goal(h)
         init_node.epistemic_item_set.update(es)
-        # remaining_g = p-_gn(init_node)
-        open_list.push(item=init_node, priority=self._gn(init_node))
-        
+        open_list.push(item=init_node, priority=fn)
         
         while not open_list.isEmpty():
 
-            current_p , _, current_node = open_list.pop_full()
-
+            current_fn , _, current_node = open_list.pop_full()
             state = current_node.state
             ep_goal_dict = current_node.epistemic_item_set
             path = current_node.path
@@ -97,10 +122,18 @@ class Search:
                 self._finalise_result(problem)
                 return self.result
             
+            
             all_actions = problem.getAllActions(state,path)
             self.logger.debug("finding all actions: [%s]" % (all_actions))
+            
             # self.logger.debug(actions)
-            filtered_action_names = filterActionNames(problem,all_actions)
+            filterAction = getattr(problem.external,'filterActionNames')
+
+            if filterAction == None:
+                filtered_action_names = list(all_actions.keys())
+            else:
+                filtered_action_names = filterAction(problem,all_actions)
+                
             self.logger.debug("finding all actions: [%s]" % (list(filtered_action_names)))
             
             ontic_pre_dict = {}
@@ -112,6 +145,8 @@ class Search:
  
             flag_dict,e_pre_dict,pre_dict = problem.checkAllPreconditions(state,path, ontic_pre_dict,epistemic_pre_dict,self.p_path)
 
+
+
             # e_pre_dict.update(state)
             # e_pre_dict.update(ep_goal_dict)
             e_pre_dict.update(state)
@@ -119,29 +154,17 @@ class Search:
             e_pre_dict.update(pre_dict)
             
             self.logger.debug("flag_dict is [%s]",flag_dict)
-
             ep_state_str = state_to_string(e_pre_dict)
-            if not ep_state_str in self.visited:
-                # self.logger.debug(epistemic_item_set)
-            # if True:
-                # self.branch_factors.append(flag_dict.values().count(True))
+            if self._duplication_check(ep_state_str):
                 self.logger.debug("path [%s] get in visited",actions)
                 self.logger.info("ep_state_str is [%s]",ep_state_str)
                 self.expanded +=1
-                # self.logger.debug(self.expanded)
+                self.branch_factors.append(len(list(all_actions.keys())))
+                self.filtered_branching_factors.append(list(flag_dict.values()).count(True))
                 temp_successor = 0
                 temp_actions = []
-                # update the visited list
-                # self.short_visited.append(temp_str)
-                self.visited.append(ep_state_str)
-
-                
-                
-
                 
                 for action_name in filtered_action_names:
-
-                    self.logger.debug(action_name)
 
                     if flag_dict[action_name]: 
                         action = all_actions[action_name]
@@ -149,16 +172,21 @@ class Search:
                         # passed the precondition
                         succ_state = problem.generateSuccessor(state, action,path)
                         if not succ_state == None:
-                            # self.visited.append(e_dict)
-                            self.goal_checked += 1
-                            succ_node = self.SearchNode(succ_state,{},path + [(succ_state,action_name)])
-                            p,ep_dict = self._f(succ_node,problem,self.p_path)
                             
-                            succ_node.remaining_goal = p - self._gn(succ_node)
-                            if succ_node.remaining_goal <= max_goal_num:
+                            succ_node = self.SearchNode(succ_state,{},path + [(succ_state,action_name)])
+
+                            h,ep_dict = self._h(succ_node,problem,self.p_path)
+                            self.logger.debug("heuristic is: %d" % (h))
+                            g = self._gn(succ_node)
+                            self.logger.debug("gn is: %d" % (g))
+                            succ_node.remaining_goal =  self._remaining_goal(h)
+                            self.logger.debug("remaining is: %d" % (succ_node.remaining_goal))
+                            
+                            if self._unknown_check(succ_node):
                                 succ_node.epistemic_item_set = ep_dict
                                 self.generated += 1
-                                open_list.push(item=succ_node, priority=self._gn(succ_node))
+                                fn = self._f(h,g)
+                                open_list.push(item=succ_node, priority=fn)
                                 temp_successor +=1
                                 temp_actions.append(action_name)
                             else:
@@ -205,8 +233,8 @@ class Search:
         self.logger.info(f'[number of epistemic formulas evaluation: {problem.epistemic_calls}]')
         self.logger.info(f'[time in epistemic formulas evaluation: {problem.epistemic_call_time}]')
         self.logger.info(f'[avg time in epistemic formulas evaluation: {problem.epistemic_call_time.total_seconds()/problem.epistemic_calls}]')
-        self.logger.info(f'goal_size: {len(list(problem.goals.epistemic_dict.keys()))}')
-        self.logger.info(f'pddl_goals: {list(problem.goals.epistemic_dict.keys())}')
+        self.logger.info(f'[goal_size: {len(list(problem.goals.epistemic_dict.keys()))}]')
+        self.logger.info(f'[pddl_goals: {list(problem.goals.epistemic_dict.keys())}]')
         
         # file output
         self.result.update({'pruned':self.pruned})
@@ -242,6 +270,27 @@ class Search:
         self.result.update( {'common_max':max_common_iteration})
         self.result.update( {'common_average':average_common_iteration})
 
+        avg_branching_factors = 0
+        max_branching_factors = 0
+        avg_filtered_branching_factors = 0
+        max_filtered_branching_factors = 0
+        if not self.branch_factors == list():
+            avg_branching_factors = sum(self.branch_factors)/len(self.branch_factors)
+            max_branching_factors = max(self.branch_factors)
+        if not self.filtered_branching_factors == list():
+            avg_filtered_branching_factors = sum(self.filtered_branching_factors)/len(self.filtered_branching_factors)
+            max_filtered_branching_factors = max(self.filtered_branching_factors)
+        self.logger.info(f'[number of averaged unfiltered branching factors]: {avg_branching_factors}')
+        self.logger.info(f'[number of max unfiltered branching factors]: {max_branching_factors}')
+        self.logger.info(f'[number of average filtered branching factors]: {avg_filtered_branching_factors}')
+        self.logger.info(f'[number of max filtered branching factors]: {max_filtered_branching_factors}')
+        self.result.update({'avg_branching_factors': avg_branching_factors})
+        self.result.update({'max_branching_factors': max_branching_factors})
+        self.result.update({'avg_filtered_branching_factors': avg_filtered_branching_factors})
+        self.result.update({'max_filtered_branching_factors': max_filtered_branching_factors})        
+
+
+
     def group_epistemic_goals(self,problem):
         group_eg_dict = {}
         for eq_str,value in problem.goals.epistemic_dict.items():
@@ -254,19 +303,7 @@ class Search:
 
 
 
-    def _f(self,node,problem,p_path):
-        heuristic = self.goal_counting
-        g = self._gn(node)
-        h,es = heuristic(node,problem,p_path)
-        f = g*1+h*1
-        return f,es
 
-    def _isGoal(self,current_p, current_node):
-        return (current_p - self._gn(current_node)*1) == 0
-
-    def _gn(self,node):
-        path = node.path
-        return len(path)-1
 
     # it is not admissible
     def goal_counting(self,node,problem,p_path):

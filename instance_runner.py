@@ -32,18 +32,18 @@ class Instance:
     external_function = None
     search = None
     
-    def __init__(self,instance_name="",problem_path="",domain_path="",external_function= "",search= "", debug=False):
+    def __init__(self,instance_name="",problem_path="",domain_path="",external_function= "",search_module= None,search_name = "", debug=False):
         self.problem_path = ""
         self.domain_path = ""
         self.instance_name = ""
         self.external_function = None
-        self.search = None
+        self.search_module = search_module
         
         self.instance_name = instance_name
         self.problem_path = problem_path
         self.domain_path = domain_path
         self.external_function = external_function
-        self.search = search
+        self.search_name = search_name
 
 
     def solve(self,timeout=300,log_debug = False, output_path = '', time_debug =False, belief_mode = -1):
@@ -80,23 +80,7 @@ class Instance:
         actions,domain_name = pddl_parser.domainParser(f"{self.domain_path}")
         logger.info(f"finish loading domain file: {domain_name}")        
         
-        if type(self.search) ==str:
-            logger.info(f"loading search algorithm: {self.search}")
-            search_path = self.search
-            search_path = search_path.replace('.py','').replace('\\','.').replace('/','.').replace('..','')
-            
-            try:
-                self.search = importlib.import_module(search_path)
-                # self.search = __import__(search_path)
-                # logger.info(f"finish loading search algorithm:")
-            except (NameError, ImportError, IOError):
-                traceback.print_exc()
-                exit()
-            except:
-                traceback.print_exc()
-                exit()
-        else:
-            logger.info(f"Search algorithm exists")
+
         
         
         if type(self.external_function) ==str:
@@ -128,14 +112,16 @@ class Instance:
         import func_timeout
         
         if time_debug:
-            search_algorithm = self.search.Search(logger_handlers)
+            search_class_ref = getattr( self.search_module, self.search_name)
+            search_algorithm = search_class_ref(logger_handlers,self.search_name)
 
-            result = search_algorithm.searching(problem,self.external_function.filterActionNames)
+            result = search_algorithm.searching(problem)
         else:
             
             try:
-                search_algorithm = self.search.Search(logger_handlers)
-                result = func_timeout.func_timeout(timeout, search_algorithm.searching,args=(problem,self.external_function.filterActionNames))
+                search_class_ref = getattr( self.search_module, self.search_name)
+                search_algorithm = search_class_ref(logger_handlers,self.search_name)
+                result = func_timeout.func_timeout(timeout, search_algorithm.searching,args=(problem,))
             except func_timeout.FunctionTimedOut:
                 result.update({"running": f"timeout after {timeout}"})
             except:
@@ -187,7 +173,7 @@ def loadParameter():
     parser.add_option('-p', '--problem', dest="problem_path", help='path to the problem file', default='')
     parser.add_option('-e', '--external', dest="external_path", help='path to the external function file', default='')
     parser.add_option('-o', '--output', dest="output_path", help='output directory for the running results (default: output/timestamp)',default='')
-    parser.add_option('-s', '--search', dest="search_path", help='the name of the search algorithm', default='bfs')
+    parser.add_option('-s', '--search_path', dest="search_path", help='the name of the search algorithm', default='bfs')
     parser.add_option('--log_debug', dest="log_debug", action='store_true', help='enable logging level to debug', default=False)
     parser.add_option('-b', '--belief_mode', dest="belief_mode", type='int', help='should between 0-3', default=1)
     parser.add_option('--time_debug', dest="time_debug", action='store_true', help='enable cProfile', default=False)
@@ -208,21 +194,49 @@ if __name__ == '__main__':
     domain_path = options.domain_path
     # initialise with path, the function will load it later
     external_function = options.external_path
-    search = options.search_path
+    search_path = options.search_path
     output_path = ''
 
     
     
-    if '\\' in search:
-        domain_name = domain_path.split('\\')[2]
-        problem_name = problem_path.split('\\')[-1].replace('.pddl','')
-        search_name = search.split('\\')[-1].replace('.py','')
-    elif '/' in search:
-        domain_name = domain_path.split('/')[2]
-        problem_name = problem_path.split('/')[-1].replace('.pddl','')
-        search_name = search.split('/')[-1].replace('.py','')        
+    # if '\\' in search:
+    #     domain_name = domain_path.split('\\')[2]
+    #     problem_name = problem_path.split('\\')[-1].replace('.pddl','')
+    #     search_name = search.split('\\')[-1].replace('.py','')
+    # elif '/' in search:
+    #     domain_name = domain_path.split('/')[2]
+    #     problem_name = problem_path.split('/')[-1].replace('.pddl','')
+    #     search_name = search.split('/')[-1].replace('.py','')        
+    # instance_name = f"{search_name}_{domain_name}_{problem_name}"
+
+
+    print("loading search algorithm: [%s]" % (search_path))
+
+    search_path = search_path
+    module_list = os.path.normpath(search_path).split(os.sep)
+    search_name = module_list[-1].replace(".py","")
+    problem_name = os.path.normpath(problem_path).split(os.sep)[-1].replace('.pddl','')
+    domain_name = os.path.normpath(domain_path).split(os.sep)[-2]
+    module_path = ".".join( module_list)
+    module_path = module_path.replace(".py","")
     instance_name = f"{search_name}_{domain_name}_{problem_name}"
-    
+
+
+    try:
+        print("loading search module from: [%s]" % (module_path))
+        search_module = importlib.import_module(module_path)
+        # self.search = __import__(search_path)
+        # logger.info(f"finish loading search algorithm:")
+    except (NameError, ImportError, IOError):
+        traceback.print_exc()
+        exit()
+    except:
+        traceback.print_exc()
+        exit()
+
+    if search_module == None:
+        print("ERRORRRRRRRRRRRRRR")
+
     if options.output_path == '':
         output_path = f"output/{start_time.strftime(DATE_FORMAT)}"
     if not os.path.isdir(output_path):
@@ -237,7 +251,7 @@ if __name__ == '__main__':
         print("starting profiling")
         pr = cProfile.Profile()
         pr.enable()
-        ins = Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search= search, )
+        ins = Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search_module= search_module, search_name = search_name)
         ins.solve(timeout=options.timeout,log_debug = options.log_debug, output_path = output_path, time_debug= options.time_debug,belief_mode=options.belief_mode)
         
         
@@ -259,6 +273,6 @@ if __name__ == '__main__':
 
         
     else:
-        ins = Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search= search)
+        ins = Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search_module=search_module,search_name=search_name)
         ins.solve(timeout=options.timeout,log_debug = options.log_debug, output_path = output_path, time_debug= options.time_debug,belief_mode=options.belief_mode)
 
