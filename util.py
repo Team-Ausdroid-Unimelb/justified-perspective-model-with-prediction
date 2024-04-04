@@ -388,7 +388,15 @@ class OnticCondition():
         self.symbol = symbol
         self.variable_name = variable_name
         self.value =  value
-        
+
+    def __str__(self): # show only in the print(object)
+        return f" symbol is {self.symbol}; variable_name is {self.variable_name}; value is {self.value}; \n"
+
+    def __repr__(self): # show when in a dictionary
+        return f" symbol is {self.symbol}; variable_name is {self.variable_name}; value is {self.value}; \n"
+
+
+
 class EpistemicCondition():
     variable_name = ""
     v_value = ""
@@ -405,6 +413,12 @@ class EpistemicCondition():
         self.variable_name = variable #"secret-a"
         self.value =  value # 't'
  
+    def __str__(self): # show only in the print(object)
+        return f" symbol is {self.symbol};\n variable_name is {self.variable_name};\n value is {self.value}; \n query is {self.query};\n query_prefix is {self.query_prefix}.\n\n"
+
+    def __repr__(self): # show when in a dictionary
+        return f" symbol is {self.symbol};\n variable_name is {self.variable_name};\n value is {self.value}; \n query is {self.query};\n query_prefix is {self.query_prefix}.\n\n"
+
 # the following classes are for epistemic model
 class Q_TYPE(Enum):
     MUTUAL = 0
