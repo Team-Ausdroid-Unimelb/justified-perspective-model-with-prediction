@@ -134,7 +134,7 @@ class Search:
             else:
                 filtered_action_names = filterAction(problem,all_actions)
                 
-            self.logger.debug("finding all actions: [%s]" % (list(filtered_action_names)))
+            self.logger.debug("finding all filtered actions: [%s]" % (list(filtered_action_names)))
             
             ontic_pre_dict = {}
             epistemic_pre_dict = {}
@@ -142,9 +142,12 @@ class Search:
                 action = all_actions[action_name]
                 ontic_pre_dict.update({action_name:action.a_preconditions.ontic_dict})
                 epistemic_pre_dict.update({action_name:action.a_preconditions.epistemic_dict})
- 
-            flag_dict,e_pre_dict,pre_dict = problem.checkAllPreconditions(state,path, ontic_pre_dict,epistemic_pre_dict,self.p_path)
 
+            flag_dict = dict()
+            self.logger.debug("flag dict is : [%s]" % (flag_dict))
+            self.logger.debug("state : [%s]"%(state))
+            flag_dict,e_pre_dict,pre_dict = problem.checkAllPreconditions(state,path, ontic_pre_dict,epistemic_pre_dict,self.p_path)
+            self.logger.debug("flag dict after checking pre is : [%s]" % (flag_dict))
 
 
             # e_pre_dict.update(state)
@@ -156,8 +159,8 @@ class Search:
             self.logger.debug("flag_dict is [%s]",flag_dict)
             ep_state_str = state_to_string(e_pre_dict)
             if self._duplication_check(ep_state_str):
-                self.logger.debug("path [%s] get in visited",actions)
-                self.logger.info("ep_state_str is [%s]",ep_state_str)
+                # self.logger.debug("path [%s] get in visited",actions)
+                # self.logger.debug("ep_state_str is [%s]",ep_state_str)
                 self.expanded +=1
                 self.branch_factors.append(len(list(all_actions.keys())))
                 self.filtered_branching_factors.append(list(flag_dict.values()).count(True))
@@ -181,7 +184,7 @@ class Search:
                             self.logger.debug("gn is: %d" % (g))
                             succ_node.remaining_goal =  self._remaining_goal(h)
                             self.logger.debug("remaining is: %d" % (succ_node.remaining_goal))
-                            
+
                             if self._unknown_check(succ_node):
                                 succ_node.epistemic_item_set = ep_dict
                                 self.generated += 1

@@ -9,6 +9,7 @@ from typing import List
 
 import epistemic_model
 import forward_epistemic_model
+import traceback
 
 LOGGER_NAME = "pddl_model"
 LOGGER_LEVEL = logging.INFO
@@ -260,13 +261,16 @@ class Problem:
                             old_variable_name = variable_name
                             new_variable_name = old_variable_name.replace(f'{i}',f'-{v}')
 
-                            key = key.replace(old_variable_name,new_variable_name).replace(f'{i}',f'{v}')
+                            key = key.replace(old_variable_name,new_variable_name).replace(f'{i}',f'-{v}')
                             # symbol = symbol.replace(f'{i}',f'-{v}')
 
                             # v_value = v_value.replace(f'{i}',f'-{v}') if type(v_value) == str else v_value
                             # self.logger.debug(type(value))
+                            
+                            old_value = value
                             value = value.replace(f'{i}',f'-{v}')  if type(value) == str else value if type(value) ==int else value.value
-                            temp_ontic_tuple_list[j]  = (key,symbol,variable_name,value)
+                            self.logger.debug("[%s] repalced by [%s] in [%s] into [%s]" %(i,v,old_value,value))
+                            temp_ontic_tuple_list[j]  = (key,symbol,new_variable_name,value)
 
 
                         # update parameters in the epistemic precondition
@@ -306,6 +310,7 @@ class Problem:
                     self.logger.debug('a_temp_name [%s]',a_temp_name)
                     self.logger.debug('ontic [%s]',temp_ontic_tuple_list)
                     self.logger.debug('epistemic [%s]',temp_epistemic_tuple_list)
+                    self.logger.debug('effects [%s]',a_temp_effects)
                     self.logger.debug(a_temp_name)
                     
                     all_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_pre_dict,a_temp_effects)})
@@ -314,6 +319,7 @@ class Problem:
         return all_actions   
 
     def checkAllPreconditions(self,state,path,ontic_pre_dict,epistemic_pre_dict,p_path):
+
         self.logger.debug('function checkAllPreconditions')
         self.logger.debug('checking precondition for state: [%s]', state)
         # preconditions = action.a_precondition
@@ -337,9 +343,11 @@ class Problem:
             for key,ontic_obj in ontic_pre.items():
                 try:
                     k = ontic_obj.variable_name
-                    e = ontic_obj.v_value
+                    e = ontic_obj.value
+                    self.logger.debug('k [%s] and e [%s] in [%s]',k,e,state.keys())
                     if k in state.keys():
                         if e in state.keys():
+                            self.logger.debug('k [%s]: [%s]; e [%s]: [%s]',k,state[k],e,state[e])
                             if not state[k] == state[e]:
                                 flag_dict[action_name] = False
                                 pre_dict[action_name].update({k+":"+str(e):False})
@@ -354,10 +362,11 @@ class Problem:
                         self.logger.error(f'variable {k} not in state {state}')
                         
                 except:
+                    self.logger.error(traceback.format_exc())
                     self.logger.error("Error when checking precondition: [%s]\n with state: [%s]", ontic_pre,state)
                     
                     flag_dict[action_name] = False
-        self.logger.debug("pre_dict [%s]", pre_dict)
+        self.logger.debug("flag_dict [%s]", flag_dict)
             
         # adding epistemic checker here
         # self.logger.debug("epistemic_pre: {preconditions['epistemic_p']}")
@@ -383,19 +392,20 @@ class Problem:
         epistemic_dict = self.epistemic_model.epistemicGoalsHandler(temp_ep_dict,"",path,p_path)
         self.epistemic_call_time += datetime.now() - current_time
 
-
+        self.logger.debug("epistemic preconditions list [%s]",epistemic_pre_dict) 
         for action_name,ep_dict in epistemic_pre_dict.items():
-            flag_dict[action_name]=True
-            for k in ep_dict.keys():
-                if epistemic_dict[k] == PDDL_TERNARY.TRUE:
-                    pre_dict[action_name].update({k:True})
-                elif  epistemic_dict[k] == PDDL_TERNARY.FALSE:
-                    pre_dict[action_name].update({k:False})
-                    flag_dict[action_name]=False
-                    
-                else:
-                    raise ValueError("this should not happen in check ep precondition")
-                     
+            if not ep_dict == dict():
+                # flag_dict[action_name]=True
+                for k in ep_dict.keys():
+                    if epistemic_dict[k] == PDDL_TERNARY.TRUE:
+                        pre_dict[action_name].update({k:True})
+                    elif  epistemic_dict[k] == PDDL_TERNARY.FALSE:
+                        pre_dict[action_name].update({k:False})
+                        flag_dict[action_name]=False
+                        
+                    else:
+                        raise ValueError("this should not happen in check ep precondition")
+                        
             # for k,ep_obj in ep_dict.items():
             #     v = ep_obj.value
             #     if not epistemic_dict[k] == v:
@@ -431,7 +441,7 @@ class Problem:
             p_dict[k] = temp_p
         # return p_dict,epistemic_dict,goal_dict
 
-        self.logger.setLevel(logging.INFO)
+        # self.logger.setLevel(logging.INFO)
         return flag_dict,epistemic_dict,p_dict
         # return flag_dict,epistemic_dict,pre_dict
 
