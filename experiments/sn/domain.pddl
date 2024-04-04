@@ -8,6 +8,7 @@
         :precondition (and 
         ; to do
             (:ontic (= (friended a ?a) 0))
+            (:ontic (= (nota ?a) 1))
         )
         :effect (and 
             (= (friended a ?a) 1)
@@ -20,6 +21,7 @@
         :precondition (and 
         ; to do
             (:ontic (= (friended a ?a) 1))
+            (:ontic (= (nota ?a) 1))
         )
         :effect (and 
             (= (friended a ?a) 0)
