@@ -24,7 +24,7 @@ ONTIC_STR_PREFIX = "(:ontic"
 EPISTEMIC_RE_PREFIX = "\(:epistemic"
 EPISTEMIC_STR_PREFIX = "(:epistemic"
 BOTH_RE_PREFIX = "\(:(?:epistemic|ontic)"
-PREDICATE_RE = " ((?:\$|\+|\-) [a-z]* \[[a-z0-9,]*\] )*\((?:>|<|=|>=|<=|\-=)+ \([\? 0-9a-z_]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)\)"
+PREDICATE_RE = " ((?:\$|\+|\-) [a-z]* \[[a-z0-9,]*\] )*\((?:>|<|=|>=|<=|\-=)+ \([\? 0-9a-z_\-]*\) (?:[0-9a-z_\'\"\-]+|\([0-9a-z_ ]+\))\)\)"
 
 class PDDLParser:
     logger = None
