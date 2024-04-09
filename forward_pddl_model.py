@@ -22,6 +22,7 @@ from util import Domain,D_TYPE,dTypeConvert
 from util import Entity,E_TYPE,eTypeConvert
 from util import Conditions
 from util import ActionList2DictKey
+from util import eval_var_from_str
 
 # Class of the problem
 class Problem:
@@ -269,7 +270,7 @@ class Problem:
                             
                             old_value = value
                             value = value.replace(f'{i}',f'-{v}')  if type(value) == str else value if type(value) ==int else value.value
-                            self.logger.debug("[%s] repalced by [%s] in [%s] into [%s]" %(i,v,old_value,value))
+                            # self.logger.debug("[%s] repalced by [%s] in [%s] into [%s]" %(i,v,old_value,value))
                             temp_ontic_tuple_list[j]  = (key,symbol,new_variable_name,value)
 
 
@@ -307,11 +308,11 @@ class Problem:
 
                     a_temp_pre_dict = {'ontic':temp_ontic_tuple_list,'epistemic':temp_epistemic_tuple_list}
 
-                    self.logger.debug('a_temp_name [%s]',a_temp_name)
-                    self.logger.debug('ontic [%s]',temp_ontic_tuple_list)
-                    self.logger.debug('epistemic [%s]',temp_epistemic_tuple_list)
-                    self.logger.debug('effects [%s]',a_temp_effects)
-                    self.logger.debug(a_temp_name)
+                    # self.logger.debug('a_temp_name [%s]',a_temp_name)
+                    # self.logger.debug('ontic [%s]',temp_ontic_tuple_list)
+                    # self.logger.debug('epistemic [%s]',temp_epistemic_tuple_list)
+                    # self.logger.debug('effects [%s]',a_temp_effects)
+                    # self.logger.debug(a_temp_name)
                     
                     all_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_pre_dict,a_temp_effects)})
                     # # self.logger.debug('legal action before precondition check: {all_actions}') 
@@ -341,31 +342,41 @@ class Problem:
             flag_dict[action_name] = True
             self.logger.debug('checking ontic precondition [%s] for action [%s]',ontic_pre,action_name)
             for key,ontic_obj in ontic_pre.items():
-                try:
-                    k = ontic_obj.variable_name
-                    e = ontic_obj.value
-                    self.logger.debug('k [%s] and e [%s] in [%s]',k,e,state.keys())
-                    if k in state.keys():
-                        if e in state.keys():
-                            self.logger.debug('k [%s]: [%s]; e [%s]: [%s]',k,state[k],e,state[e])
-                            if not state[k] == state[e]:
-                                flag_dict[action_name] = False
-                                pre_dict[action_name].update({k+":"+str(e):False})
-                            else:
-                                pre_dict[action_name].update({k+":"+str(e):True})
-                        elif not state[k] == e:
-                            flag_dict[action_name] = False
-                            pre_dict[action_name].update({k+":"+str(e):False})
-                        else:
-                            pre_dict[action_name].update({k+":"+str(e):True})
-                    else:
-                        self.logger.error(f'variable {k} not in state {state}')
-                        
-                except:
-                    self.logger.error(traceback.format_exc())
-                    self.logger.error("Error when checking precondition: [%s]\n with state: [%s]", ontic_pre,state)
-                    
+                ontic_str = key.replace(":ontic ","")
+                result = eval_var_from_str(self.logger,ontic_str,state)
+                if result == PDDL_TERNARY.TRUE:
+                    pre_dict[action_name].update({key:True})
+                else:
                     flag_dict[action_name] = False
+                    pre_dict[action_name].update({key:False})
+            self.logger.debug("pre_dict[%s]: %s",action_name, pre_dict[action_name])
+                # try:
+                #     k = ontic_obj.variable_name
+                #     e = ontic_obj.value
+                #     self.logger.debug('k [%s] and e [%s] in [%s]',k,e,state.keys())
+                #     if k in state.keys():
+                #         if e in state.keys():
+                #             self.logger.debug('k [%s]: [%s]; e [%s]: [%s]',k,state[k],e,state[e])
+                #             if not state[k] == state[e]:
+                #                 flag_dict[action_name] = False
+                #                 pre_dict[action_name].update({k+":"+str(e):False})
+                #             else:
+                #                 pre_dict[action_name].update({k+":"+str(e):True})
+                #         elif not state[k] == e:
+                #             flag_dict[action_name] = False
+                #             pre_dict[action_name].update({k+":"+str(e):False})
+                #         else:
+                #             pre_dict[action_name].update({k+":"+str(e):True})
+                #     else:
+                #         flag_dict[action_name] = False
+                #         pre_dict[action_name].update({k+":"+str(e):False})
+                #         self.logger.error(f'variable {k} not in state {state}')
+                #     self.logger.debug('k [%s]: [%s]; e [%s]: [%s]',k,state[k],e,state[e])
+                # except:
+                #     self.logger.error(traceback.format_exc())
+                #     self.logger.error("Error when checking precondition: [%s]\n with state: [%s]", ontic_pre,state)
+                    
+                #     flag_dict[action_name] = False
         self.logger.debug("flag_dict [%s]", flag_dict)
             
         # adding epistemic checker here
@@ -440,8 +451,6 @@ class Problem:
             temp_p["perspectives"] = p["perspectives"][-1]
             p_dict[k] = temp_p
         # return p_dict,epistemic_dict,goal_dict
-
-        # self.logger.setLevel(logging.INFO)
         return flag_dict,epistemic_dict,p_dict
         # return flag_dict,epistemic_dict,pre_dict
 
@@ -575,6 +584,8 @@ class Problem:
                     if re.search("[a-z]|[A-Z]", update):
                         update = state[update]
                     new_state[v_name] = int(update)
+                elif update in state.keys():
+                    new_state[v_name] = state[update]
                 else:
                     new_state[v_name] = update
 
