@@ -124,7 +124,7 @@ class Search:
             
             
             all_actions = problem.getAllActions(state,path)
-            self.logger.debug("finding all actions: [%s]" % (all_actions))
+            self.logger.debug("finding all actions: [%s]" % (all_actions.keys()))
             
             # self.logger.debug(actions)
             filterAction = getattr(problem.external,'filterActionNames')
@@ -328,8 +328,12 @@ class Search:
         for key,value in goal_dict.items():
             
             # if str(PDDL_TERNARY.UNKNOWN.value) in key and not value:
+            # if key in problem.goals.epistemic_dict.keys() \
+            #     and problem.goals.epistemic_dict[key].value == PDDL_TERNARY.UNKNOWN \
+            #         and not value:
+                
             if key in problem.goals.epistemic_dict.keys() \
-                and problem.goals.epistemic_dict[key].value == PDDL_TERNARY.UNKNOWN \
+                and problem.goals.epistemic_dict[key].query_prefix[0] == "$" \
                     and not value:
                 self.logger.debug('Unknown been updated, goal is impossible')
                 self.logger.debug('goal is impossible')
