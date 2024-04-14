@@ -141,3 +141,5 @@ temp/
 *.xlsx
 
 epistemic_pddl_domains
+
+scripts/figs/
