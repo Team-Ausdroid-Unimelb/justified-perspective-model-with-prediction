@@ -99,6 +99,7 @@ class ExternalFunction:
             if not AGENT_ID_PREFIX+agt_id in state.keys():
                 return False
         return PDDL_TERNARY.TRUE
+    ''' 
     def checkVisibility(self,state,agt_index,var_name,entities,variables):
         if 'at' in var_name:
             #print("var",var_name)
@@ -116,9 +117,8 @@ class ExternalFunction:
 
     '''
     def checkVisibility(self,state,agt_index,var_name,entities,variables):
-        print("checkVisibility(_, {}, {}, {})".format(state, agt_index, var_name))
-        if 'object_at' in var_name:
-            return True
+        #print("checkVisibility(_, {}, {}, {})".format(state, agt_index, var_name))
+        
         try:
             # self.logger.debug('checking seeing for agent [%s] on [%s]  in state [%s]',agt_index,var_name,state)
             tgt_index = variables[var_name].v_parent
@@ -140,9 +140,9 @@ class ExternalFunction:
                     return PDDL_TERNARY.TRUE
                 
                 # if the secret has not been shared
-                if tgt_loc == 0:
+                #if tgt_loc == 0:
                     return PDDL_TERNARY.FALSE
-                
+
                 
             elif 'shared' in var_name:
                 tgt_loc = state[f'shared-{tgt_index}']
@@ -151,12 +151,21 @@ class ExternalFunction:
                 
                 # agent knows if a secret is not been shared
                 # this is to break the continues effect of a sharing secret
-                if tgt_loc == 0:
-                    return PDDL_TERNARY.TRUE
+                #if tgt_loc == 0:
+                    #return PDDL_TERNARY.TRUE
+
+            elif 'at' in var_name:
+                #print("var",var_name)
+                return PDDL_TERNARY.TRUE
+                '''
             elif 'numl' in var_name or 'nump' in var_name:
+                tgt_index = variables[var_name].v_parent
+                #print(tgt_index)
                 tgt_loc = state[f'object_at-{tgt_index}']
-
-
+                #print(tgt_loc)
+                if tgt_loc == state[f'agent_at-{agt_index}']:
+                    return PDDL_TERNARY.TRUE
+                '''
             else:
                 # the target is an agent, it has its own location
                 # tgt_loc = int(state[f'agent_at-{tgt_index}'])
@@ -181,7 +190,7 @@ class ExternalFunction:
 
             # logger.debug(f'checking seeing with agent location: {agt_loc} and target location: {tgt_loc}')
             # agent is able to see anything in the same location
-            if tgt_loc == agt_loc:
+            if tgt_loc == agt_loc and state[f"sharing-{tgt_index}"]=='t':
                 return PDDL_TERNARY.TRUE
             else:
                 return PDDL_TERNARY.FALSE
@@ -196,7 +205,7 @@ class ExternalFunction:
             self.logger.warning("variable is None when check visibility")
             # logging.error("error when checking visibility")
             return PDDL_TERNARY.UNKNOWN
-    '''    
+       
 
     # customise action filters
     # to filter out the irrelevant actions
@@ -349,6 +358,32 @@ class ExternalFunction:
     def update2Poly(self,x):
         return x**2 + 1
     
+    def changeValue(self,state,agt_index,var_name,entities,variables,value):
+        try:
+            tgt_index = variables[var_name].v_parent
+
+            assert(entities[agt_index].e_type==E_TYPE.AGENT)
+            if 'secretvalue' in var_name:
+                secret_value = state[f"secretvalue-{tgt_index}"]
+                #print(agt_index, tgt_index,state)
+                #matching_keys = [key for key, value in state.items() if key.startswith("sharing-") and value == 't']
+                #print(len(matching_keys),matching_keys,tgt_index)
+
+                #if isinstance(secret_value, (int, float)) and state[f"sharing-{tgt_index}"]=='t' and state[f"secret-{tgt_index}"]=='t':
+                    #value = value
+                if isinstance(secret_value, (int, float)) and state[f"sharing-{tgt_index}"]=='t' and state[f"secret-{tgt_index}"]=='f':
+                    value = -secret_value
+
+                return value
+            
+            else:
+                return value
+        except (KeyError, TypeError):
+            return value  
+        return value    
+
+
+        
 
            
 def get_valid_states(agents,states,problem,ep_goals,obj_name):

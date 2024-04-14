@@ -2,6 +2,10 @@ import numpy as np
 
 class Predictor:
 
+    def __init__(self,external) -> None:
+        self.external = external
+        pass
+
     def getps(self, new_os,new_rs,p):
         os_dict = self.get_os_dict(new_os,p)
         ps_dict = {}
@@ -38,6 +42,11 @@ class Predictor:
             return result
         elif rule['rule_name'] == 'undetermined':
             result = self.get_predict_undetermined(i,rule,value)
+            return result
+        else:
+            result = self.external.domain_specific_predict(i,rule,value)
+            if result == None:
+                result = self.get_predict_static(i,rule,value)
             return result
         return None
     
@@ -121,8 +130,8 @@ class Predictor:
             if value is not None:
                 os_value_list.append([index, value])
         if len( os_value_list) >=3:
-            x_values = [item[0] for item in os_value_list]
-            y_values = [item[1] for item in os_value_list]
+            x_values = [item[0] for item in os_value_list][-3:]
+            y_values = [item[1] for item in os_value_list][-3:]
             coefficients = np.polyfit(x_values, y_values, 2)  # Fit a quadratic polynomial, if linear,a will be 0
             a = coefficients[0]
             b = coefficients[1]
@@ -137,8 +146,8 @@ class Predictor:
             if value is not None:
                 os_value_list.append([index, value])
         if len( os_value_list) >=2:
-            x_values = [item[0] for item in os_value_list]
-            y_values = [item[1] for item in os_value_list]
+            x_values = [item[0] for item in os_value_list][-2:]
+            y_values = [item[1] for item in os_value_list][-2:]
             coefficients = np.polyfit(x_values, y_values, 1)  # Fit a quadratic polynomial, if linear,a will be 0
             a = coefficients[0]
             b = coefficients[1]

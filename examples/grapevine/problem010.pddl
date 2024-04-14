@@ -32,10 +32,13 @@
         ;(= (:epistemic b [a] (= (numl e) 2)) 1)
         ;(= (:epistemic b [b] (= (numl e) 3)) 1)
 
-        ;(= (:epistemic b [a] b [b] (= (numl e) 4)) 1)
-
+        (= (:epistemic b [a] b [b] (= (nump f) 5)) 1)
         (= (:epistemic b [a] (= (nump f) 10)) 1)
-        (= (:epistemic b [b] (= (nump f) 5)) 1)
+
+        ;(= (:epistemic b [a] b [b] b [a] b [b] (= (nump f) 5)) 1)
+
+        ;(= (:epistemic b [a] (= (nump f) 10)) 1)
+        ;(= (:epistemic b [b] (= (nump f) 5)) 1)
 
     ))
 

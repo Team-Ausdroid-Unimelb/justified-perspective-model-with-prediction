@@ -123,6 +123,9 @@ class ExternalFunction:
             # logger.error("error when checking visibility")
             return PDDL_TERNARY.UNKNOWN
 
+    def domain_specific_predict(self,i,rule,value):
+        return None
+
     # customise action filters
     # to filter out the irrelevant actions
     def filterActionNames(self,problem,action_dict):

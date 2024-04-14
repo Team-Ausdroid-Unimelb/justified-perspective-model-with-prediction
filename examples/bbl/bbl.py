@@ -156,6 +156,52 @@ class ExternalFunction:
 # if __name__ == "__main__":
     
 #     pass
+    #############################################################
+    def updatelinear(self,x):
+        return x + 2
+    
+    def update2Poly(self,x):
+        return x**2 + 1
     
 
+    def update_state(self, succ_state, path, problem):
+        domains = problem.domains
+
+        rule_dict = {}
+        for v_name in domains:
+            variable_dict  = domains[v_name]
+            dict_list = str(variable_dict).split(';')
+            v_rule_type = dict_list[-1].split(':')
+            type_name = str(v_rule_type[1])[:-2].strip()
+            rule_dict[v_name] = type_name
+            
+        #keyword = self.checkV()
+        x = len(path)
+        updated_state = succ_state
+        for keyword in succ_state:
+            v_name = keyword.split('-')[0]
+            v_rult_type = str(rule_dict[v_name])
+            if succ_state is not None and keyword in succ_state and v_rult_type =='linear':
+                updated_value = self.updatelinear(x)    ##########change model here
+                updated_state[keyword] = updated_value
+                #print(x,updated_value)
+                
+            if succ_state is not None and keyword in succ_state and v_rult_type =='2nd_poly':
+                updated_value = self.update2Poly(x)    ##########change model here
+                updated_state[keyword] = updated_value
+                #print(x,updated_value)
+
+        if self.is_value_in_domain(updated_state,domains):
+            return updated_state
+        else:
+            return None
+
+    def is_value_in_domain(self, state,domains):
+        for var_name, value in state.items():
+            clean_var_name = var_name.split('-')[0]
+            if clean_var_name in domains:
+                domain = domains[clean_var_name].d_values
+                if value not in domain:
+                    return False
+        return True
     

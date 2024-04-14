@@ -496,7 +496,7 @@ class PDDLParser:
                         #     e_list = e_list[0].split(" ")
                         effects.append((e_list[0].replace(" ?","?").replace(" ","-").replace("(","").replace(")",""),e_list[1].replace(" ","").replace("(","").replace(")","").replace('"','').replace("'",'')))
                     self.logger.debug('effects: [%s]',effects)
-                    
+                    ###################
                     actions.update({action_name: {"parameters":parameters,"precondition":preconditions,"effect":effects}})
                 self.logger.debug(actions)
             except AttributeError:

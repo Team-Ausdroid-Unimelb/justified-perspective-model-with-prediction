@@ -36,7 +36,7 @@ class EpistemicModel:
         self.pre_p_keys = None
         self.all_p_keys = list()
         self.domains = domains
-        self.predictor = Predictor()
+        self.predictor = Predictor(external)
 
 
     def epistemicGoalsHandler(self,epistemic_goals_dict, prefix, path, p_path):
@@ -267,7 +267,7 @@ class EpistemicModel:
                 #print(domains)##############################################################
                 print("##########")
                 print("agt_id",agt_id)
-                new_rs = self.predictor.getrs(new_os,p,domains)
+                new_rs = self.predictor.getrs(new_os,p,domains)###############################
                 new_ps = self.predictor.getps(new_os,new_rs, p)
 
                 p_path[actions_str_new][prefix]['rule'] = new_rs
@@ -288,7 +288,13 @@ class EpistemicModel:
         new_state = {}
         for var_index,value in parent_state.items():
             if self.external.checkVisibility(parent_state,agt_id,var_index,self.entities,self.variables)==PDDL_TERNARY.TRUE:
-                new_state.update({var_index: value})
+                ################
+                if hasattr(self.external, 'changeValue') and callable(self.external.changeValue):
+                    value = self.external.changeValue(parent_state,agt_id,var_index,self.entities,self.variables,value)
+                    new_state.update({var_index: value})
+                else:
+                    new_state.update({var_index: value})
+                #new_state.update({var_index: value})
         
         return new_state
     # def get1o(self,agt_id,p,prefix, actions_str_old, actions_str_new,p_path):
