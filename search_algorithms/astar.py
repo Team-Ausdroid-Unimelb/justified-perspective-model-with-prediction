@@ -4,8 +4,8 @@ from search import Search
 # the search name should be the same as python file name
 class astar(Search):
 
-    def __init__(self, handlers, search_name):
-        super().__init__(handlers, search_name)
+    def __init__(self, handlers, search_name,timeout):
+        super().__init__(handlers, search_name,timeout)
         # bfs updating
         self.h_weight = 1
         self.g_weight = 1
