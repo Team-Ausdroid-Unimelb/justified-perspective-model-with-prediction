@@ -1,4 +1,5 @@
 import logging
+import datetime
 
 from util import setup_logger, PriorityQueue, PDDL_TERNARY
 # import util
@@ -11,7 +12,7 @@ LOGGER_LEVEL = logging.INFO
 SPLIT_KEY_WORD = "@"
 
 class Search:
-    def __init__(self,handlers,search_name):
+    def __init__(self,handlers,search_name,timeout):
         self.search_name = search_name      
         self.logger = setup_logger(search_name,handlers,logger_level=LOGGER_LEVEL) 
         self.expanded = 0
@@ -30,6 +31,9 @@ class Search:
         self.h_weight = 1
         self.g_weight = 1
         self.max_goal_num = 0
+        self.timeout = datetime.timedelta(seconds=timeout)
+
+    # Do i need to reset here?
 
     class SearchNode:
         state = None
@@ -78,6 +82,8 @@ class Search:
     # for novelty checking purpose, we need to move the goal check process at where the node is generated
     def searching(self,problem):
         self.logger.info("starting searching using [%s]",self.search_name)
+        start_time = datetime.datetime.now()
+
         self.max_goal_num = len(problem.goals.ontic_dict)+len(problem.goals.epistemic_dict)
         
         # check whether the initial state is the goal state
@@ -119,9 +125,22 @@ class Search:
                 self.logger.info(f'Goal found')
                 self.result.update({'solvable': True})
                 self.result.update({'plan':actions})
+                self.result.update({'timeout':self.timeout.seconds})
                 self._finalise_result(problem)
                 return self.result
-            
+
+            current_time = datetime.datetime.now()
+            delta_time = current_time - start_time
+
+            if delta_time > self.timeout:
+
+                self.logger.info(f'Problem cannot be solved in the given time ({self.timeout.seconds}).')
+                self.result.update({'plan':[]})
+                self.result.update({'solvable': False})
+                self.result.update({'running': "TIMEOUT"})
+                self.result.update({'timeout':self.timeout.seconds})
+                self._finalise_result(problem)
+                return self.result
             
             all_actions = problem.getAllActions(state,path)
             self.logger.debug("finding all actions: [%s]" % (all_actions.keys()))
@@ -206,10 +225,10 @@ class Search:
                 self.logger.debug("visited: [%s]",self.visited)
             # self.logger.debug(open_list.count)
             
-            
         self.logger.info(f'Problem is not solvable')
         self.result.update({'plan':[]})
         self.result.update({'solvable': False})
+        self.result.update({'timeout':self.timeout.seconds})
         
         self._finalise_result(problem)
         self.logger.debug(self.result)

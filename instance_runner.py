@@ -82,7 +82,7 @@ class Instance:
         
 
         
-        
+        # loading external function
         if type(self.external_function) ==str:
             logger.info(f"loading external function: {self.external_function}")
             external_path = self.external_function
@@ -113,15 +113,16 @@ class Instance:
         
         if time_debug:
             search_class_ref = getattr( self.search_module, self.search_name)
-            search_algorithm = search_class_ref(logger_handlers,self.search_name)
+            search_algorithm = search_class_ref(logger_handlers,self.search_name,timeout)
 
             result = search_algorithm.searching(problem)
         else:
             
             try:
                 search_class_ref = getattr( self.search_module, self.search_name)
-                search_algorithm = search_class_ref(logger_handlers,self.search_name)
-                result = func_timeout.func_timeout(timeout, search_algorithm.searching,args=(problem,))
+                search_algorithm = search_class_ref(logger_handlers,self.search_name,timeout)
+                result = search_algorithm.searching(problem)
+                # result = func_timeout.func_timeout(timeout, search_algorithm.searching,args=(problem,))
             except func_timeout.FunctionTimedOut:
                 result.update({"running": f"timeout after {timeout}"})
             except:
@@ -242,6 +243,7 @@ if __name__ == '__main__':
     if not os.path.isdir(output_path):
         os.makedirs(output_path)
     
+    print(options.timeout)
         
     if options.time_debug:
         import cProfile
