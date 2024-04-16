@@ -1,5 +1,8 @@
 import logging
 import datetime
+# import resource
+import psutil
+import os
 
 from util import setup_logger, PriorityQueue, PDDL_TERNARY
 # import util
@@ -32,6 +35,7 @@ class Search:
         self.g_weight = 1
         self.max_goal_num = 0
         self.timeout = datetime.timedelta(seconds=timeout)
+        self.memoryout = 10*1024
 
     # Do i need to reset here?
 
@@ -125,22 +129,47 @@ class Search:
                 self.logger.info(f'Goal found')
                 self.result.update({'solvable': True})
                 self.result.update({'plan':actions})
+                self.result.update({'path_length':len(actions)})
                 self.result.update({'timeout':self.timeout.seconds})
                 self._finalise_result(problem)
                 return self.result
 
             current_time = datetime.datetime.now()
             delta_time = current_time - start_time
+            process = psutil.Process(os.getpid())
+
+            # Get the memory usage (in bytes)
+            memory_info = process.memory_info()
+            current_memory_usage = memory_info.rss  # resident set size in bytes
+
+            # Convert bytes to MB for easier interpretation
+            usage = current_memory_usage / (1024 * 1024)
 
             if delta_time > self.timeout:
-
+                actions = [ a  for s,a in path]
+                actions = actions[1:]
                 self.logger.info(f'Problem cannot be solved in the given time ({self.timeout.seconds}).')
                 self.result.update({'plan':[]})
+                self.result.update({'path_length':len(actions)})
                 self.result.update({'solvable': False})
                 self.result.update({'running': "TIMEOUT"})
                 self.result.update({'timeout':self.timeout.seconds})
+                self.result.update({'memoryout':self.memoryout})
                 self._finalise_result(problem)
                 return self.result
+            elif usage > self.memoryout:
+                actions = [ a  for s,a in path]
+                actions = actions[1:]
+                self.logger.info(f'Problem cannot be solved in the given memory ({self.memoryout}MB).')
+                self.result.update({'plan':[]})
+                self.result.update({'path_length':len(actions)})
+                self.result.update({'solvable': False})
+                self.result.update({'running': "MEMORYOUT"})
+                self.result.update({'timeout':self.timeout.seconds})
+                self.result.update({'memoryout':self.memoryout})
+                self._finalise_result(problem)
+                return self.result
+
             
             all_actions = problem.getAllActions(state,path)
             self.logger.debug("finding all actions: [%s]" % (all_actions.keys()))
@@ -227,9 +256,11 @@ class Search:
             
         self.logger.info(f'Problem is not solvable')
         self.result.update({'plan':[]})
+        self.result.update({'path_length':0})
         self.result.update({'solvable': False})
         self.result.update({'timeout':self.timeout.seconds})
-        
+        self.result.update({'memoryout':self.memoryout})
+        print(usage)
         self._finalise_result(problem)
         self.logger.debug(self.result)
         return self.result

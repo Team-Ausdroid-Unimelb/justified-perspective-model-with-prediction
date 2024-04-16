@@ -165,6 +165,7 @@ if __name__ == '__main__':
                 end_time = datetime.datetime.now().astimezone(TIMEZONE)
                 used_time = end_time - start_time
                 logger.info(f"solving time: {used_time}")
+                del ins
     
         if options.latex_output:
             logger.info("Generating Latex for domain:")

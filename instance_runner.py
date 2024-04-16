@@ -8,7 +8,8 @@ import sys
 import traceback
 from optparse import OptionParser
 import pytz
-
+import time
+import gc
 
 import logging
 import forward_pddl_model as pddl_model
@@ -115,13 +116,15 @@ class Instance:
             search_class_ref = getattr( self.search_module, self.search_name)
             search_algorithm = search_class_ref(logger_handlers,self.search_name,timeout)
 
-            result = search_algorithm.searching(problem)
+            temp_result = search_algorithm.searching(problem)
+            # result = search_algorithm.searching(problem)
         else:
             
             try:
                 search_class_ref = getattr( self.search_module, self.search_name)
                 search_algorithm = search_class_ref(logger_handlers,self.search_name,timeout)
-                result = search_algorithm.searching(problem)
+                temp_result = search_algorithm.searching(problem)
+                # result = search_algorithm.searching(problem)
                 # result = func_timeout.func_timeout(timeout, search_algorithm.searching,args=(problem,))
             except func_timeout.FunctionTimedOut:
                 result.update({"running": f"timeout after {timeout}"})
@@ -133,6 +136,9 @@ class Instance:
         # result = self.search.searching(problem,self.external_function.filterActionNames)
         end_search_time = datetime.datetime.now().astimezone(TIMEZONE)
         
+        result = temp_result.copy()
+
+
         init_time = start_search_time - start_time
         search_time = end_search_time - start_search_time
         
@@ -157,6 +163,16 @@ class Instance:
         with open(f"{output_path}/{self.instance_name}.json",'w') as f:
             json.dump(result,f) 
         
+        if 'running' in result.keys() and result['running']=='MEMORYOUT':
+            del temp_result
+            del search_algorithm
+            gc.collect() 
+            time.sleep(10)
+        else:
+            del temp_result
+            del search_algorithm
+            gc.collect() 
+
         return 
 
 def loadParameter():
@@ -242,8 +258,6 @@ if __name__ == '__main__':
         output_path = f"output/{start_time.strftime(DATE_FORMAT)}"
     if not os.path.isdir(output_path):
         os.makedirs(output_path)
-    
-    print(options.timeout)
         
     if options.time_debug:
         import cProfile
