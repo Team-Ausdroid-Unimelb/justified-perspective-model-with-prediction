@@ -22,7 +22,7 @@ from util import Domain,D_TYPE,dTypeConvert
 from util import Entity,E_TYPE,eTypeConvert
 from util import Conditions
 from util import ActionList2DictKey
-from util import eval_var_from_str
+from util import eval_var_from_str,valid_variable
 
 # Class of the problem
 class Problem:
@@ -137,18 +137,28 @@ class Problem:
         # actions = [ a  for s,a in path]
         # actions = actions[1:]
         
-        for k,v in self.goals.ontic_dict.items():
+        for key,v in self.goals.ontic_dict.items():
             symbol = v.symbol
             variable_name = v.variable_name
             # v_value = v.v_value
             value = v.value
-            if symbol == "=":
-                
-                    if not state[variable_name] == value:
-                        is_goal = False
-                        goal_dict.update({k:False})
-                    else:
-                        goal_dict.update({k:True})
+            # valid_variable(variable_name,self)
+            # if symbol == "=":
+            #     if not state[variable_name] == value:
+            #         is_goal = False
+            #         goal_dict.update({k:False})
+            #     else:
+            #         goal_dict.update({k:True})
+            # elif symbol == "-="
+
+            ontic_str = key.replace(":ontic ","")
+            result = eval_var_from_str(self.logger,ontic_str,state)
+            if result == PDDL_TERNARY.TRUE:
+                goal_dict.update({k:True})
+            else:
+                is_goal = False
+                goal_dict.update({k:False})
+
             
         # adding epistemic checker here
         current_time = datetime.now()
@@ -162,7 +172,9 @@ class Problem:
             self.epistemic_model.epistemicGoalsHandler(self.goals.epistemic_dict,"",path,p_path)
         self.epistemic_call_time += datetime.now() - current_time
         
-        for k,_ in self.goals.epistemic_dict.items():
+        for k,item in self.goals.epistemic_dict.items():
+            v_name = item.variable_name
+            # valid_variable(v_name,self)
             if epistemic_dict[k] == PDDL_TERNARY.FALSE:
                 # is_goal = False
                 goal_dict.update({k:False})
@@ -343,6 +355,7 @@ class Problem:
             self.logger.debug('checking ontic precondition [%s] for action [%s]',ontic_pre,action_name)
             for key,ontic_obj in ontic_pre.items():
                 ontic_str = key.replace(":ontic ","")
+                # valid_variable(ontic_obj.variable_name,self)
                 result = eval_var_from_str(self.logger,ontic_str,state)
                 if result == PDDL_TERNARY.TRUE:
                     pre_dict[action_name].update({key:True})
@@ -350,31 +363,6 @@ class Problem:
                     flag_dict[action_name] = False
                     pre_dict[action_name].update({key:False})
             self.logger.debug("pre_dict[%s]: %s",action_name, pre_dict[action_name])
-                # try:
-                #     k = ontic_obj.variable_name
-                #     e = ontic_obj.value
-                #     self.logger.debug('k [%s] and e [%s] in [%s]',k,e,state.keys())
-                #     if k in state.keys():
-                #         if e in state.keys():
-                #             self.logger.debug('k [%s]: [%s]; e [%s]: [%s]',k,state[k],e,state[e])
-                #             if not state[k] == state[e]:
-                #                 flag_dict[action_name] = False
-                #                 pre_dict[action_name].update({k+":"+str(e):False})
-                #             else:
-                #                 pre_dict[action_name].update({k+":"+str(e):True})
-                #         elif not state[k] == e:
-                #             flag_dict[action_name] = False
-                #             pre_dict[action_name].update({k+":"+str(e):False})
-                #         else:
-                #             pre_dict[action_name].update({k+":"+str(e):True})
-                #     else:
-                #         flag_dict[action_name] = False
-                #         pre_dict[action_name].update({k+":"+str(e):False})
-                #         self.logger.error(f'variable {k} not in state {state}')
-                #     self.logger.debug('k [%s]: [%s]; e [%s]: [%s]',k,state[k],e,state[e])
-                # except:
-                #     self.logger.error(traceback.format_exc())
-                #     self.logger.error("Error when checking precondition: [%s]\n with state: [%s]", ontic_pre,state)
                     
                 #     flag_dict[action_name] = False
         self.logger.debug("flag_dict [%s]", flag_dict)
@@ -407,7 +395,9 @@ class Problem:
         for action_name,ep_dict in epistemic_pre_dict.items():
             if not ep_dict == dict():
                 # flag_dict[action_name]=True
-                for k in ep_dict.keys():
+                for k,item in ep_dict.items():
+                    v_name = item.variable_name
+                    # valid_variable(v_name,self)
                     if epistemic_dict[k] == PDDL_TERNARY.TRUE:
                         pre_dict[action_name].update({k:True})
                     elif  epistemic_dict[k] == PDDL_TERNARY.FALSE:
