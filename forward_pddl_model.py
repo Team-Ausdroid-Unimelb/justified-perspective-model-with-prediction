@@ -13,7 +13,7 @@ import traceback
 
 LOGGER_NAME = "pddl_model"
 LOGGER_LEVEL = logging.INFO
-# LOGGER_LEVEL = logging.DEBUG
+LOGGER_LEVEL = logging.DEBUG
 
 
 from util import setup_logger,PDDL_TERNARY
@@ -302,7 +302,7 @@ class Problem:
                             # v_value = v_value.replace(f'{i}',f'-{v}') if type(v_value) == str else v_value
                             # self.logger.debug(type(value))
                             value = value.replace(f'{i}',f'-{v}')  if type(value) == str else value if type(value) ==int else value.value
-                            temp_epistemic_tuple_list[j]  = (key,query,query_prefix,symbol,variable_name,value)
+                            temp_epistemic_tuple_list[j]  = (key,query,query_prefix,symbol,new_variable_name,value)
                         # # update parameters in the epistemic precondition
                         # for j in range(len(a_temp_epistemic_p_list)):
                         #     v_name, v_effects = a_temp_epistemic_p_list[j]
@@ -432,15 +432,15 @@ class Problem:
         #     self.logger.info("p_path for action [%s]  is: \n [%s]",action_list_str,p_path[action_list_str])
         # if "-,,single_peek-a,subtraction1-c,return-a,single_peek-b" in action_list_str:
         #     self.logger.info("p_path for action [%s]  is: \n [%s]",action_list_str,p_path[action_list_str])
-        
-        
-        assert action_list_str in p_path.keys(), "action string not in p_path"
         p_dict = dict()
-        for k,p in p_path[action_list_str].items():
-            temp_p = dict()
-            temp_p["observation"] = p["observation"][-1]
-            temp_p["perspectives"] = p["perspectives"][-1]
-            p_dict[k] = temp_p
+        if not epistemic_dict == {}:
+            assert action_list_str in p_path.keys(), "action string not in p_path"
+            
+            for k,p in p_path[action_list_str].items():
+                temp_p = dict()
+                temp_p["observation"] = p["observation"][-1]
+                temp_p["perspectives"] = p["perspectives"][-1]
+                p_dict[k] = temp_p
         # return p_dict,epistemic_dict,goal_dict
         return flag_dict,epistemic_dict,p_dict
         # return flag_dict,epistemic_dict,pre_dict
