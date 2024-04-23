@@ -548,3 +548,6 @@ class Queue:
         "Returns true if the queue is empty"
         return len(self.list) == 0
 
+def valid_variable(v_name,problem):
+    if v_name not in problem.variables.keys():
+        raise ValueError("%s is not in variables %s. Probably you spelled it wrong."%(v_name,str(problem.variables.keys())))
