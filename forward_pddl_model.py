@@ -136,15 +136,15 @@ class Problem:
 
         # actions = [ a  for s,a in path]
         # actions = actions[1:]
-
+        
         for k,v in self.goals.ontic_dict.items():
             symbol = v.symbol
             variable_name = v.variable_name
-            v_value = v.v_value
+            # v_value = v.v_value
             value = v.value
             if symbol == "=":
                 
-                    if not state[variable_name] == v_value:
+                    if not state[variable_name] == value:
                         is_goal = False
                         goal_dict.update({k:False})
                     else:
