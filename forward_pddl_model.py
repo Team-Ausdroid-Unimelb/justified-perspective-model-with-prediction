@@ -154,10 +154,10 @@ class Problem:
             ontic_str = key.replace(":ontic ","")
             result = eval_var_from_str(self.logger,ontic_str,state)
             if result == PDDL_TERNARY.TRUE:
-                goal_dict.update({k:True})
+                goal_dict.update({key:True})
             else:
                 is_goal = False
-                goal_dict.update({k:False})
+                goal_dict.update({key:False})
 
             
         # adding epistemic checker here
