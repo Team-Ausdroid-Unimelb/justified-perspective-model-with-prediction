@@ -145,3 +145,9 @@ epistemic_pddl_domains
 scripts/figs/
 
 epistemic_pddl_domains/
+
+overview/
+
+scripts/configs/
+scripts/unused_config/
+gis_sharedyF/

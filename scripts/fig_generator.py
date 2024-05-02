@@ -59,7 +59,7 @@ class FigGenerator():
         my_client = pymongo.MongoClient("mongodb://localhost:27017",username="admin",password="90054")
         my_db = my_client['result']
 
-        my_collection = my_db['20240411']
+        my_collection = my_db['20240417']
 
         filters = config_yaml.get('filters')
         filter_query = dict()
@@ -126,7 +126,7 @@ class FigGenerator():
         fig, axes = plt.subplots(
             nrows=1, 
             ncols=len(pd_query_list), 
-            figsize=(20, 14), sharey=False, sharex=False)
+            figsize=(20, 14), sharey=True, sharex=False)
         # axes[0].set_ylabel('Scores')
 
         # display_column_keys = [i[:3] for i in display_column_names]
