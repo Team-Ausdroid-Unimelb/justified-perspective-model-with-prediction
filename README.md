@@ -3,7 +3,7 @@
 
 The experiment is run by the command:
 ```bash
-python .\experiment_runner.py -s .\forward_search\fbfsdc.py -i .\examples\GROUP_CONFIG_NUM
+python experiment_runner.py -s forward_search/fbfsdc.py -i .\examples\GROUP_CONFIG_NUM
 python .\experiment_runner.py -s .\forward_search\fbfsdc.py -i .\examples\GROUP_CONFIG_BBL
 python .\experiment_runner.py -s .\forward_search\fbfsdc.py -i .\examples\GROUP_CONFIG_GRAPEVINE
 ```
