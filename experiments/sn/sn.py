@@ -155,4 +155,9 @@ class ExternalFunction:
     # customise action filters
     # to filter out the irrelevant actions
     def filterActionNames(self,problem,action_dict):
-        return action_dict.keys()
+        related_action_names = list()
+        for action_name in action_dict.keys():
+            agent_index = action_name.split('-')[1]
+            if agent_index == 'a' or agent_index == 'b' or agent_index == 'c' or agent_index == 'd':
+                related_action_names.append(action_name)
+        return related_action_names
