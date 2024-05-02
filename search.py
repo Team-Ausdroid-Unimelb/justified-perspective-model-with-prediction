@@ -4,7 +4,7 @@ import datetime
 import psutil
 import os
 
-from util import setup_logger, PriorityQueue, PDDL_TERNARY
+from util import setup_logger, PriorityQueue, PDDL_TERNARY, E_TYPE
 # import util
 
 
@@ -131,6 +131,7 @@ class Search:
                 self.result.update({'plan':actions})
                 self.result.update({'path_length':len(actions)})
                 self.result.update({'timeout':self.timeout.seconds})
+                self.result.update({'memoryout':self.memoryout})
                 self._finalise_result(problem)
                 return self.result
 
@@ -260,7 +261,6 @@ class Search:
         self.result.update({'solvable': False})
         self.result.update({'timeout':self.timeout.seconds})
         self.result.update({'memoryout':self.memoryout})
-        print(usage)
         self._finalise_result(problem)
         self.logger.debug(self.result)
         return self.result
@@ -302,6 +302,35 @@ class Search:
         
         self.result.update({'goal_size':len(list(problem.goals.epistemic_dict.keys()))})
         self.result.update({'pddl_goals':list(problem.goals.epistemic_dict.keys())})
+
+        max_depth = 0
+        num_of_unknown_goals = 0
+        goal_agents = set()
+        for key,item in problem.goals.epistemic_dict.items():
+            temp_depth = key.count('[')
+            if temp_depth > max_depth:
+                max_depth = temp_depth
+            if item.query_prefix[0] == "$":
+                num_of_unknown_goals +=1
+            query_prefix_list = item.query_prefix.split(' ')
+            for temp_str in query_prefix_list:
+                if '[' in temp_str:
+                    temp_agent_str = temp_str[1:-1]
+                    temp_agent_list = temp_agent_str.split(',')
+                    for agent_id in temp_agent_list:
+                        goal_agents.add(agent_id)
+        
+        self.result.update({'max_goal_depth':max_depth})
+        self.result.update({'num_of_unknown_goals':num_of_unknown_goals})
+        self.result.update({'num_of_goal_agents':len(goal_agents)})
+        self.result.update({'goal_agents':list(goal_agents)})
+
+        agents= set()
+        for k,item in problem.entities.items():
+            if item.e_type == E_TYPE.AGENT:
+                agents.add(k)
+        self.result.update({'agents':list(agents)})
+        self.result.update({'num_of_agents':len(agents)})
         
         ## added for common perspective iterations
         common_iteration_list = problem.epistemic_model.common_iteration_list
