@@ -45,7 +45,12 @@ if __name__ == '__main__':
     config_path = options.config_path
     file_list = list_files(config_path)
     sample_domain_name = os.path.split(config_path)[1]
-    fg = FigGenerator()
+    config_path = os.path.split(config_path)[0]
+    while sample_domain_name == "":
+        sample_domain_name = os.path.split(config_path)[1]
+        config_path = os.path.split(config_path)[0]
+    print(sample_domain_name)
+    # fg = FigGenerator()
     domain_list = ['spcoin','sn','grapevine','corridor','bbl','coin']
     print(sample_domain_name)
     domain_list.remove(sample_domain_name)

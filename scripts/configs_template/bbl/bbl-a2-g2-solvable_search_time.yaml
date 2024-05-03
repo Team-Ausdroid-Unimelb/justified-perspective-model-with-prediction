@@ -40,7 +40,7 @@ display_column_names:
   # - epistemic_calls
   # - expanded
   # - pruned
-  # - pruned_by_visited
-  # - pruned_by_unknown
+  # # - pruned_by_visited
+  # # - pruned_by_unknown
   - search_time
   - epistemic_call_time

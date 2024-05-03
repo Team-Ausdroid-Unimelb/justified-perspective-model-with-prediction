@@ -39,8 +39,8 @@ display_column_names:
   # - goal_checked
   # - epistemic_calls
   - expanded
-  # - pruned
-  - pruned_by_visited
-  - pruned_by_unknown
+  - pruned
+  # - pruned_by_visited
+  # - pruned_by_unknown
   # - search_time
   # - epistemic_call_time
