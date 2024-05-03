@@ -43,7 +43,7 @@ def loadParameter():
 
 class FigGenerator():
 
-    def run(self,config_path):
+    def run(self,config_path,shareY=False):
         print(config_path)
         folder_path,file_name = os.path.split(config_path)
         result_path = folder_path.replace('configs','figs')
@@ -157,4 +157,4 @@ if __name__ == '__main__':
     options = loadParameter()
     config_path = options.config_path
     fg = FigGenerator(config_path)
-    fg.run()
+    fg.run(config_path=config_path,shareY=True)

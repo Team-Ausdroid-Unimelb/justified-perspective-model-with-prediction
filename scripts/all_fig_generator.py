@@ -26,6 +26,8 @@ def loadParameter():
     # logger.info("Parsing Options")
     parser = OptionParser(usageStr)
     parser.add_option('-c','--config', dest="config_path", help='path to the config yaml file to display the results',default='scripts/configs/')
+    parser.add_option('-y','--share_y', action="store_false" ,dest="share_y", help='shareY, default true',default=True)
+    
     options, otherjunk = parser.parse_args(sys.argv[1:] )
     assert len(otherjunk) == 0, "Unrecognized options: " + str(otherjunk)
 
@@ -55,12 +57,12 @@ if __name__ == '__main__':
 
     config_path = options.config_path
     file_list = list_files(config_path)
-
-    
+    share_y = options.share_y
+    file_list.sort()
 
     for file_name in file_list:
-        print(file_name)
+        # print(file_name)
         if ".yaml" in file_name:
             # configs = get_config_by_yaml(file_name)
             fg = FigGenerator()
-            fg.run(file_name)
+            fg.run(file_name,share_y)

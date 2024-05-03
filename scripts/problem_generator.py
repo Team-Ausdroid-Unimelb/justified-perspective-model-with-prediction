@@ -72,7 +72,7 @@ if __name__ == '__main__':
     template_file_dict = dict()
 
     if options.search_name == "":
-        raise ValueError("search_nameis empty")
+        raise ValueError("search_name is empty")
     else:
         search_name = options.search_name 
         
@@ -81,12 +81,14 @@ if __name__ == '__main__':
             for item in collection.find():
                 domain_path = item['domain_path']
                 problem = item['problem']
+                print(problem)
                 problem_file_name = 'problem_'+problem+".pddl"
                 if existing_problems == []:
                     existing_problems = os.listdir(domain_path)
 
                 query = {'search':search_name,'problem':problem}
                 if problem_file_name not in existing_problems and my_collection.find_one(query) == None:
+                    print("Not found, adding it~~~~")
                     domain_name = item['domain_name']
                     
                     pddl_goals = item['pddl_goals']

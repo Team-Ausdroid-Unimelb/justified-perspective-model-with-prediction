@@ -35,7 +35,7 @@ def write_one_problems(problem_template,pddl_goal_list,prefix,domain_name):
         output_str=output_str + "          (" + goal_str +")\n"
     output_str=output_str + problem_template.problem_goal_surfix
     output_str=output_str + problem_template.problem_surfix
-    with open(os.path.join(problem_template.problem_path,f"problem_{prefix}.pddl"),"w") as f:
+    with open(os.path.join(problem_template.problem_path,f"problem{prefix}.pddl"),"w") as f:
         f.write(output_str)
 
 
@@ -79,15 +79,16 @@ if __name__ == '__main__':
     prefix = ""
 
     if '2' in problem_template_file:
-        prefix = 'a2_'
+        prefix = '_a2'
     elif '4' in problem_template_file:
-        prefix = 'a4_'
+        prefix = '_a4'
     else:
-        prefix = 'a1_'
+        prefix = '_a1'
 
     for item in my_collection.find():
-        # if 'agent_multiplier' in item.keys()
-        if item['agent_multipler'] == 1:
+        # if not 'agent_multiplier' in item.keys():
+        #     print(item)
+        if item['agent_multiplier'] == 1:
             pddl_goals = item['pddl_goals']
             problem = item['problem'] #'bbl3_ttt_00184',
             # print(problem)
@@ -97,9 +98,9 @@ if __name__ == '__main__':
             #     query = {'_id':item['_id']}
             #     updates = {"$set": {'agent_multiplier':agent_multiplier}}
             #     my_collection.update_one(query,updates)
+            new_problem_name = problem.replace(domain_name,"")
 
-
-            write_one_problems(problem_template,pddl_goals,prefix+problem,domain_name)
+            write_one_problems(problem_template,pddl_goals,prefix+new_problem_name,domain_name)
 
 
 

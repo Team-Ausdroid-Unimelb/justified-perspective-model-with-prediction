@@ -25,7 +25,9 @@ def loadParameter():
     
     # logger.info("Parsing Options")
     parser = OptionParser(usageStr)
-    parser.add_option('-c','--config', dest="config_path", help='path to the config yaml file to display the results',default='scripts/configs/bbl')
+    parser.add_option('-c','--config', dest="config_path", help='path to the config yaml file to display the results',default='scripts/configs')
+    parser.add_option('-a','--agent_mul', dest="agent_mul", help='path to the config yaml file to display the results',default='1')
+    
     options, otherjunk = parser.parse_args(sys.argv[1:] )
     assert len(otherjunk) == 0, "Unrecognized options: " + str(otherjunk)
 
@@ -44,18 +46,18 @@ if __name__ == '__main__':
 
     config_path = options.config_path
     file_list = list_files(config_path)
-
+    agent_mul = options.agent_mul
     fg = FigGenerator()
-    domain_list = ['coin','spcoin','sn','grapevine','corridor']
+    domain_list = ['coin','spcoin','sn','grapevine','corridor','bbl']
     # for domain_name in domain_list:
     for file_name in file_list:
         # if "a1" in file_name and ".yaml" in file_name:
-        if ".yaml" in file_name:
+        if ".yaml" in file_name and '-a1' in file_name:
             
             with open(file_name, 'r') as file:
                 content = file.read()
-            new_file_name = file_name.replace('bbl','bbl-a4')
-            new_content = content.replace('value: 1','value: 4')
+            new_file_name = file_name.replace('-a1',f'-a{agent_mul}')
+            new_content = content.replace('value: 1',f'value: {agent_mul}')
             new_content = content
             new_file_folder = os.path.split(new_file_name)[0]
             # print(new_file_name)
