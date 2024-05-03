@@ -5,9 +5,9 @@ class PDDL_Template:
 
     # this template is for coin
     problem_prefix1 ='''(define 
-        (problem coin'''
+        (problem spcoin'''
     problem_prefix2 = ''') 
-        (:domain coin)
+        (:domain spcoin)
 
         (:agents
             a b d e f g h i
@@ -51,7 +51,7 @@ class PDDL_Template:
     '''
 
 
-    problem_path = os.path.join("experiments","coin")
+    problem_path = os.path.join("experiments","spcoin")
 
 
 
