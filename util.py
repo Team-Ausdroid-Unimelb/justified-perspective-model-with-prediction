@@ -332,28 +332,44 @@ def eval_var_from_str(logger,eval_str,state):
 def convertBooltoPDDL_TERNARY(bool):
     return PDDL_TERNARY.TRUE if bool else PDDL_TERNARY.FALSE
         
+class Type:
+    name = None
+    range = None
+    data_type = None
+    parent_type_name = None
+    entity_index_list = list()
 
+    def __init__(self,type_name) -> None:
+        self.name = type_name
+        pass
 
-class Domain():
-    d_name = None
-    d_values = None
-    d_type = None
-    agency = False
+    def __repr__(self) -> str:
+        output_str = f"(Type {self.name}): [{self.range}, {self.data_type}, {self.parent_type_name}, {self.entity_index_list}]"
+        return output_str
     
-    def __init__(self,d_name,d_values,agency,d_type):
-        self.d_name = d_name
-        self.d_values = d_values
-        self.agency = agency
-        self.d_type = d_type
+    def __str__(self) -> str:
+        return self.__repr__()
+        
+# class Domain():
+#     d_name = None
+#     d_values = None
+#     d_type = None
+#     agency = False
     
-    def __str__(self): # show only in the print(object)
-        return f"<d_name: {self.d_name}; d_values: {self.d_type}; d_values: {self.d_values}; isAgent?(agency): {self.agency}>\n"
+#     def __init__(self,d_name,d_values,agency,d_type):
+#         self.d_name = d_name
+#         self.d_values = d_values
+#         self.agency = agency
+#         self.d_type = d_type
+    
+#     def __str__(self): # show only in the print(object)
+#         return f"<d_name: {self.d_name}; d_values: {self.d_type}; d_values: {self.d_values}; isAgent?(agency): {self.agency}>\n"
 
-    def __repr__(self): # show when in a dictionary
-        return f"<d_name: {self.d_name}; d_values: {self.d_type}; d_values: {self.d_values}; isAgent?(agency): {self.agency}>\n"
+#     def __repr__(self): # show when in a dictionary
+#         return f"<d_name: {self.d_name}; d_values: {self.d_type}; d_values: {self.d_values}; isAgent?(agency): {self.agency}>\n"
     
-    def isAgent(self):
-        return self.agency
+#     def isAgent(self):
+#         return self.agency
 
 class Conditions():
     ontic_dict = dict()
