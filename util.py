@@ -11,6 +11,7 @@ import re
 import traceback
 
 
+
 GLOBAL_PERSPECTIVE_INDEX = ""
 ROOT_NODE_ACTION = ""
 
@@ -350,26 +351,26 @@ class Type:
     def __str__(self) -> str:
         return self.__repr__()
         
-# class Domain():
-#     d_name = None
-#     d_values = None
-#     d_type = None
-#     agency = False
+class Domain():
+    d_name = None
+    d_values = None
+    d_type = None
+    agency = False
     
-#     def __init__(self,d_name,d_values,agency,d_type):
-#         self.d_name = d_name
-#         self.d_values = d_values
-#         self.agency = agency
-#         self.d_type = d_type
+    def __init__(self,d_name,d_values,agency,d_type):
+        self.d_name = d_name
+        self.d_values = d_values
+        self.agency = agency
+        self.d_type = d_type
     
-#     def __str__(self): # show only in the print(object)
-#         return f"<d_name: {self.d_name}; d_values: {self.d_type}; d_values: {self.d_values}; isAgent?(agency): {self.agency}>\n"
+    def __str__(self): # show only in the print(object)
+        return f"<d_name: {self.d_name}; d_values: {self.d_type}; d_values: {self.d_values}; isAgent?(agency): {self.agency}>\n"
 
-#     def __repr__(self): # show when in a dictionary
-#         return f"<d_name: {self.d_name}; d_values: {self.d_type}; d_values: {self.d_values}; isAgent?(agency): {self.agency}>\n"
+    def __repr__(self): # show when in a dictionary
+        return f"<d_name: {self.d_name}; d_values: {self.d_type}; d_values: {self.d_values}; isAgent?(agency): {self.agency}>\n"
     
-#     def isAgent(self):
-#         return self.agency
+    def isAgent(self):
+        return self.agency
 
 class Conditions():
     ontic_dict = dict()

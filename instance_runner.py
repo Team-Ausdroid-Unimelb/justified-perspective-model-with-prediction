@@ -72,14 +72,17 @@ class Instance:
         # read the pddl files
         pddl_parser = PDDLParser(logger_handlers)
 
+        logger.info('parser domain and problem')
+        logger.info(self.domain_path)
+        logger.info(self.problem_path)
+        pddl_parser.run(self.domain_path,self.problem_path)
+        # logger.info(f"loading problem file: {self.problem_path}")
+        # variable_domains,i_state,g_states,agent_index,obj_index,variables,vd_name,p_name= pddl_parser.problemParser(self.problem_path)
+        # logger.info(f"finish loading problem file: {p_name}")
 
-        logger.info(f"loading problem file: {self.problem_path}")
-        variable_domains,i_state,g_states,agent_index,obj_index,variables,vd_name,p_name= pddl_parser.problemParser(self.problem_path)
-        logger.info(f"finish loading problem file: {p_name}")
-
-        logger.info(f"loading domain file: {self.domain_path}")
-        actions,domain_name = pddl_parser.domainParser(f"{self.domain_path}")
-        logger.info(f"finish loading domain file: {domain_name}")        
+        # logger.info(f"loading domain file: {self.domain_path}")
+        # actions,domain_name = pddl_parser.domainParser(f"{self.domain_path}")
+        # logger.info(f"finish loading domain file: {domain_name}")        
         
 
         

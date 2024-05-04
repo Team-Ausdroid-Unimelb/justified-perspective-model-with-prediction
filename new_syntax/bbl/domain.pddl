@@ -11,11 +11,6 @@
         turnable askable - locatable
     )
 
-    (:functiontypes ;todo: enumerate types and their hierarchy here, e.g. car truck bus - vehicle
-        locatable
-        turnable askable - locatable
-    )
-
     ; un-comment following line if constants are needed
     ;(:constants )
 

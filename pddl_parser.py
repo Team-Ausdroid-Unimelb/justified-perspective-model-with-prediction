@@ -4,6 +4,7 @@ import datetime
 import pytz
 import re
 import traceback
+import typing
 
 from util import EpistemicQuery
 TIMEZONE = pytz.timezone('Australia/Melbourne')
@@ -11,12 +12,22 @@ DATE_FORMAT = '%d-%m-%Y_%H-%M-%S'
 timestamp = datetime.datetime.now().astimezone(TIMEZONE).strftime(DATE_FORMAT)
 # logging.basicConfig(filename=f'logs/{timestamp}.log', level=logging.DEBUG)
 
+LINE_BREAK = "&"
+DOMAIN_PREFIX = "(define"
+DOMAIN_SURFIX = ")"
+DOMAIN_NAME_REG_PREFIX = "\(domain "
+DOMAIN_NAME_REG ="[0-9a-z_]*"
+DOMAIN_NAME_REG_SURFIX= "\)"
+TYPING_REG_PREFIX = "\(:types"
+TYPING_REG = "[&0-9a-z_\- ]*"
+TYPING_REG_SURFIX= "\)"
 
 
 LOGGER_NAME = "pddl_parser"
 LOGGER_LEVEL = logging.INFO
-# LOGGER_LEVEL = logging.DEBUG
-from util import setup_logger
+LOGGER_LEVEL = logging.DEBUG
+from util import setup_logger 
+from util import Type
 
 
 ONTIC_RE_PREFIX = "\(:ontic"
@@ -31,37 +42,151 @@ class PDDLParser:
     def __init__(self,handlers):
         self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=LOGGER_LEVEL) 
         self.logger.debug("PDDL PARSER initialized")
-    
-    def formatDocument(self,str):
-        # . match anything but the endline
-        # * match 0 or more preceding RE
-        # $ matchs end line
-        str = re.sub(';.*$',"",str,flags=re.MULTILINE).lower()
-        self.logger.debug(repr(str))
+
+    def run(self,domain_path,problem_path):
+        # this should decode the domain first and then problem
+
+        self.logger.info("Reading domain file")
+        self.logger.info(domain_path)
+        domain_file = ""
+        with open(domain_path,"r") as f:
+            domain_file = f.read()
+
+        self.logger.debug(repr(domain_file))
+        self.logger.debug("format document")
+        domain_str = self.formatDocument(domain_file)
+
+        self.logger.info("Parsing domain file")
+        self.domainParser(domain_str)
+
+    def keyWordParser(self,keyword,reg_prefix,reg_str,reg_surfix,input_str):
+        self.logger.debug("extract %s",keyword)
+        inner_str = ""
+        try:
+            found = re.search(f'{reg_prefix}{reg_str}{reg_surfix}',input_str).group(0)
+            lp = len(re.sub(r'\\([.*+()])', r'\1', reg_prefix))
+            ls = len(re.sub(r'\\([.*+()])', r'\1', reg_surfix))
+            inner_str = found[lp:-ls:]
+            self.logger.debug("Found domain_name: [%s]",inner_str)
+        except:
+            
+            self.logger.error("error when extract domain name")
+            self.logger.error(traceback.format_exc())
+            exit()  
+        output_str = input_str[lp+len(inner_str)+ls:]
+        self.logger.debug(repr(input_str))
+        return inner_str,output_str
+
+
+
+    def domainParser(self,domain_str):
+        actions = {}
+        # checking the prefix and surface of the whole domain file
+        if not domain_str.startswith(DOMAIN_PREFIX):
+            self.logger.error("the domain file does not start with '%s'",DOMAIN_PREFIX)
+            exit()
+        elif not domain_str.endswith(DOMAIN_SURFIX):
+            self.logger.error("the domain file does not end with '%s'",DOMAIN_SURFIX)
+            exit()
+        domain_str = domain_str[len(DOMAIN_PREFIX):-len(DOMAIN_SURFIX):]
+        self.logger.debug(repr(domain_str))
         
-        # removing useless space
-        # ^ match any start of the newline in multiline mode
-        str = re.sub('^ *| *$|^\n',"",str,flags=re.MULTILINE)
-        str = re.sub(' *, *',",",str,flags=re.MULTILINE)
-        # str = re.sub(' *- *',"-",str,flags=re.MULTILINE)
-        str = re.sub('\[ *',"[",str,flags=re.MULTILINE)
-        str = re.sub(' *\]',"]",str,flags=re.MULTILINE)
-        str = re.sub(':goal *',":goal",str,flags=re.MULTILINE)
-        str = re.sub(':action *',":action ",str,flags=re.MULTILINE)
-        str = re.sub(':parameters *',":parameters",str,flags=re.MULTILINE)
-        str = re.sub(':precondition *',":precondition",str,flags=re.MULTILINE)
-        str = re.sub(':effect *',":effect",str,flags=re.MULTILINE)
-        self.logger.debug(repr(str))
-        
-        # removing useless \n
-        str = re.sub('\( *|(\n)*\((\n)*',"(",str,flags=re.MULTILINE)
-        str = re.sub(' *\)|(\n)*\)(\n)*',")",str,flags=re.MULTILINE)
-        str = re.sub('\)\n',")",str,flags=re.MULTILINE)
-        self.logger.debug(repr(str))
-        
-        str = re.sub('\n'," ",str,flags=re.MULTILINE)
-        self.logger.debug(repr(str)) 
-        return str      
+        # extract domain name
+        domain_name,domain_str = self.keyWordParser("domain_name",DOMAIN_NAME_REG_PREFIX,DOMAIN_NAME_REG,DOMAIN_NAME_REG_SURFIX,domain_str)
+
+        # extract typing
+        typing_str,domain_str = self.keyWordParser("types",TYPING_REG_PREFIX,TYPING_REG,TYPING_REG_SURFIX,domain_str)
+        types: typing.List[Type] = []
+        for type_str in typing_str.split(LINE_BREAK):
+            if type_str == "":
+                continue
+            elif '-' in type_str:
+                # it has parent types:
+                type_str_list= type_str.split("-")
+                type_str = type_str_list[0]
+                parent_type_name = type_str_list[1]
+            else:
+                parent_type_name = ""
+
+            for type_name in type_str.split(" "):
+                new_type = Type(type_name)
+                new_type.parent_type_name = parent_type_name
+                types.append(new_type)
+
+        self.logger.debug(types)
+
+
+        if 0:
+        # extract actions
+            self.logger.debug("extract actions")
+            try:
+                action_list = str.split("(:action ")[1::]
+
+                for action_str in action_list:
+                    parameters = []
+                    preconditions = {}
+                    effects = []
+                    action_str = action_str[:-1:]
+                    action_name = action_str.split(" ")[0]
+                    
+                    # decode parameters
+                    parameters_str = re.search(':parameters\(.*\):precondition',action_str).group()
+                    self.logger.debug('parameters_str: [%s]',parameters_str)
+                    for p_str in parameters_str[12:-14:].split(","):
+                        if p_str == '':
+                            continue
+                        self.logger.debug('single parameters_str: [%s]',p_str)
+                        p_str = p_str.replace(" ","")
+                        p = p_str.split("-")
+                        parameters.append((p[0],p[1]))
+                    self.logger.debug('parameters: [%s]',parameters)
+                    
+                    self.logger.debug("extract preconditions")
+                    try:
+                        
+                        preconditions_str = re.search(':precondition\(and.*\):effect', action_str).group()
+                        preconditions_str = preconditions_str[18:-9:]
+                        self.logger.debug(preconditions_str)
+                        # preconditions_str = preconditions_str[len(goal_str_prefix)+1:-len(goal_str_suffix)-1]
+                        predicator_list = preconditions_str.split(")(")
+                        self.logger.debug("precondition list: %s" % (predicator_list))
+                        preconditions = self.predicator_convertor(predicator_list)
+
+                    except AttributeError:
+                        
+                        self.logger.error("error when extract precondition")
+                        self.logger.error(traceback.format_exc())
+                        traceback.print_exc()
+                        exit() 
+                    
+                    #decode effects
+                    effects_str = re.search(':effect\(and\(.*\)\)',action_str).group()
+                    self.logger.debug('effects_str: [%s]',effects_str)  
+                    for e_str in effects_str[11:-2:].split("(= "):
+                        if e_str == '':
+                            continue
+                        self.logger.debug('single effect_str: [%s]',e_str)
+                        e_list = e_str[1:].split(") ")
+                        # if len(e_list) == 1:
+                        #     e_list = e_list[0].split(" ")
+                        effects.append((e_list[0].replace(" ?","?").replace(" ","-").replace("(","").replace(")",""),e_list[1].replace(" ","").replace("(","").replace(")","").replace('"','').replace("'",'')))
+                    self.logger.debug('effects: [%s]',effects)
+                    
+                    actions.update({action_name: {"parameters":parameters,"precondition":preconditions,"effect":effects}})
+                self.logger.debug(actions)
+            except AttributeError:
+                self.logger.error("error when extract actions")
+                self.logger.error(traceback.format_exc())
+                exit()          
+            return actions,d_name
+
+
+
+
+
+
+
+
 
 
     # assuming the input is one epistemic string
@@ -532,199 +657,35 @@ class PDDLParser:
 
 
 
-    def domainParser(self,file_path):
-        actions = {}
-        d_name = ""
-
+    def formatDocument(self,input_str):
+        # this should remove all the comments
+            # . match anything but the endline
+            # * match 0 or more preceding RE
+            # $ matchs end line
+        input_str = re.sub(';.*$',"",input_str,flags=re.MULTILINE).lower()
+        self.logger.debug(repr(input_str))
         
-        self.logger.debug("reading domain file:")
+        # removing useless space
+        # ^ match any start of the newline in multiline mode
+        input_str = re.sub('^ *| *$|^\n',"",input_str,flags=re.MULTILINE)
+        input_str = re.sub(' *, *',",",input_str,flags=re.MULTILINE)
+        input_str = re.sub(' *- *',"-",input_str,flags=re.MULTILINE)
+        input_str = re.sub('\[ *',"[",input_str,flags=re.MULTILINE)
+        input_str = re.sub(' *\]',"]",input_str,flags=re.MULTILINE)
+        input_str = re.sub(':goal *',":goal",input_str,flags=re.MULTILINE)
+        input_str = re.sub(':action *',":action ",input_str,flags=re.MULTILINE)
+        input_str = re.sub(':parameters *',":parameters",input_str,flags=re.MULTILINE)
+        input_str = re.sub(':precondition *',":precondition",input_str,flags=re.MULTILINE)
+        input_str = re.sub(':effect *',":effect",input_str,flags=re.MULTILINE)
+        self.logger.debug(repr(input_str))
         
-        with open(file_path,"r") as f:
-            file = f.read()
-            self.logger.debug(repr(file))
-            
-            self.logger.debug("formating domain file")
-            str = self.formatDocument(file)
-            self.logger.debug(repr(str))
-            
-            if not str.startswith("(define"):
-                self.logger.error("the domain file does not start with '(define'")
-                exit()
-            elif not str.endswith(")"):
-                self.logger.error("the domain file does not end with ')'")
-                exit()
-            str = str[7:-1:]
-            self.logger.debug(repr(str))
-            
-            self.logger.debug("extract d_name")
-            try:
-                found = re.search('\(domain [0-9a-z_]*\)',str).group(0)
-                d_name = found[8:-1:]
-                self.logger.info(f"parsing domain: [{d_name}]")
-                # self.logger.debug(d_name)
-            except AttributeError:
-                
-                self.logger.error("error when extract domain name")
-                self.logger.error(traceback.format_exc())
-                exit()  
-            
-            
-            self.logger.debug("extract actions")
-            try:
-                action_list = str.split("(:action ")[1::]
-
-                for action_str in action_list:
-                    parameters = []
-                    preconditions = {}
-                    effects = []
-                    action_str = action_str[:-1:]
-                    action_name = action_str.split(" ")[0]
-                    
-                    # decode parameters
-                    parameters_str = re.search(':parameters\(.*\):precondition',action_str).group()
-                    self.logger.debug('parameters_str: [%s]',parameters_str)
-                    for p_str in parameters_str[12:-14:].split(","):
-                        if p_str == '':
-                            continue
-                        self.logger.debug('single parameters_str: [%s]',p_str)
-                        p_str = p_str.replace(" ","")
-                        p = p_str.split("-")
-                        parameters.append((p[0],p[1]))
-                    self.logger.debug('parameters: [%s]',parameters)
-                    
-                    self.logger.debug("extract preconditions")
-                    try:
-                        
-                        preconditions_str = re.search(':precondition\(and.*\):effect', action_str).group()
-                        preconditions_str = preconditions_str[18:-9:]
-                        self.logger.debug(preconditions_str)
-                        # preconditions_str = preconditions_str[len(goal_str_prefix)+1:-len(goal_str_suffix)-1]
-                        predicator_list = preconditions_str.split(")(")
-                        self.logger.debug("precondition list: %s" % (predicator_list))
-                        preconditions = self.predicator_convertor(predicator_list)
-                        
-                        # # loading ontic precondition
-                        # self.logger.debug("extract ontic preconditions propositions")
-
-                        # preconditions["ontic_p"] = list()
-                        # # ontic_goal_list = re.findall('\(= \([0-9a-z_ ]*\) [0-9a-z_\'\"]*\)',found[10:-1:])
-                        # # (= (:ontic (= (agent_at-a) (secret_at ?s))) 1)
-                        # ontic_pre_list = re.findall('\(= \(:ontic[ 0-9a-z_\[\],]*\([=><] \([ 0-9a-z_\-\?]*\) [\(\)\?0-9a-z_\'\" ]*\)\) [0-9a-z_\'\"-]*\)',preconditions_str)  
-
-                        # ontic_prefix = "(= (:ontic ("
-                        # ontic_surfix = ")"
-                        # self.logger.debug('ontic preconditions list: [%s]',ontic_pre_list)
-                        # for pre_str in ontic_pre_list:
-                        #     key = pre_str.replace(' ?',"?")
-                        #     self.logger.debug(pre_str)
-                        #     pre_str = pre_str[len(ontic_prefix):-len(ontic_surfix):]
-                        #     self.logger.debug(pre_str)
-                        #     pre_str_list = pre_str.split(" ")
-                        #     symbol  = pre_str_list[0]
-                        #     value = pre_str_list[-1]
-                        #     pre_str = pre_str[(len(symbol)+2):-(len(value)+3):]
-                        #     self.logger.debug(pre_str)
-                            
-                        #     self.logger.debug('single goal_str [%s]',pre_str)
-                            
-                        #     goal_list = pre_str.split(') ')
-                        #     variable = goal_list[0].replace(' ?','?').replace(' ','-')
-                        #     v_value = goal_list[1]
-                        #     if "'" in v_value:
-                        #         v_value = v_value.replace("'","")
-                        #     elif '"' in v_value:
-                        #         v_value = v_value.replace('"',"")
-                        #     elif '?' in v_value:
-                        #         v_value = v_value.replace(' ?',"?").replace(')','').replace('(','')
-                        #     else:
-                        #         v_value =int(v_value)
-                        #     self.logger.debug("ontic_p: [%s]",(key,symbol,variable,v_value,value))
-                        #     preconditions["ontic_p"].append((key,symbol,variable,v_value,value))
-                                
-                        # # loading epismetic goals
-                        # self.logger.debug("extract epistemic precondition propositions")
-                        # self.logger.debug("input pre str: [%s]",preconditions_str)
-                        # preconditions["epistemic_p"] = list()
-                        # epistemic_pre_list = re.findall('\(= \(:epistemic[\? 0-9a-z_\[\],]*\((?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)\) [0-9a-z-]*\)',preconditions_str)  
-                        # epistemic_prefix = "(= (:epistemic "
-                        # epistemic_surfix = ")"
-                        # self.logger.debug(epistemic_pre_list)
-                        # for pre_str in epistemic_pre_list:
-                        #     key = pre_str.replace(' ?',"?")
-                        #     self.logger.debug(pre_str)
-                        #     pre_str = pre_str[len(epistemic_prefix):-len(epistemic_surfix):]
-                        #     self.logger.debug(pre_str)
-                        #     pre_str_list = pre_str.split(" ")
-                        #     # symbol  = goal_str_list[0]
-                        #     value = pre_str_list[-1]
-                        #     pre_str = pre_str[:-(len(value)+2):]
-                        #     value = int(value)
-                        #     query = pre_str
-                        #     self.logger.debug(pre_str)
-                            
-                        #     # i,j = re.search('\)\) .*',goal_str).span()
-                        #     # value1 = int(goal_str[i+3:j:])
-                            
-                        #     p,q = re.search('(?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)',pre_str).span()
-                        #     # query = pre_str[:p-1]
-                        #     pre_str = pre_str[p:q-1]
-                            
-                            
-                        #     pre_str_list = pre_str.split(' ')
-                        #     symbol = pre_str_list[0]
-                        #     pre_str = pre_str[(len(symbol)+2)::]
-                        #     pre_str_list = pre_str.split(') ')
-                        #     old_variable = pre_str_list[0]
-                        #     variable = pre_str_list[0].replace(' ?','?').replace(' ','-')
-                        #     self.logger.debug("old variable string: [%s]",old_variable)
-                        #     self.logger.debug("new variable string: [%s]",variable)
-                        #     self.logger.debug("query string: [%s]",query)
-                        #     query = query.replace(old_variable,variable) 
-                        #     self.logger.debug("query string: [%s]",query)
-                        #     key = key.replace(old_variable,variable)
-                        #     v_value = pre_str_list[1]
-                        #     if "'" in v_value:
-                        #         v_value = v_value.replace("'","")
-                        #     elif '"' in v_value:
-                        #         v_value = v_value.replace('"',"")
-                        #     elif '?' in v_value:
-                        #         v_value = v_value.replace(' ?',"?").replace(')','').replace('(','')
-                        #     elif "(" in v_value and ")" in v_value:
-                        #         old_v_value = v_value
-                        #         v_value = v_value[1:-1]
-                        #         v_value = v_value.replace(" ","-")
-                        #         query = query.replace(old_v_value,v_value)
-                                
-                                
-                        #     else:
-                        #         v_value =int(v_value)
-                        #     self.logger.debug("epistemic_p: [%s]",(key,symbol,query,variable,v_value,value))
-                        #     preconditions["epistemic_p"].append((key,symbol,query,variable,v_value,value))
-                    except AttributeError:
-                        
-                        self.logger.error("error when extract precondition")
-                        self.logger.error(traceback.format_exc())
-                        traceback.print_exc()
-                        exit() 
-                    
-                    #decode effects
-                    effects_str = re.search(':effect\(and\(.*\)\)',action_str).group()
-                    self.logger.debug('effects_str: [%s]',effects_str)  
-                    for e_str in effects_str[11:-2:].split("(= "):
-                        if e_str == '':
-                            continue
-                        self.logger.debug('single effect_str: [%s]',e_str)
-                        e_list = e_str[1:].split(") ")
-                        # if len(e_list) == 1:
-                        #     e_list = e_list[0].split(" ")
-                        effects.append((e_list[0].replace(" ?","?").replace(" ","-").replace("(","").replace(")",""),e_list[1].replace(" ","").replace("(","").replace(")","").replace('"','').replace("'",'')))
-                    self.logger.debug('effects: [%s]',effects)
-                    
-                    actions.update({action_name: {"parameters":parameters,"precondition":preconditions,"effect":effects}})
-                self.logger.debug(actions)
-            except AttributeError:
-                self.logger.error("error when extract actions")
-                self.logger.error(traceback.format_exc())
-                exit()          
-            return actions,d_name
+        # removing useless \n
+        input_str = re.sub('\( *|(\n)*\((\n)*',"(",input_str,flags=re.MULTILINE)
+        input_str = re.sub(' *\)|(\n)*\)(\n)*',")",input_str,flags=re.MULTILINE)
+        input_str = re.sub('\)\n',")",input_str,flags=re.MULTILINE)
+        self.logger.debug(repr(input_str))
+        
+        input_str = re.sub('\n',LINE_BREAK,input_str,flags=re.MULTILINE)
+        self.logger.debug(repr(input_str)) 
+        return input_str      
     
