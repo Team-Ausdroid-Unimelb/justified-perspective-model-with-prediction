@@ -19,6 +19,7 @@
 
 
     (:functions ;todo: define numeric functions here
+        ; this is V from model
         (dir ?a - turnable)
         (x ?a - locatable)
         (y ?a - locatable)
@@ -27,19 +28,22 @@
 
     ;define actions here
     (:action turn_clockwise
-        :parameters (?i - agent)
-        :precondition (and )
-        :effect (and 
-            (= (dir ?i) ( + 1))
+        :parameters (?i - turnable)
+        :precondition ()
+        :effect (
+            ; increase sth by 1
+            ; (increase (dir ?i) 1)
+            (when (!= ((@jp ("b [?i] b [a]") (v?i))) None) (assign (x ?i) (@jp ("b [b] b [a]") (v?i))))
+            ; (assign (dir ?i) (v ?i))
         )
     )
     
-    (:action turn_counter_clockwise
-        :parameters (?i - agent)
-        :precondition (and )
-        :effect (and 
-            (= (dir ?i) ( - 1))
-        )
-    )
+    ; (:action turn_counter_clockwise
+    ;     :parameters (?i - turnable)
+    ;     :precondition ()
+    ;     :effect (
+    ;         (= (dir ?i) 1)
+    ;     )
+    ; )
  
 )

@@ -332,24 +332,7 @@ def eval_var_from_str(logger,eval_str,state):
     
 def convertBooltoPDDL_TERNARY(bool):
     return PDDL_TERNARY.TRUE if bool else PDDL_TERNARY.FALSE
-        
-class Type:
-    name = None
-    range = None
-    data_type = None
-    parent_type_name = None
-    entity_index_list = list()
-
-    def __init__(self,type_name) -> None:
-        self.name = type_name
-        pass
-
-    def __repr__(self) -> str:
-        output_str = f"(Type {self.name}): [{self.range}, {self.data_type}, {self.parent_type_name}, {self.entity_index_list}]"
-        return output_str
-    
-    def __str__(self) -> str:
-        return self.__repr__()
+   
         
 class Domain():
     d_name = None
@@ -568,3 +551,76 @@ class Queue:
 def valid_variable(v_name,problem):
     if v_name not in problem.variables.keys():
         raise ValueError("%s is not in variables %s. Probably you spelled it wrong."%(v_name,str(problem.variables.keys())))
+    
+    
+# new syntax ________________
+
+     
+class Type:
+    def __init__(self,type_name) -> None:
+        self.parent_type_name = None
+        self.entity_index_list = list()
+        self.name = type_name
+        self.children_type_list = list()
+        pass
+
+    def __repr__(self) -> str:
+        output_str = f"(Type {self.name}): [{self.parent_type_name}, {self.entity_index_list}]"
+        return output_str
+    
+    def __str__(self) -> str:
+        return self.__repr__()
+    
+class VAR:
+    def __init__(self,name) -> None:
+        self.range = None
+        self.data_type = None
+        self.content_dict = dict()
+        self.name = name
+        pass
+    
+    def __repr__(self) -> str:
+        output_str = f"(VAR {self.name}): [{self.range}, {self.data_type}, {self.content_dict}]"
+        return output_str
+    
+    def __str__(self) -> str:
+        return self.__repr__()    
+
+class Parameters(dict):
+    def __init_subclass__(cls) -> None:
+        return super().__init_subclass__()
+
+class EffectType(Enum):
+    ASSIGN = 1
+    INCREASE = 2
+    DECREASE = 3
+
+class UpdateType(Enum):
+    CONSTENT = 1
+    ONTIC = 2
+    EPSITEMIC = 3
+
+class Effect:
+    def __init__(self) -> None:
+        self.effect_type = None
+        self.effect_condition = None
+        self.update = None
+        self.target_variable_name = None
+        self.update_type = None
+        pass
+    def __repr__(self) -> str:
+
+        output_str = f"(Condition: {self.effect_condition}; Effect {self.effect_type.name} {self.target_variable_name} {self.update})"
+        return output_str
+    
+    def __str__(self) -> str:
+        return self.__repr__()    
+    
+class ActionSchema:
+    def __init__(self,name,parameters,preconditions,effects) -> None:
+        self.name = name
+        self.parameters = parameters
+        self.preconditions = preconditions
+        self.effects = effects
+        
+        pass
