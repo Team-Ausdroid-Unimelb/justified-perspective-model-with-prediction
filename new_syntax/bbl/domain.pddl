@@ -21,6 +21,7 @@
     (:functions ;todo: define numeric functions here
         ; this is V from model
         (dir ?a - turnable)
+        ; (room ?r - askable ?b - turnable)
         (x ?a - locatable)
         (y ?a - locatable)
         (v ?a - askable)
@@ -38,6 +39,20 @@
         )
     )
     
+
+    ; ((room ?b) "r1")
+    ; v_name == "room-a"
+    ;     if "room-a" in state.keys():
+    ;     else:
+    ;         state [(notroom-a-r1)]
+    ;         (= (notroom a r2) 1)
+    ;         (= (notroom a r3) 0)
+    ;         (= (notroom a r4) 1)
+
+    ; (= (notroom a r1) 1)
+    ; (= (notroom a r2) 1)
+    ; (= (notroom a r3) 0)
+    ; (= (notroom a r4) 1)
     ; (:action turn_counter_clockwise
     ;     :parameters (?i - turnable)
     ;     :precondition ()

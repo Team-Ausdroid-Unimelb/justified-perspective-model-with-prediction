@@ -13,9 +13,10 @@ timestamp = datetime.datetime.now().astimezone(TIMEZONE).strftime(DATE_FORMAT)
 # logging.basicConfig(filename=f'logs/{timestamp}.log', level=logging.DEBUG)
 
 LINE_BREAK = "&"
-DOMAIN_PREFIX = "(define"
-DOMAIN_SURFIX = ")"
+PDDL_PREFIX = "(define"
+PDDL_SURFIX = ")"
 
+# domain file constants
 DOMAIN_NAME_REG_PREFIX = "\(domain "
 DOMAIN_NAME_REG ="[0-9a-z_]*"
 DOMAIN_NAME_REG_SURFIX= "\)"
@@ -48,11 +49,42 @@ EFFECT_CONDITION_REG_PREFIX = r"\("
 EFFECT_CONDITION_REG = r"(assign|increase|decrease) \(\w*\??\w*\) \(\@jp \(\"[\w \[\]]*\"\) \(\w*\??\w*\)\)"
 EFFECT_CONDITION_REG_SURFIX = r"\)"
 
+# problem file constants
+PROBLEM_NAME_REG_PREFIX = "\(problem "
+PROBLEM_NAME_REG ="\w*"
+PROBLEM_NAME_REG_SURFIX= "\)"
+
+PROBLEM_DOMAIN_NAME_REG_PREFIX = "\(:domain "
+PROBLEM_DOMAIN_NAME_REG ="[0-9a-z_]*"
+PROBLEM_DOMAIN_NAME_REG_SURFIX= "\)"
+
+
+AGENT_REG_PREFIX = "\(:agents"
+AGENT_REG = "[\w \&\-]*"
+AGENT_REG_SURFIX= "\)"
+
+OBJECT_REG_PREFIX = "\(:objects"
+OBJECT_REG = "[\w \&\-]*"
+OBJECT_REG_SURFIX= "\)"
+
+INIT_REG_PREFIX = "\(:init"
+INIT_REG = "(\(assign [\w \'\"\(\)]*\))*"
+INIT_REG_SURFIX= "\)"
+
+RANGE_REG_PREFIX = "\(:ranges"
+RANGE_REG = "(\([\w \[\]\'\,]*\))*"
+RANGE_REG_SURFIX= "\)"
+
+RULE_REG_PREFIX = "\(:rules"
+RULE_REG = "(\(\w* \([\w ]*\) \[[\w,]*\]\))*"
+RULE_REG_SURFIX= "\)"
+
 LOGGER_NAME = "pddl_parser"
 LOGGER_LEVEL = logging.INFO
 LOGGER_LEVEL = logging.DEBUG
 from util import setup_logger 
-from util import Type,VAR,Parameters,EffectType,Effect,UpdateType,ActionSchema
+from util import Type,FunctionSchema,Parameters,EffectType,Effect,UpdateType,ActionSchema,EntityType,Entity
+from util import VALUE_TYPE,value_type_dict,RULE_TYPE,rule_type_dict,Function,Rule
 
 EFFECT_TYPE_DICT = {
     "increase": EffectType.INCREASE,
@@ -86,7 +118,7 @@ class PDDLParser:
         domain_str = self.formatDocument(domain_file)
 
         self.logger.info("Parsing domain file")
-        domain_name,types,functions,action_schemas = self.domainParser(domain_str)
+        domain_name,types,function_schemas,action_schemas = self.domainParser(domain_str)
         
         self.logger.info("Reading problem file")
         self.logger.info(problem_path)
@@ -99,503 +131,185 @@ class PDDLParser:
         problem_str = self.formatDocument(problem_file)
         
         self.logger.info("Parsing problem file")
-        self.problemParser(problem_str)
+        self.problemParser(problem_str,domain_name,types,function_schemas,action_schemas)
 
-    def keyWordParser(self,keyword,reg_prefix,reg_str,reg_surfix,input_str):
-        self.logger.debug("extract %s",keyword)
-        inner_str = ""
-        try:
-            pattern = f'{reg_prefix}{reg_str}{reg_surfix}'
-            found = re.search(pattern,input_str).group(0)
-            lp = len(re.sub(r'\\([.*+()])', r'\1', reg_prefix))
-            ls = len(re.sub(r'\\([.*+()])', r'\1', reg_surfix))
-            inner_str = found[lp:-ls:]
-            self.logger.debug("Found %s: [%s]",keyword,inner_str)
-        except:
-            
-            self.logger.error("error when extract domain")
-            self.logger.error("pattern is %s",pattern)
-            self.logger.error("target is %s",input_str)
-            # self.logger.error(traceback.format_exc())
-            exit()  
-        output_str = input_str[lp+len(inner_str)+ls:]
-        self.logger.debug(repr(input_str))
-        return inner_str,output_str
+    def problemParser(self,problem_str,domain_name,types:typing.Dict[str,Type],function_schemas: typing.Dict[str,FunctionSchema] ,action_schemas: typing.Dict[str,ActionSchema]):
 
-
-
-    def domainParser(self,domain_str):
-        actions = {}
         # checking the prefix and surface of the whole domain file
-        if not domain_str.startswith(DOMAIN_PREFIX):
-            self.logger.error("the domain file does not start with '%s'",DOMAIN_PREFIX)
+        if not problem_str.startswith(PDDL_PREFIX):
+            self.logger.error("the problem file does not start with '%s'",PDDL_PREFIX)
             exit()
-        elif not domain_str.endswith(DOMAIN_SURFIX):
-            self.logger.error("the domain file does not end with '%s'",DOMAIN_SURFIX)
+        elif not problem_str.endswith(PDDL_SURFIX):
+            self.logger.error("the problem file does not end with '%s'",PDDL_SURFIX)
             exit()
-        domain_str = domain_str[len(DOMAIN_PREFIX):-len(DOMAIN_SURFIX):]
-        self.logger.debug(repr(domain_str))
-        
+        problem_str = problem_str[len(PDDL_PREFIX):-len(PDDL_SURFIX):]
+        self.logger.debug(repr(problem_str))
+
+        # extract problem name
+        problem_name,problem_str = self.keyWordParser("problem_name",PROBLEM_NAME_REG_PREFIX,PROBLEM_NAME_REG,PROBLEM_NAME_REG_SURFIX,problem_str)
+        self.logger.debug(problem_name)
+
         # extract domain name
-        domain_name,domain_str = self.keyWordParser("domain_name",DOMAIN_NAME_REG_PREFIX,DOMAIN_NAME_REG,DOMAIN_NAME_REG_SURFIX,domain_str)
+        problem_domain_name,problem_str = self.keyWordParser(
+            "problem_domain_name",
+            PROBLEM_DOMAIN_NAME_REG_PREFIX,
+            PROBLEM_DOMAIN_NAME_REG,
+            PROBLEM_DOMAIN_NAME_REG_SURFIX,
+            problem_str)
+        self.logger.debug(problem_domain_name)
 
-        # extract typing
-        typing_str,domain_str = self.keyWordParser("types",TYPING_REG_PREFIX,TYPING_REG,TYPING_REG_SURFIX,domain_str)
-        # types: typing.List[Type] = []
-        types: typing.Dict[str,Type] = {}
-        for type_str in typing_str.split(LINE_BREAK):
-            if type_str == "":
-                continue
-            elif '-' in type_str:
-                # it has parent types:
-                type_str_list= type_str.split("-")
-                type_str = type_str_list[0]
-                parent_type_name = type_str_list[1]
-            else:
-                parent_type_name = ""
-
-            for type_name in type_str.split(" "):
-                new_type = Type(type_name)
-                new_type.parent_type_name = parent_type_name
-                types.update({type_name:new_type})
-        self.logger.debug(types)
-        # double check the parent types
-        type_names = types.keys()
-        for k,item in types.items():
-            p_name = item.parent_type_name
-            if not p_name == "" and not p_name in type_names:
-                raise ValueError("checking type %s: parent type name not found in types: %s",k,p_name)
-
-        # extra functions
-        functions : typing.Dict[str,VAR] = {}
-        all_function_str,domain_str = self.keyWordParser("functions",FUNC_REG_PREFIX,FUNC_REG,FUNC_REG_SURFIX,domain_str)
-        self.logger.debug(all_function_str)
-        function_str_list = re.findall(r'\(.*?\)', all_function_str)
-        for function_str in function_str_list:
-            parts = list()
-            new_function = None
-            function_str = function_str[1:-1]
-            parts = re.split(r'\?[a-z]-', function_str)
-            function_name = parts[0]
-            new_function = VAR(function_name)
-            parts = parts[1:]
-            for type_name in parts:
-                new_function.content_dict.update({type_name:[]})
-            functions.update({function_name:new_function})
-        self.logger.debug(functions)
+        # extract agents
+        enetities : typing.Dict[str,Entity] = {}
+        agents_str,problem_str = self.keyWordParser("agents",AGENT_REG_PREFIX,AGENT_REG,AGENT_REG_SURFIX,problem_str)
+        self.logger.debug(agents_str)
+        pattern = r"\&[\w -]*"
+        single_type_agents_str_list = re.findall(pattern, agents_str)
+        self.logger.debug(single_type_agents_str_list)
+        agent_set = set()
+        for single_type_agents_str in single_type_agents_str_list:
+            single_type_agents_str = single_type_agents_str[1:]
+            agent_list_str = single_type_agents_str.split("-")[0]
+            type_str = single_type_agents_str.split("-")[1]
+            for agent_index in agent_list_str.split(" "):
+                types[type_str].entity_index_list.add(agent_index)
+                parent_type = types[type_str].parent_type_name
+                if not parent_type == "":
+                    types[parent_type].entity_index_list.add(agent_index)
+                agent_set.add(agent_index)
+        for agent_index in agent_set:
+            enetities.update({agent_index:Entity(agent_index,EntityType.AGENT)})
         
-        # extract actions
-        action_schemas: typing.Dict[str,ActionSchema] = {}
-        pattern = r"\(:action.*?(?=\(:action|$)"
-        action_str_list = re.findall(pattern, domain_str)
-        for action_str in action_str_list:
-            self.logger.debug(action_str)
-            action_content_str,_ = self.keyWordParser("action",ACTION_REG_PREFIX,ACTION_REG,ACTION_REG_SURFIX,action_str)
-            self.logger.debug(action_content_str)
-            temp_list = action_content_str.split(LINE_BREAK)
-            action_name = temp_list[0]
-            self.logger.debug(action_name)
-            action_content_str = temp_list[1]
-            
-            # find parameter string
-            self.logger.debug(action_content_str)
-            parameter_str,action_content_str = self.keyWordParser("parameters",PARAMETERS_REG_PREFIX,PARAMETERS_REG,PARAMETERS_REG_SURFIX,action_content_str)
-            self.logger.debug(parameter_str)
-            self.logger.debug(action_content_str)
-            
-            # extract parameter
-            pattern = r'\?\w*'
-            match_variables = re.findall(pattern, parameter_str)
-            pattern = r'\?[a-z]-(\w+)'
-            match_types = re.findall(pattern, parameter_str)
-            if not len(match_variables) == len(match_types):
-                raise ValueError('missing variable or types in parameter [%s] for action [%s]',parameter_str,action_name)
-            parameters = Parameters()
-            for i in range(len(match_types)):
-                parameters[match_variables[i]] = match_types[i]
-            self.logger.debug(parameters)
-            print(action_content_str)
-            
-            # find effect first, which is easier for the re
-            # extract effects
-            effects_str,len_holder = self.keyWordParser("effect",EFFECT_REG_PREFIX,EFFECT_REG,EFFECT_REG_SURFIX,action_content_str)
-            # take the len of the len_holder, which is the string with pre and effect removing the length of the whole effect
-            # the precondition comes before the effect, so we keep the first len(len_holder) from the old string
-            # which is effectively the precondition string
-            action_content_str = action_content_str[:len(len_holder)]            
-            # since there are uncertain nesting level of brackets in the effect
-            # using manual approach instead of regular expression
-            effects : typing.List[Effect] = []
-            effects_str = effects_str[1:-1] # remove the first and last bracket
-            for effect_str in effects_str.split(")("):
+        print(types)
 
-                effects.append(self.parsingEffect(effect_str,action_name))
-            
-            # TODO I need to apply the action and check goal at the same time.
-            
-            # extract precondition
-            preconditions = []
-            # find precondition string
-            precondition_str, remaining_str = self.keyWordParser("precondition",PRECONDITION_REG_PREFIX,PRECONDITION_REG,PRECONDITION_REG_SURFIX,action_content_str)
-            if not remaining_str == "":
-                raise ValueError("The remaining string [%s] after action parsing is not empty",remaining_str)
-            
-            
-            # TODO
-            # match the preconditions
-            
-            
-            new_action = ActionSchema(action_name,parameters,preconditions,effects)
-            action_schemas.update({action_name:new_action})
-        self.logger.debug(action_schemas)
-        
-        return domain_name,types,functions,action_schemas
-            # self.logger.debug("extract actions")
-            # try:
-            #     action_list = str.split("(:action ")[1::]
+        # extract objects
+        objects_str,problem_str = self.keyWordParser("objects",OBJECT_REG_PREFIX,OBJECT_REG,OBJECT_REG_SURFIX,problem_str)
+        print(objects_str)
+        pattern = r"\&[\w -]*"
+        single_type_objects_str_list = re.findall(pattern, objects_str)
+        print(single_type_objects_str_list)
+        object_set = set()
+        for single_type_objects_str in single_type_objects_str_list:
+            print(single_type_objects_str)
+            single_type_objects_str = single_type_objects_str[1:]
+            print(single_type_objects_str)
+            object_list_str = single_type_objects_str.split("-")[0]
+            type_str = single_type_objects_str.split("-")[1]
+            for object_index in object_list_str.split(" "):
+                print(object_index)
+                print(type_str)
+                types[type_str].entity_index_list.add(object_index)
+                parent_type = types[type_str].parent_type_name
+                if not parent_type == "":
+                    types[parent_type].entity_index_list.add(object_index)
+                object_set.add(object_index)
+        for object_index in object_set:
+            enetities.update({object_index:Entity(object_index,EntityType.OBJECT)})
+        print(types)
 
-            #     for action_str in action_list:
-            #         parameters = []
-            #         preconditions = {}
-            #         effects = []
-            #         action_str = action_str[:-1:]
-            #         action_name = action_str.split(" ")[0]
-                    
-            #         # decode parameters
-            #         parameters_str = re.search(':parameters\(.*\):precondition',action_str).group()
-            #         self.logger.debug('parameters_str: [%s]',parameters_str)
-            #         for p_str in parameters_str[12:-14:].split(","):
-            #             if p_str == '':
-            #                 continue
-            #             self.logger.debug('single parameters_str: [%s]',p_str)
-            #             p_str = p_str.replace(" ","")
-            #             p = p_str.split("-")
-            #             parameters.append((p[0],p[1]))
-            #         self.logger.debug('parameters: [%s]',parameters)
-                    
-            #         self.logger.debug("extract preconditions")
-            #         try:
-                        
-            #             preconditions_str = re.search(':precondition\(and.*\):effect', action_str).group()
-            #             preconditions_str = preconditions_str[18:-9:]
-            #             self.logger.debug(preconditions_str)
-            #             # preconditions_str = preconditions_str[len(goal_str_prefix)+1:-len(goal_str_suffix)-1]
-            #             predicator_list = preconditions_str.split(")(")
-            #             self.logger.debug("precondition list: %s" % (predicator_list))
-            #             preconditions = self.predicator_convertor(predicator_list)
-
-            #         except AttributeError:
-                        
-            #             self.logger.error("error when extract precondition")
-            #             self.logger.error(traceback.format_exc())
-            #             traceback.print_exc()
-            #             exit() 
-                    
-            #         #decode effects
-            #         effects_str = re.search(':effect\(and\(.*\)\)',action_str).group()
-            #         self.logger.debug('effects_str: [%s]',effects_str)  
-            #         for e_str in effects_str[11:-2:].split("(= "):
-            #             if e_str == '':
-            #                 continue
-            #             self.logger.debug('single effect_str: [%s]',e_str)
-            #             e_list = e_str[1:].split(") ")
-            #             # if len(e_list) == 1:
-            #             #     e_list = e_list[0].split(" ")
-            #             effects.append((e_list[0].replace(" ?","?").replace(" ","-").replace("(","").replace(")",""),e_list[1].replace(" ","").replace("(","").replace(")","").replace('"','').replace("'",'')))
-            #         self.logger.debug('effects: [%s]',effects)
-                    
-            #         actions.update({action_name: {"parameters":parameters,"precondition":preconditions,"effect":effects}})
-            #     self.logger.debug(actions)
-            # except AttributeError:
-            #     self.logger.error("error when extract actions")
-            #     self.logger.error(traceback.format_exc())
-            #     exit()          
-            # return actions,d_name
+        rules : typing.Dict[str,Rule] = {}
+        # extract rules first
+        rules_str,len_holder = self.keyWordParser("rules",RULE_REG_PREFIX,RULE_REG,RULE_REG_SURFIX,problem_str)
+        problem_str = problem_str[:len(len_holder)]
+        print(rules_str)
+        print(problem_str)
+        pattern = r"\(\w* \([\w ]*\) \[[\w,]*\]\)"
+        single_rule_str_list = re.findall(pattern, rules_str)
+        print(single_rule_str_list)
+        for single_rule_str in single_rule_str_list:
+            print(single_rule_str)
+            rule_str = single_rule_str[1:-1:]
+            print(rule_str)
+            rule_type_str = rule_str.split(" ")[0]
+            rule_type = rule_type_dict[rule_type_str]
+            rule_str = rule_str[len(rule_type_str)+2:]
+            function_name = rule_str.split(") ")[0]
+            rule_content = rule_str.split(") ")[1][1:-1].split(",")
+            new_rule = Rule(function_name,rule_type,rule_content)
+            rules.update({function_name:new_rule})
+        print(rules)
 
 
-
-    def parsingEffect(self,effect_str,action_name):
-        
-
-        effect_type = None
-        effect_inner_effect = None
-        effect_condition = None
-        
-        new_effect = Effect()
-        if effect_str.startswith("when"):
-            print("when")
-            # this is conditional effect, which should be handled later
+        # extract the range first
+        ranges_str,len_holder = self.keyWordParser("ranges",RANGE_REG_PREFIX,RANGE_REG,RANGE_REG_SURFIX,problem_str)
+        problem_str = problem_str[:len(len_holder)]
+        print(ranges_str)
+        print(problem_str)
+        pattern = r"\([\w \[\]\'\,]*\)"
+        single_range_str_list = re.findall(pattern, ranges_str)
+        print(single_range_str_list)
+        for single_range_str in single_range_str_list:
+            print("single range")
+            print(single_range_str)
+            range_str = single_range_str[1:-1:]
+            # print(range_str)
             
-            # determine the effect type for conditional effect
+            range_content_list = range_str.split(" ")
+            if not len(range_content_list) == 3:
+                raise ValueError("range should have 3 components: %s",range_content_list)
+            function_schema_name = range_content_list[0]
+            value_type_str =  range_content_list[1]
+            value_type = value_type_dict[value_type_str]
+            value_range_str = range_content_list[2]
             
-            
-            # extract effect first as it ensures the only match
-            conditional_effect_str, len_holder = self.keyWordParser("Effect in Conditional Effect",EFFECT_CONDITION_REG_PREFIX,EFFECT_CONDITION_REG,EFFECT_CONDITION_REG_SURFIX,effect_str)
-            effect_str =effect_str[:len(len_holder)]
-            effect_type_str = conditional_effect_str.split(" ")[0]
-            print(effect_type_str)
-            conditional_effect_str = conditional_effect_str[len(effect_type_str)+1:]
-            target_variable_name, jp_str = self.keyWordParser("Variable in Conditional Effect","\(","\w*\??\w*","\) ",conditional_effect_str)
-            
-            print(target_variable_name)
-            print(jp_str)
-            
-            # effect_inner_effect = self.parsingEffect()
-        else:
-            print(effect_str)
-            
-            # if effect_str.startswith("increase"):
-            #     effect_type = EffectType.INCREASE
-            # elif effect_str.startswith("decrease"):
-            #     effect_type = EffectType.DECREASE
-            # elif effect_str.startswith("assign"):
-            #     effect_type = EffectType.ASSIGN
-            effect_content_list = effect_str.split(" ")
-            if not len(effect_content_list) == 3:
-                raise ValueError("Error when parsing effect [%s] for actoin [%s]",effect_str,action_name)
-           
-           
-            effect_type_str = effect_content_list[0]
-            target_variable_name = effect_content_list[1][1:-1]
-            
-            if not effect_type_str in EFFECT_TYPE_DICT.keys():
-                raise ValueError("Error effect [%s] for action [%s] is not a valid effect from: [%s]",effect_str,action_name,EFFECT_TYPE_DICT.keys())
-            update_str = effect_content_list[2]
-            update_is_variable = False
-            pattern = r'^\(\w*\??\w*\)$'
-            print(repr(update_str))
-            if re.match(pattern, update_str):
-                # then this is a variable too
-                update_is_variable = True
-                update = update_str[1:-1]
-                print("udpdate is a variable")
-            else:
-                # then it is not a variable
-                # so it is either a enum in the format of a string
-                # or it is an integer
-                int_pattern = r'^[+-]?\d+$'
-                string_pattern = r"^(['\"])(.*)\1$"
-                if re.match(int_pattern, update_str):
-                    # then it is an integer
-                    update = int(update_str)
-                elif re.match(string_pattern, update_str):
-                    update = update_str[1:-1]
+            if value_type == VALUE_TYPE.ENUMERATE:
+                print(value_range_str[1:-1:].replace("'","").split(","))
+                function_schemas[function_schema_name].value_range = value_range_str[1:-1:].replace("'","").split(",")
+            elif value_type == VALUE_TYPE.INTEGER:
+                bounds = value_range_str[1:-1:].split(",")
+                if len(bounds) == 2:
+                    function_schemas[function_schema_name].value_range = (int(bounds[0]),int(bounds[1]))
                 else:
-                    raise ValueError("The effect update is neither integer or a string")
-            new_effect.update_is_variable = update_is_variable
-            new_effect.update = update
+                    raise ValueError("integer range should have 2 components: %s",bounds)
             
-            
-        effect_type = EFFECT_TYPE_DICT[effect_type_str]
-        new_effect.target_variable_name = target_variable_name
-        new_effect.effect_type = effect_type
-        return new_effect
-
-
-
-    # assuming the input is one epistemic string
-    # def epistemic_decoder(self,ep_str):
-    #     self.logger.debug("extract epistemic formulea")
-    #     self.logger.debug("input epistemic str: [%s]",ep_str)
-    #                     # preconditions["epistemic_p"] = list()
-    #     p,q = re.search('\(= \(:epistemic [\?+\- 0-9a-z_\[\],]*\((?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)\) [0-9a-z-]*\)',ep_str).span()
-    #     epistemic_prefix = "(= (:epistemic "
-    #     epistemic_surfix = ")"
-        
-    #     ep_str = ep_str[p+len(epistemic_prefix):q+len(epistemic_surfix)]
-    #     self.logger.debug(ep_str)
-    #     import sys
-    #     sys.exit()
-    
-    
-    def predicator_convertor(self,pred_list):
-        result = dict()
-        result["ontic"] = list()
-        result["epistemic"] = list()
-        
-        for pred_str in pred_list:
-            self.logger.debug(pred_str)
-            self.logger.debug(ONTIC_STR_PREFIX)
-            #  this is for precondition, it is also fine with the goal for now
-            key = pred_str.replace(' ?',"?")
-            if ONTIC_STR_PREFIX[1:] in pred_str:
-                # this is an ontic predictor
-                
-                self.logger.debug(pred_str)
-                
-                
-                
-                
-                pred_str = pred_str[len(ONTIC_STR_PREFIX)+1:-1]
-                self.logger.debug(pred_str)
-                self.logger.debug(pred_str)
-                pre_comp_list = pred_str.split(" ")
-                symbol  = pre_comp_list[0]
-                # value = goal_str_list[-1]
-                pred_str = pred_str[(len(symbol)+2):]
-                self.logger.debug(pred_str)
-                
-                # self.logger.debug(goal_str)
-                temp_list = pred_str.split(')')
-                old_variable = temp_list[0]
-                variable = old_variable.replace(' ?','?').replace(' ','-')
-                key = key.replace(old_variable,variable)
-                self.logger.debug(temp_list)
-                if len(temp_list)==2:
-                    value = temp_list[1][1:]
-                    if "'" in value:
-                        value = value.replace("'","")
-                    elif '"' in value:
-                        value = value.replace('"',"")
-                    else:
-                        value =int(value)      
-                elif len(temp_list)==3:
-                    # it means the second argument is also a variable
-                    value = temp_list[1][2:].replace(' ?','?').replace(' ','-')
-                else:
-                    raise ValueError("error in decoding ontic [%s]",key)
-                self.logger.debug("ontic: [%s]",(key,symbol,variable,value))
-
-                result["ontic"].append((key,symbol,variable,value))
-            elif EPISTEMIC_STR_PREFIX[1:] in pred_str:
-                # this is an epistemic predictor
-                
-                self.logger.debug(pred_str)
-                
-                # this is for precondition, it is also fine with the goal for now
-                
-                
-                query_str = key[len(EPISTEMIC_STR_PREFIX):]
-                self.logger.debug("query string: [%s]",query_str)
-                separator_index = query_str.index("(")
-                query_prefix = query_str[:separator_index]
-                self.logger.debug("query prefix [%s]" % (query_prefix))
-                query_suffix_str = query_str[separator_index:]
-                self.logger.debug("query suffix [%s]" % (query_suffix_str))                
-                # pre_comp_list = pred_str.split("(")
-                
-                symbol  = query_suffix_str[1:].split(" ")[0]
-                # pre_comp_list[0]
-                # value = goal_str_list[-1]
-                query_suffix_str = query_suffix_str[(len(symbol)+3):]
-                self.logger.debug(query_suffix_str)
-                
-                # self.logger.debug(goal_str)
-                temp_list = query_suffix_str.split(')')
-                old_variable = temp_list[0]
-                variable = old_variable.replace(' ?','?').replace(' ','-')
-                key = key.replace(old_variable,variable)
-                query_str = query_str.replace(old_variable,variable)
-                if len(temp_list)==2:
-                    value = temp_list[1][1:]
-                    if "'" in value:
-                        value = value.replace("'","")
-                    elif '"' in value:
-                        value = value.replace('"',"")
-                    else:
-                        value =int(value)      
-                elif len(temp_list)==3:
-                    # it means the second argument is also a variable
-                    value = temp_list[1][2:].replace(' ?','?').replace(' ','-')
-                else:
-                    raise ValueError("error in decoding epistemic [%s]",key)
-                self.logger.debug("epistemic:(%s,%s,%s,%s,%s,%s)" % (key,query_str,query_prefix,symbol,variable,value))
-
-                result["epistemic"].append((key,query_str,query_prefix,symbol,variable,value))
-            elif pred_str == "":
-                pass
+            # elif value_type_str == VALUE_TYPE.STRING:
+            #     pass
             else:
-                raise ValueError("[predicate type not found] error in decoding [%s]",key)
-        
-        return result
-                
-
-    # def epistemic_converter(self,ep_content):
-    #     self.logger.debug("epistemic converter: [%s]",ep_content)
-    #     header_index = ep_content.find(" ")
-    #     header_str =  ep_content[1:header_index]
-    #     self.logger.debug("header string: [%s]",header_str)
-    #     ep_content = ep_content[:header_index]
-    #     agent_index = ep_content.find(" ")
-    #     agents_str = ep_content[2:agent_index-1]
-
-    #     ep = EpistemicQuery(header_str,agents_str,value,content)
-
-    #     ep_value = 
-    #     self.logger.debug(epistemic_pre_list)
-    #                     for pre_str in epistemic_pre_list:
-    
-    #                         key = pre_str.replace(' ?',"?")
-    #                         self.logger.debug(pre_str)
-    #                         pre_str = pre_str[len(epistemic_prefix):-len(epistemic_surfix):]
-    #                         self.logger.debug(pre_str)
-    #                         pre_str_list = pre_str.split(" ")
-    #                         # symbol  = goal_str_list[0]
-    #                         value = pre_str_list[-1]
-    #                         pre_str = pre_str[:-(len(value)+2):]
-    #                         value = int(value)
-    #                         query = pre_str
-    #                         self.logger.debug(pre_str)
-                            
-    #                         # i,j = re.search('\)\) .*',goal_str).span()
-    #                         # value1 = int(goal_str[i+3:j:])
-                            
-    #                         p,q = re.search('(?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)',pre_str).span()
-    #                         # query = pre_str[:p-1]
-    #                         pre_str = pre_str[p:q-1]
-                            
-                            
-    #                         pre_str_list = pre_str.split(' ')
-    #                         symbol = pre_str_list[0]
-    #                         pre_str = pre_str[(len(symbol)+2)::]
-    #                         pre_str_list = pre_str.split(') ')
-    #                         old_variable = pre_str_list[0]
-    #                         variable = pre_str_list[0].replace(' ?','?').replace(' ','-')
-    #                         self.logger.debug("old variable string: [%s]",old_variable)
-    #                         self.logger.debug("new variable string: [%s]",variable)
-    #                         self.logger.debug("query string: [%s]",query)
-    #                         query = query.replace(old_variable,variable) 
-    #                         self.logger.debug("query string: [%s]",query)
-    #                         key = key.replace(old_variable,variable)
-    #                         v_value = pre_str_list[1]
-    #                         if "'" in v_value:
-    #                             v_value = v_value.replace("'","")
-    #                         elif '"' in v_value:
-    #                             v_value = v_value.replace('"',"")
-    #                         elif '?' in v_value:
-    #                             v_value = v_value.replace(' ?',"?").replace(')','').replace('(','')
-    #                         elif "(" in v_value and ")" in v_value:
-    #                             old_v_value = v_value
-    #                             v_value = v_value[1:-1]
-    #                             v_value = v_value.replace(" ","-")
-    #                             query = query.replace(old_v_value,v_value)
-                                
-                                
-    #                         else:
-    #                             v_value =int(v_value)
-    #                         self.logger.debug("epistemic_p: [%s]",(key,symbol,query,variable,v_value,value))
-    #                         preconditions["epistemic_p"].append((key,symbol,query,variable,v_value,value))
-    #                 except AttributeError:
-                        
-    #                     self.logger.error("error when extract precondition")
-    #                     self.logger.error(traceback.format_exc())
-    #                     traceback.print_exc()
-    #                     exit() 
+                raise ValueError("value type %s does not exist",value_type)
+            function_schemas[function_schema_name].value_type = value_type
 
 
-    def problemParser(self,file_path):
-        domains = {'agent':{'basic_type':'agent','values':[]},}
-        i_state = {}
-        g_states = {}
-        agent_index = []
-        obj_index = []
-        variables = {}
-        d_name = ""
-        p_name = ""
-        
-        self.logger.debug("reading problem file:")
-        
-        with open(file_path,"r") as f:
+        # generate a template state
+        # TODO
+        # initialise all functions
+        functions : typing.Dict[str,Function] = {}
+        for function_schema in function_schemas.values():
+            entity_list = [[]]
+            for type_name in function_schema.content_type_list:
+                temp_entity = types[type_name].entity_index_list
+                entity_list = [x + [y] for x in entity_list for y in temp_entity]
+            for entity in entity_list:
+
+                function_name = f"{function_schema.name} {' '.join(entity)}"
+                functions.update({function_name:Function(function_name,function_schema,entity)})
+        print(functions)
+
+
+        print(repr(problem_str))
+        # extract initial state
+        init_str,problem_str = self.keyWordParser("init",INIT_REG_PREFIX,INIT_REG,INIT_REG_SURFIX,problem_str)
+        print(init_str)
+        pattern = r"\(assign \([\w ]*\) [ \w\'\"]*\)"
+        single_init_str_list = re.findall(pattern, init_str)
+        print(single_init_str_list)
+        for single_init_str in single_init_str_list:
+            if not single_init_str.startswith("(assign"):
+                raise ValueError("Error when parsing initial state [%s] (it should start with '(assign')",single_init_str)
+            else:
+                single_init_str = single_init_str[8:-1]
+                print(single_init_str)
+                # var_str = single_init_str.split(" ")[0]
+                # value_str = single_init_str.split(" ")[1]
+                # if "'" in value_str:
+                #     value_str = value_str.replace("'","")
+                # elif '"' in value_str:
+                #     value_str = value_str.replace('"',"")
+                # else:
+                #     value_str = int(value_str)
+                # print(var_str)
+                # print(value_str)
+
+
+        if 0:
             file = f.read()
             self.logger.debug(repr(file))
             
@@ -860,6 +574,424 @@ class PDDLParser:
             return domains,i_state,g_states,agent_index,obj_index,variables,d_name,p_name
 
 
+    def keyWordParser(self,keyword,reg_prefix,reg_str,reg_surfix,input_str):
+        self.logger.debug("extract %s",keyword)
+        inner_str = ""
+        try:
+            pattern = f'{reg_prefix}{reg_str}{reg_surfix}'
+            found = re.search(pattern,input_str).group(0)
+            lp = len(re.sub(r'\\([.*+()])', r'\1', reg_prefix))
+            ls = len(re.sub(r'\\([.*+()])', r'\1', reg_surfix))
+            inner_str = found[lp:-ls:]
+            self.logger.debug("Found %s: [%s]",keyword,inner_str)
+        except:
+            
+            self.logger.error("error when extract %s",keyword)
+            self.logger.error("pattern is %s",pattern)
+            self.logger.error("target is %s",input_str)
+            # self.logger.error(traceback.format_exc())
+            exit()  
+        output_str = input_str[lp+len(inner_str)+ls:]
+        self.logger.debug(repr(input_str))
+        return inner_str,output_str
+
+
+
+    def domainParser(self,domain_str):
+        actions = {}
+        # checking the prefix and surface of the whole domain file
+        if not domain_str.startswith(PDDL_PREFIX):
+            self.logger.error("the domain file does not start with '%s'",PDDL_PREFIX)
+            exit()
+        elif not domain_str.endswith(PDDL_SURFIX):
+            self.logger.error("the domain file does not end with '%s'",PDDL_SURFIX)
+            exit()
+        domain_str = domain_str[len(PDDL_PREFIX):-len(PDDL_SURFIX):]
+        self.logger.debug(repr(domain_str))
+        
+        # extract domain name
+        domain_name,domain_str = self.keyWordParser("domain_name",DOMAIN_NAME_REG_PREFIX,DOMAIN_NAME_REG,DOMAIN_NAME_REG_SURFIX,domain_str)
+
+        # extract typing
+        typing_str,domain_str = self.keyWordParser("types",TYPING_REG_PREFIX,TYPING_REG,TYPING_REG_SURFIX,domain_str)
+        # types: typing.List[Type] = []
+        types: typing.Dict[str,Type] = {}
+        for type_str in typing_str.split(LINE_BREAK):
+            if type_str == "":
+                continue
+            elif '-' in type_str:
+                # it has parent types:
+                type_str_list= type_str.split("-")
+                type_str = type_str_list[0]
+                parent_type_name = type_str_list[1]
+            else:
+                parent_type_name = ""
+
+            for type_name in type_str.split(" "):
+                new_type = Type(type_name)
+                new_type.parent_type_name = parent_type_name
+                types.update({type_name:new_type})
+        self.logger.debug(types)
+        # double check the parent types
+        type_names = types.keys()
+        for k,item in types.items():
+            p_name = item.parent_type_name
+            if not p_name == "":
+                if not p_name in type_names:
+                    raise ValueError("checking type %s: parent type name not found in types: %s",k,p_name)
+                else:
+                    types[p_name].children_type_list.add(k)
+
+
+        # extra function_schemas
+        function_schemas : typing.Dict[str,FunctionSchema] = {}
+        all_function_schema_str,domain_str = self.keyWordParser("function_schemas",FUNC_REG_PREFIX,FUNC_REG,FUNC_REG_SURFIX,domain_str)
+        self.logger.debug(all_function_schema_str)
+        function_schema_str_list = re.findall(r'\(.*?\)', all_function_schema_str)
+        for function_schema_str in function_schema_str_list:
+            parts = list()
+            new_function_schema = None
+            function_schema_str = function_schema_str[1:-1]
+            parts = re.split(r'\?[a-z]-', function_schema_str)
+            function_schema_name = parts[0]
+            new_function_schema = FunctionSchema(function_schema_name)
+            parts = parts[1:]
+            for type_name in parts:
+                new_function_schema.content_type_list.append(type_name)
+            function_schemas.update({function_schema_name:new_function_schema})
+        self.logger.debug(function_schemas)
+        
+        # extract actions
+        action_schemas: typing.Dict[str,ActionSchema] = {}
+        pattern = r"\(:action.*?(?=\(:action|$)"
+        action_str_list = re.findall(pattern, domain_str)
+        for action_str in action_str_list:
+            self.logger.debug(action_str)
+            action_content_str,_ = self.keyWordParser("action",ACTION_REG_PREFIX,ACTION_REG,ACTION_REG_SURFIX,action_str)
+            self.logger.debug(action_content_str)
+            temp_list = action_content_str.split(LINE_BREAK)
+            action_name = temp_list[0]
+            self.logger.debug(action_name)
+            action_content_str = temp_list[1]
+            
+            # find parameter string
+            self.logger.debug(action_content_str)
+            parameter_str,action_content_str = self.keyWordParser("parameters",PARAMETERS_REG_PREFIX,PARAMETERS_REG,PARAMETERS_REG_SURFIX,action_content_str)
+            self.logger.debug(parameter_str)
+            self.logger.debug(action_content_str)
+            
+            # extract parameter
+            pattern = r'\?\w*'
+            match_variables = re.findall(pattern, parameter_str)
+            pattern = r'\?[a-z]-(\w+)'
+            match_types = re.findall(pattern, parameter_str)
+            if not len(match_variables) == len(match_types):
+                raise ValueError('missing variable or types in parameter [%s] for action [%s]',parameter_str,action_name)
+            parameters = Parameters()
+            for i in range(len(match_types)):
+                parameters[match_variables[i]] = match_types[i]
+            self.logger.debug(parameters)
+            print(action_content_str)
+            
+            # find effect first, which is easier for the re
+            # extract effects
+            effects_str,len_holder = self.keyWordParser("effect",EFFECT_REG_PREFIX,EFFECT_REG,EFFECT_REG_SURFIX,action_content_str)
+            # take the len of the len_holder, which is the string with pre and effect removing the length of the whole effect
+            # the precondition comes before the effect, so we keep the first len(len_holder) from the old string
+            # which is effectively the precondition string
+            action_content_str = action_content_str[:len(len_holder)]            
+            # since there are uncertain nesting level of brackets in the effect
+            # using manual approach instead of regular expression
+            effects : typing.List[Effect] = []
+            effects_str = effects_str[1:-1] # remove the first and last bracket
+            for effect_str in effects_str.split(")("):
+
+                effects.append(self.parsingEffect(effect_str,action_name))
+            
+            # TODO I need to apply the action and check goal at the same time.
+            
+            # extract precondition
+            preconditions = []
+            # find precondition string
+            precondition_str, remaining_str = self.keyWordParser("precondition",PRECONDITION_REG_PREFIX,PRECONDITION_REG,PRECONDITION_REG_SURFIX,action_content_str)
+            if not remaining_str == "":
+                raise ValueError("The remaining string [%s] after action parsing is not empty",remaining_str)
+            
+            
+            # TODO
+            # match the preconditions
+            
+            
+            new_action = ActionSchema(action_name,parameters,preconditions,effects)
+            action_schemas.update({action_name:new_action})
+        self.logger.debug(action_schemas)
+        
+        return domain_name,types,function_schemas,action_schemas
+            # self.logger.debug("extract actions")
+            # try:
+            #     action_list = str.split("(:action ")[1::]
+
+            #     for action_str in action_list:
+            #         parameters = []
+            #         preconditions = {}
+            #         effects = []
+            #         action_str = action_str[:-1:]
+            #         action_name = action_str.split(" ")[0]
+                    
+            #         # decode parameters
+            #         parameters_str = re.search(':parameters\(.*\):precondition',action_str).group()
+            #         self.logger.debug('parameters_str: [%s]',parameters_str)
+            #         for p_str in parameters_str[12:-14:].split(","):
+            #             if p_str == '':
+            #                 continue
+            #             self.logger.debug('single parameters_str: [%s]',p_str)
+            #             p_str = p_str.replace(" ","")
+            #             p = p_str.split("-")
+            #             parameters.append((p[0],p[1]))
+            #         self.logger.debug('parameters: [%s]',parameters)
+                    
+            #         self.logger.debug("extract preconditions")
+            #         try:
+                        
+            #             preconditions_str = re.search(':precondition\(and.*\):effect', action_str).group()
+            #             preconditions_str = preconditions_str[18:-9:]
+            #             self.logger.debug(preconditions_str)
+            #             # preconditions_str = preconditions_str[len(goal_str_prefix)+1:-len(goal_str_suffix)-1]
+            #             predicator_list = preconditions_str.split(")(")
+            #             self.logger.debug("precondition list: %s" % (predicator_list))
+            #             preconditions = self.predicator_convertor(predicator_list)
+
+            #         except AttributeError:
+                        
+            #             self.logger.error("error when extract precondition")
+            #             self.logger.error(traceback.format_exc())
+            #             traceback.print_exc()
+            #             exit() 
+                    
+            #         #decode effects
+            #         effects_str = re.search(':effect\(and\(.*\)\)',action_str).group()
+            #         self.logger.debug('effects_str: [%s]',effects_str)  
+            #         for e_str in effects_str[11:-2:].split("(= "):
+            #             if e_str == '':
+            #                 continue
+            #             self.logger.debug('single effect_str: [%s]',e_str)
+            #             e_list = e_str[1:].split(") ")
+            #             # if len(e_list) == 1:
+            #             #     e_list = e_list[0].split(" ")
+            #             effects.append((e_list[0].replace(" ?","?").replace(" ","-").replace("(","").replace(")",""),e_list[1].replace(" ","").replace("(","").replace(")","").replace('"','').replace("'",'')))
+            #         self.logger.debug('effects: [%s]',effects)
+                    
+            #         actions.update({action_name: {"parameters":parameters,"precondition":preconditions,"effect":effects}})
+            #     self.logger.debug(actions)
+            # except AttributeError:
+            #     self.logger.error("error when extract actions")
+            #     self.logger.error(traceback.format_exc())
+            #     exit()          
+            # return actions,d_name
+
+
+
+    def parsingEffect(self,effect_str,action_name):
+        
+
+        effect_type = None
+        effect_inner_effect = None
+        effect_condition = None
+        
+        new_effect = Effect()
+        if effect_str.startswith("when"):
+            print("when")
+            # this is conditional effect, which should be handled later
+            
+            # determine the effect type for conditional effect
+            
+            
+            # extract effect first as it ensures the only match
+            conditional_effect_str, len_holder = self.keyWordParser("Effect in Conditional Effect",EFFECT_CONDITION_REG_PREFIX,EFFECT_CONDITION_REG,EFFECT_CONDITION_REG_SURFIX,effect_str)
+            effect_str =effect_str[:len(len_holder)]
+            effect_type_str = conditional_effect_str.split(" ")[0]
+            print(effect_type_str)
+            conditional_effect_str = conditional_effect_str[len(effect_type_str)+1:]
+            target_variable_name, jp_str = self.keyWordParser("Variable in Conditional Effect","\(","\w*\??\w*","\) ",conditional_effect_str)
+            
+            print(target_variable_name)
+            print(jp_str)
+            
+            # effect_inner_effect = self.parsingEffect()
+        else:
+            print(effect_str)
+            
+            # if effect_str.startswith("increase"):
+            #     effect_type = EffectType.INCREASE
+            # elif effect_str.startswith("decrease"):
+            #     effect_type = EffectType.DECREASE
+            # elif effect_str.startswith("assign"):
+            #     effect_type = EffectType.ASSIGN
+            effect_content_list = effect_str.split(" ")
+            if not len(effect_content_list) == 3:
+                raise ValueError("Error when parsing effect [%s] for actoin [%s]",effect_str,action_name)
+           
+           
+            effect_type_str = effect_content_list[0]
+            target_variable_name = effect_content_list[1][1:-1]
+            
+            if not effect_type_str in EFFECT_TYPE_DICT.keys():
+                raise ValueError("Error effect [%s] for action [%s] is not a valid effect from: [%s]",effect_str,action_name,EFFECT_TYPE_DICT.keys())
+            update_str = effect_content_list[2]
+            update_is_variable = False
+            pattern = r'^\(\w*\??\w*\)$'
+            print(repr(update_str))
+            if re.match(pattern, update_str):
+                # then this is a variable too
+                update_is_variable = True
+                update = update_str[1:-1]
+                print("udpdate is a variable")
+            else:
+                # then it is not a variable
+                # so it is either a enum in the format of a string
+                # or it is an integer
+                int_pattern = r'^[+-]?\d+$'
+                string_pattern = r"^(['\"])(.*)\1$"
+                if re.match(int_pattern, update_str):
+                    # then it is an integer
+                    update = int(update_str)
+                elif re.match(string_pattern, update_str):
+                    update = update_str[1:-1]
+                else:
+                    raise ValueError("The effect update is neither integer or a string")
+            new_effect.update_is_variable = update_is_variable
+            new_effect.update = update
+            
+            
+        effect_type = EFFECT_TYPE_DICT[effect_type_str]
+        new_effect.target_variable_name = target_variable_name
+        new_effect.effect_type = effect_type
+        return new_effect
+
+
+
+    # assuming the input is one epistemic string
+    # def epistemic_decoder(self,ep_str):
+    #     self.logger.debug("extract epistemic formulea")
+    #     self.logger.debug("input epistemic str: [%s]",ep_str)
+    #                     # preconditions["epistemic_p"] = list()
+    #     p,q = re.search('\(= \(:epistemic [\?+\- 0-9a-z_\[\],]*\((?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)\) [0-9a-z-]*\)',ep_str).span()
+    #     epistemic_prefix = "(= (:epistemic "
+    #     epistemic_surfix = ")"
+        
+    #     ep_str = ep_str[p+len(epistemic_prefix):q+len(epistemic_surfix)]
+    #     self.logger.debug(ep_str)
+    #     import sys
+    #     sys.exit()
+    
+    
+    def predicator_convertor(self,pred_list):
+        result = dict()
+        result["ontic"] = list()
+        result["epistemic"] = list()
+        
+        for pred_str in pred_list:
+            self.logger.debug(pred_str)
+            self.logger.debug(ONTIC_STR_PREFIX)
+            #  this is for precondition, it is also fine with the goal for now
+            key = pred_str.replace(' ?',"?")
+            if ONTIC_STR_PREFIX[1:] in pred_str:
+                # this is an ontic predictor
+                
+                self.logger.debug(pred_str)
+                
+                
+                
+                
+                pred_str = pred_str[len(ONTIC_STR_PREFIX)+1:-1]
+                self.logger.debug(pred_str)
+                self.logger.debug(pred_str)
+                pre_comp_list = pred_str.split(" ")
+                symbol  = pre_comp_list[0]
+                # value = goal_str_list[-1]
+                pred_str = pred_str[(len(symbol)+2):]
+                self.logger.debug(pred_str)
+                
+                # self.logger.debug(goal_str)
+                temp_list = pred_str.split(')')
+                old_variable = temp_list[0]
+                variable = old_variable.replace(' ?','?').replace(' ','-')
+                key = key.replace(old_variable,variable)
+                self.logger.debug(temp_list)
+                if len(temp_list)==2:
+                    value = temp_list[1][1:]
+                    if "'" in value:
+                        value = value.replace("'","")
+                    elif '"' in value:
+                        value = value.replace('"',"")
+                    else:
+                        value =int(value)      
+                elif len(temp_list)==3:
+                    # it means the second argument is also a variable
+                    value = temp_list[1][2:].replace(' ?','?').replace(' ','-')
+                else:
+                    raise ValueError("error in decoding ontic [%s]",key)
+                self.logger.debug("ontic: [%s]",(key,symbol,variable,value))
+
+                result["ontic"].append((key,symbol,variable,value))
+            elif EPISTEMIC_STR_PREFIX[1:] in pred_str:
+                # this is an epistemic predictor
+                
+                self.logger.debug(pred_str)
+                
+                # this is for precondition, it is also fine with the goal for now
+                
+                
+                query_str = key[len(EPISTEMIC_STR_PREFIX):]
+                self.logger.debug("query string: [%s]",query_str)
+                separator_index = query_str.index("(")
+                query_prefix = query_str[:separator_index]
+                self.logger.debug("query prefix [%s]" % (query_prefix))
+                query_suffix_str = query_str[separator_index:]
+                self.logger.debug("query suffix [%s]" % (query_suffix_str))                
+                # pre_comp_list = pred_str.split("(")
+                
+                symbol  = query_suffix_str[1:].split(" ")[0]
+                # pre_comp_list[0]
+                # value = goal_str_list[-1]
+                query_suffix_str = query_suffix_str[(len(symbol)+3):]
+                self.logger.debug(query_suffix_str)
+                
+                # self.logger.debug(goal_str)
+                temp_list = query_suffix_str.split(')')
+                old_variable = temp_list[0]
+                variable = old_variable.replace(' ?','?').replace(' ','-')
+                key = key.replace(old_variable,variable)
+                query_str = query_str.replace(old_variable,variable)
+                if len(temp_list)==2:
+                    value = temp_list[1][1:]
+                    if "'" in value:
+                        value = value.replace("'","")
+                    elif '"' in value:
+                        value = value.replace('"',"")
+                    else:
+                        value =int(value)      
+                elif len(temp_list)==3:
+                    # it means the second argument is also a variable
+                    value = temp_list[1][2:].replace(' ?','?').replace(' ','-')
+                else:
+                    raise ValueError("error in decoding epistemic [%s]",key)
+                self.logger.debug("epistemic:(%s,%s,%s,%s,%s,%s)" % (key,query_str,query_prefix,symbol,variable,value))
+
+                result["epistemic"].append((key,query_str,query_prefix,symbol,variable,value))
+            elif pred_str == "":
+                pass
+            else:
+                raise ValueError("[predicate type not found] error in decoding [%s]",key)
+        
+        return result
+                
+
+
+
+
+
+
 
     def formatDocument(self,input_str):
         # this should remove all the comments
@@ -894,3 +1026,75 @@ class PDDLParser:
         self.logger.debug(repr(input_str)) 
         return input_str      
     
+
+    # def epistemic_converter(self,ep_content):
+    #     self.logger.debug("epistemic converter: [%s]",ep_content)
+    #     header_index = ep_content.find(" ")
+    #     header_str =  ep_content[1:header_index]
+    #     self.logger.debug("header string: [%s]",header_str)
+    #     ep_content = ep_content[:header_index]
+    #     agent_index = ep_content.find(" ")
+    #     agents_str = ep_content[2:agent_index-1]
+
+    #     ep = EpistemicQuery(header_str,agents_str,value,content)
+
+    #     ep_value = 
+    #     self.logger.debug(epistemic_pre_list)
+    #                     for pre_str in epistemic_pre_list:
+    
+    #                         key = pre_str.replace(' ?',"?")
+    #                         self.logger.debug(pre_str)
+    #                         pre_str = pre_str[len(epistemic_prefix):-len(epistemic_surfix):]
+    #                         self.logger.debug(pre_str)
+    #                         pre_str_list = pre_str.split(" ")
+    #                         # symbol  = goal_str_list[0]
+    #                         value = pre_str_list[-1]
+    #                         pre_str = pre_str[:-(len(value)+2):]
+    #                         value = int(value)
+    #                         query = pre_str
+    #                         self.logger.debug(pre_str)
+                            
+    #                         # i,j = re.search('\)\) .*',goal_str).span()
+    #                         # value1 = int(goal_str[i+3:j:])
+                            
+    #                         p,q = re.search('(?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)',pre_str).span()
+    #                         # query = pre_str[:p-1]
+    #                         pre_str = pre_str[p:q-1]
+                            
+                            
+    #                         pre_str_list = pre_str.split(' ')
+    #                         symbol = pre_str_list[0]
+    #                         pre_str = pre_str[(len(symbol)+2)::]
+    #                         pre_str_list = pre_str.split(') ')
+    #                         old_variable = pre_str_list[0]
+    #                         variable = pre_str_list[0].replace(' ?','?').replace(' ','-')
+    #                         self.logger.debug("old variable string: [%s]",old_variable)
+    #                         self.logger.debug("new variable string: [%s]",variable)
+    #                         self.logger.debug("query string: [%s]",query)
+    #                         query = query.replace(old_variable,variable) 
+    #                         self.logger.debug("query string: [%s]",query)
+    #                         key = key.replace(old_variable,variable)
+    #                         v_value = pre_str_list[1]
+    #                         if "'" in v_value:
+    #                             v_value = v_value.replace("'","")
+    #                         elif '"' in v_value:
+    #                             v_value = v_value.replace('"',"")
+    #                         elif '?' in v_value:
+    #                             v_value = v_value.replace(' ?',"?").replace(')','').replace('(','')
+    #                         elif "(" in v_value and ")" in v_value:
+    #                             old_v_value = v_value
+    #                             v_value = v_value[1:-1]
+    #                             v_value = v_value.replace(" ","-")
+    #                             query = query.replace(old_v_value,v_value)
+                                
+                                
+    #                         else:
+    #                             v_value =int(v_value)
+    #                         self.logger.debug("epistemic_p: [%s]",(key,symbol,query,variable,v_value,value))
+    #                         preconditions["epistemic_p"].append((key,symbol,query,variable,v_value,value))
+    #                 except AttributeError:
+                        
+    #                     self.logger.error("error when extract precondition")
+    #                     self.logger.error(traceback.format_exc())
+    #                     traceback.print_exc()
+    #                     exit() 

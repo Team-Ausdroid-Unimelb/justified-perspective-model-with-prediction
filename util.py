@@ -9,7 +9,7 @@ import inspect
 import sys
 import re
 import traceback
-
+import typing
 
 
 GLOBAL_PERSPECTIVE_INDEX = ""
@@ -126,32 +126,7 @@ def dTypeConvert(logger,str):
         logger.error(f"D_TYPE not found for {str}")
 
 
-class E_TYPE(Enum):
-    AGENT = 1
-    OBJECT = 2
 
-def eTypeConvert(logger,str):
-    logger.debug(f"converting E_TYPE for {str}")
-    if str == "agent":
-        return E_TYPE.AGENT
-    elif str == "object":
-        return E_TYPE.OBJECT
-    else:
-        logger.error(f"E_TYPE not found for {str}")
-class Entity():
-    e_name = None
-    e_type = None
-   
-    def __init__(self,e_name, e_type):
-        self.e_name = e_name
-        self.e_type = e_type
-
-    def __str__(self): # show only in the print(object)
-        return f"<Entity: e_name: {self.e_name}; e_type: {self.e_type}>\n"
-
-    def __repr__(self): # show when in a dictionary
-        return f"<Entity: e_name: {self.e_name}; e_type: {self.e_type}>\n"
-        # return self
 
 class Action():
     a_name = None
@@ -553,15 +528,28 @@ def valid_variable(v_name,problem):
         raise ValueError("%s is not in variables %s. Probably you spelled it wrong."%(v_name,str(problem.variables.keys())))
     
     
-# new syntax ________________
+class E_TYPE(Enum):
+    AGENT = 1
+    OBJECT = 2
 
+def eTypeConvert(logger,str):
+    logger.debug(f"converting E_TYPE for {str}")
+    if str == "agent":
+        return EntityType.AGENT
+    elif str == "object":
+        return EntityType.OBJECT
+    else:
+        logger.error(f"E_TYPE not found for {str}")
+
+# new syntax ________________
+VARIABLE_FILLER = " "
      
 class Type:
     def __init__(self,type_name) -> None:
         self.parent_type_name = None
-        self.entity_index_list = list()
+        self.entity_index_list = set()
         self.name = type_name
-        self.children_type_list = list()
+        self.children_type_list = set()
         pass
 
     def __repr__(self) -> str:
@@ -571,20 +559,71 @@ class Type:
     def __str__(self) -> str:
         return self.__repr__()
     
-class VAR:
+class FunctionSchema:
     def __init__(self,name) -> None:
-        self.range = None
-        self.data_type = None
-        self.content_dict = dict()
+        self.value_range = None
+        self.value_type = None
+
+        # a list of type
+        self.content_type_list: typing.list[str] = []
         self.name = name
         pass
     
     def __repr__(self) -> str:
-        output_str = f"(VAR {self.name}): [{self.range}, {self.data_type}, {self.content_dict}]"
+        output_str = f"(FunctionSchema {self.name}): {self.content_type_list}"
+
+        if self.value_type == VALUE_TYPE.INTEGER:
+            output_str += f"\n\t{self.value_range}, {self.value_type}."
+        elif self.value_type == VALUE_TYPE.ENUMERATE:
+            output_str += f"\n\t[{','.join(self.value_range)}], {self.value_type}."
+        else:
+            raise ValueError("Value type not found. Probably did not define %s in the problem :ranges",self.name)
         return output_str
     
     def __str__(self) -> str:
         return self.__repr__()    
+
+class Function:
+    def __init__(self,function_name,function_schema_name,entity_index_list) -> None:
+        self.function_schema_name = function_schema_name
+        self.function_name = function_name
+        self.entity_index_list = entity_index_list
+        # self.rule_type = None
+        # self.rule_content = list()
+        pass
+    def __repr__(self) -> str:
+        output_str = f"(Function {self.function_name}): "
+        output_str += f"{self.function_schema_name}, [{self.entity_index_list}]"
+        # output_str += f"{self.function_schema_name}, [{self.entity_index_list}], {self.rule_type}, [{self.rule_content}]"
+        return output_str
+    
+    def __str__(self) -> str:
+        return self.__repr__()    
+
+class Rule:
+    def __init__(self,function_name,rule_type,rule_content) -> None:
+        self.function_name = function_name
+        self.rule_type = rule_type
+        self.rule_content = rule_content
+        pass
+
+VALUE_TYPE = Enum("VALUE_TYPE", "ENUMERATE INTEGER")
+
+value_type_dict = {
+    "enumerate": VALUE_TYPE.ENUMERATE,
+    "integer": VALUE_TYPE.INTEGER,
+}
+
+
+RULE_TYPE = Enum("RULE_TYPE", "STATIC LINEAR SIN POLY_2ND POLY_3RD")
+
+rule_type_dict = {
+    "static": RULE_TYPE.STATIC,
+    "linear": RULE_TYPE.LINEAR,
+    "sin": RULE_TYPE.SIN,
+    "2nd_poly": RULE_TYPE.POLY_2ND,
+    "3rd_poly": RULE_TYPE.POLY_3RD,
+}
 
 class Parameters(dict):
     def __init_subclass__(cls) -> None:
@@ -624,3 +663,25 @@ class ActionSchema:
         self.effects = effects
         
         pass
+
+
+
+
+class EntityType(Enum):
+    AGENT = 1
+    OBJECT = 2
+
+
+
+class Entity:
+   
+    def __init__(self,enetity_name, enetity_type):
+        self.enetity_name = enetity_name
+        self.enetity_type = enetity_type
+
+    def __str__(self): # show only in the print(object)
+        return f"<Entity: e_name: {self.enetity_name}; e_type: {self.enetity_type}>\n"
+
+    def __repr__(self): # show when in a dictionary
+        return self.__str__()
+        # return self
