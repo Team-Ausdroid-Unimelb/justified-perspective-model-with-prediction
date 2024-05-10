@@ -26,7 +26,7 @@ TYPING_REG = "[&0-9a-z_\- ]*"
 TYPING_REG_SURFIX= "\)"
 
 FUNC_REG_PREFIX = "\(:functions"
-FUNC_REG = "(\([a-z0-9 \-\?]*\))*"
+FUNC_REG = "(\([\w \-\?]*\))*"
 FUNC_REG_SURFIX= "\)"
 
 ACTION_REG_PREFIX = "\(:action "
@@ -45,9 +45,10 @@ PRECONDITION_REG_PREFIX = ":precondition\("
 PRECONDITION_REG = ".*"
 PRECONDITION_REG_SURFIX= "\)"
 
-EFFECT_CONDITION_REG_PREFIX = r"\("
-EFFECT_CONDITION_REG = r"(assign|increase|decrease) \(\w*\??\w*\) \(\@jp \(\"[\w \[\]]*\"\) \(\w*\??\w*\)\)"
-EFFECT_CONDITION_REG_SURFIX = r"\)"
+# EFFECT_CONDITION_REG_PREFIX = r"\("
+# EFFECT_CONDITION_REG = r"(assign|increase|decrease) \(\w*\??\w*\) \(\@jp \(\"[\w \[\]]*\"\) \(\w*\??\w*\)\)"
+# EFFECT_CONDITION_REG_SURFIX = r"\)"
+JP_PREFIX  = "@jp"
 
 # problem file constants
 PROBLEM_NAME_REG_PREFIX = "\(problem "
@@ -79,12 +80,16 @@ RULE_REG_PREFIX = "\(:rules"
 RULE_REG = "(\(\w* \([\w ]*\) \[[\w,]*\]\))*"
 RULE_REG_SURFIX= "\)"
 
+GOAL_REG_PREFIX = "\(:goal\(and"
+GOAL_REG = ".*"
+GOAL_REG_SURFIX= "\)\)"
+
 LOGGER_NAME = "pddl_parser"
 LOGGER_LEVEL = logging.INFO
 LOGGER_LEVEL = logging.DEBUG
-from util import setup_logger 
+from util import setup_logger,find_each_section
 from util import Type,FunctionSchema,Parameters,EffectType,Effect,UpdateType,ActionSchema,EntityType,Entity
-from util import VALUE_TYPE,value_type_dict,RULE_TYPE,rule_type_dict,Function,Rule
+from util import VALUE_TYPE,value_type_dict,RULE_TYPE,rule_type_dict,Function,Rule,EP_formula,EPFType,Condition,ConditionType,Ternary,condition_operator_dict
 
 EFFECT_TYPE_DICT = {
     "increase": EffectType.INCREASE,
@@ -131,7 +136,8 @@ class PDDLParser:
         problem_str = self.formatDocument(problem_file)
         
         self.logger.info("Parsing problem file")
-        self.problemParser(problem_str,domain_name,types,function_schemas,action_schemas)
+        domain_name,problem_name,enetities,types,function_schemas,action_schemas,rules,functions,initial_state,goals = self.problemParser(problem_str,domain_name,types,function_schemas,action_schemas)
+        return domain_name,problem_name,enetities,types,function_schemas,action_schemas,rules,functions,initial_state,goals
 
     def problemParser(self,problem_str,domain_name,types:typing.Dict[str,Type],function_schemas: typing.Dict[str,FunctionSchema] ,action_schemas: typing.Dict[str,ActionSchema]):
 
@@ -179,24 +185,24 @@ class PDDLParser:
         for agent_index in agent_set:
             enetities.update({agent_index:Entity(agent_index,EntityType.AGENT)})
         
-        print(types)
+        self.logger.debug(types)
 
         # extract objects
         objects_str,problem_str = self.keyWordParser("objects",OBJECT_REG_PREFIX,OBJECT_REG,OBJECT_REG_SURFIX,problem_str)
-        print(objects_str)
+        self.logger.debug(objects_str)
         pattern = r"\&[\w -]*"
         single_type_objects_str_list = re.findall(pattern, objects_str)
-        print(single_type_objects_str_list)
+        self.logger.debug(single_type_objects_str_list)
         object_set = set()
         for single_type_objects_str in single_type_objects_str_list:
-            print(single_type_objects_str)
+            self.logger.debug(single_type_objects_str)
             single_type_objects_str = single_type_objects_str[1:]
-            print(single_type_objects_str)
+            self.logger.debug(single_type_objects_str)
             object_list_str = single_type_objects_str.split("-")[0]
             type_str = single_type_objects_str.split("-")[1]
             for object_index in object_list_str.split(" "):
-                print(object_index)
-                print(type_str)
+                self.logger.debug(object_index)
+                self.logger.debug(type_str)
                 types[type_str].entity_index_list.add(object_index)
                 parent_type = types[type_str].parent_type_name
                 if not parent_type == "":
@@ -204,21 +210,21 @@ class PDDLParser:
                 object_set.add(object_index)
         for object_index in object_set:
             enetities.update({object_index:Entity(object_index,EntityType.OBJECT)})
-        print(types)
+        self.logger.debug(types)
 
         rules : typing.Dict[str,Rule] = {}
         # extract rules first
         rules_str,len_holder = self.keyWordParser("rules",RULE_REG_PREFIX,RULE_REG,RULE_REG_SURFIX,problem_str)
         problem_str = problem_str[:len(len_holder)]
-        print(rules_str)
-        print(problem_str)
+        self.logger.debug(rules_str)
+        self.logger.debug(problem_str)
         pattern = r"\(\w* \([\w ]*\) \[[\w,]*\]\)"
         single_rule_str_list = re.findall(pattern, rules_str)
-        print(single_rule_str_list)
+        self.logger.debug(single_rule_str_list)
         for single_rule_str in single_rule_str_list:
-            print(single_rule_str)
+            self.logger.debug(single_rule_str)
             rule_str = single_rule_str[1:-1:]
-            print(rule_str)
+            self.logger.debug(rule_str)
             rule_type_str = rule_str.split(" ")[0]
             rule_type = rule_type_dict[rule_type_str]
             rule_str = rule_str[len(rule_type_str)+2:]
@@ -226,22 +232,22 @@ class PDDLParser:
             rule_content = rule_str.split(") ")[1][1:-1].split(",")
             new_rule = Rule(function_name,rule_type,rule_content)
             rules.update({function_name:new_rule})
-        print(rules)
+        self.logger.debug(rules)
 
 
         # extract the range first
         ranges_str,len_holder = self.keyWordParser("ranges",RANGE_REG_PREFIX,RANGE_REG,RANGE_REG_SURFIX,problem_str)
         problem_str = problem_str[:len(len_holder)]
-        print(ranges_str)
-        print(problem_str)
+        self.logger.debug(ranges_str)
+        self.logger.debug(problem_str)
         pattern = r"\([\w \[\]\'\,]*\)"
         single_range_str_list = re.findall(pattern, ranges_str)
-        print(single_range_str_list)
+        self.logger.debug(single_range_str_list)
         for single_range_str in single_range_str_list:
-            print("single range")
-            print(single_range_str)
+            self.logger.debug("single range")
+            self.logger.debug(single_range_str)
             range_str = single_range_str[1:-1:]
-            # print(range_str)
+            # self.logger.debug(range_str)
             
             range_content_list = range_str.split(" ")
             if not len(range_content_list) == 3:
@@ -252,7 +258,7 @@ class PDDLParser:
             value_range_str = range_content_list[2]
             
             if value_type == VALUE_TYPE.ENUMERATE:
-                print(value_range_str[1:-1:].replace("'","").split(","))
+                self.logger.debug(value_range_str[1:-1:].replace("'","").split(","))
                 function_schemas[function_schema_name].value_range = value_range_str[1:-1:].replace("'","").split(",")
             elif value_type == VALUE_TYPE.INTEGER:
                 bounds = value_range_str[1:-1:].split(",")
@@ -273,306 +279,175 @@ class PDDLParser:
         # initialise all functions
         functions : typing.Dict[str,Function] = {}
         for function_schema in function_schemas.values():
-            entity_list = [[]]
-            for type_name in function_schema.content_type_list:
-                temp_entity = types[type_name].entity_index_list
-                entity_list = [x + [y] for x in entity_list for y in temp_entity]
-            for entity in entity_list:
+            if function_schema.content_type_list == []:
+                # this function_schema does not have any input
+                function_name = function_schema.name
+                functions.update({function_name:Function(function_name,function_schema.name,[])})
+            else:
+                
+                entity_list = [[]]
+                for type_name in function_schema.content_type_list:
+                    temp_entity = types[type_name].entity_index_list
+                    entity_list = [x + [y] for x in entity_list for y in temp_entity]
+                for entity in entity_list:
 
-                function_name = f"{function_schema.name} {' '.join(entity)}"
-                functions.update({function_name:Function(function_name,function_schema,entity)})
-        print(functions)
+                    function_name = f"{function_schema.name} {' '.join(entity)}"
+                    functions.update({function_name:Function(function_name,function_schema.name,entity)})
+        self.logger.debug(functions)
 
+        for action_schema in action_schemas.values():
+            
+            
+            for pre_str,precondition in action_schema.preconditions.items():
+                if not precondition.target_value == None:
+                    if precondition.condition_type == ConditionType.ONTIC:
+                        function_schema_name = self.precondition_variable2function_schema_name(precondition.condition_variable)
+                        value_type = function_schemas[function_schema_name].value_type
+                        precondition.target_value = self.str2value(value_type,precondition.target_value)
+                    elif precondition.condition_type == ConditionType.EP:
+                        ep_formula = precondition.condition_formula
+                        ep_formula_type = ep_formula.epf_type
+                        if ep_formula_type == EPFType.JP:
+                            function_schema_name = self.precondition_variable2function_schema_name(ep_formula.ep_variable)
+                            value_type = function_schemas[function_schema_name].value_type
+                            precondition.target_value = self.str2value(value_type,precondition.target_value)
+                        elif ep_formula_type == EPFType.EP:
+                            varphi = ep_formula.ep_varphi
+                            function_schema_name = self.precondition_variable2function_schema_name(varphi.condition_variable)
+                            value_type = function_schemas[function_schema_name].value_type
+                            varphi.target_value = self.str2value(value_type,varphi.target_value)
+                            # precondition.condition_formula = ep_formula
+                        else:
+                            raise ValueError("precondition %s epf type is invalid",precondition)
+                    else:
+                        raise ValueError("precondition %s condition_type is invalid",precondition)
+            
+            for effect in action_schema.effects:
+                if not effect.target_variable_name == None:
+                    if effect.update_type == UpdateType.ONTIC:
+                        # there is nothing to change for an ontic effect
+                        pass
+                    elif effect.update_type == UpdateType.CONSTENT:
+                        function_schema_name = self.precondition_variable2function_schema_name(effect.target_variable_name)
+                        value_type = function_schemas[function_schema_name].value_type
+                        effect.update = self.str2value(value_type,effect.update)
+                    elif effect.update_type == UpdateType.EPSITEMIC:
+                        # there is nothing to change for an epistemic effect
+                        pass
+                    else:
+                        raise ValueError("effect %s update type is invalid",effect)
+        self.logger.debug(action_schemas)
 
-        print(repr(problem_str))
+        self.logger.debug(repr(problem_str))
+        initial_state: typing.Dict[str,any] = {}
         # extract initial state
         init_str,problem_str = self.keyWordParser("init",INIT_REG_PREFIX,INIT_REG,INIT_REG_SURFIX,problem_str)
-        print(init_str)
+        self.logger.debug(init_str)
         pattern = r"\(assign \([\w ]*\) [ \w\'\"]*\)"
         single_init_str_list = re.findall(pattern, init_str)
-        print(single_init_str_list)
+        self.logger.debug(single_init_str_list)
         for single_init_str in single_init_str_list:
             if not single_init_str.startswith("(assign"):
                 raise ValueError("Error when parsing initial state [%s] (it should start with '(assign')",single_init_str)
             else:
                 single_init_str = single_init_str[8:-1]
-                print(single_init_str)
-                # var_str = single_init_str.split(" ")[0]
-                # value_str = single_init_str.split(" ")[1]
-                # if "'" in value_str:
-                #     value_str = value_str.replace("'","")
-                # elif '"' in value_str:
-                #     value_str = value_str.replace('"',"")
-                # else:
-                #     value_str = int(value_str)
-                # print(var_str)
-                # print(value_str)
+                variable_name = single_init_str.split(") ")[0][1:]
+                value_str = single_init_str.split(") ")[1]
+                function_schema_name = functions[variable_name].function_schema_name
+                value_type = function_schemas[function_schema_name].value_type
+                value = self.str2value(value_type,value_str)
+                initial_state.update({variable_name:value})
+        
+        self.logger.debug(initial_state)     
+        
+        self.logger.debug(problem_str)           
+        # extract goal
+        goal_str,problem_str = self.keyWordParser("goal",GOAL_REG_PREFIX,GOAL_REG,GOAL_REG_SURFIX,problem_str)
+        self.logger.debug(goal_str)
+        # extract goal propositions
+        # regualr expression does not work
+        # pattern = r'\(.*?\)'
+        # goal_proposition_str_list = re.findall(pattern, goal_str)
+        
+        
+        goal_proposition_str_list = find_each_section(goal_str)
+        self.logger.debug(goal_proposition_str_list)
+        goals : typing.Dict[str,Condition] = {}
+        for goal_proposition_str in goal_proposition_str_list:
+            goal_condition_name = goal_proposition_str
+            self.logger.debug(goal_proposition_str)
+            goal_proposition_str = goal_proposition_str[1:-1:]
+            self.logger.debug(goal_proposition_str)
+            operator_str = goal_proposition_str.split(" ")[0]
+            new_condition = Condition()
+            if not operator_str in condition_operator_dict.keys():
+                raise ValueError("Error when parsing goal [%s] (it should start with a valid operator)",goal_proposition_str)
+            new_condition.condition_operator = condition_operator_dict[operator_str] 
+            value_str = goal_proposition_str.split(" ")[-1]
+            goal_content_str = goal_proposition_str[len(operator_str)+2:-len(value_str)-2:]
+            self.logger.debug(goal_content_str)
+            if "@jp" in goal_proposition_str:
+                goal_proposition_str = goal_proposition_str[4:-1:]
+                new_condition.condition_type = ConditionType.EP
+                new_condition.target_value = self.str2value(value_type,value_str)
+                jp_content_list = find_each_section(goal_proposition_str)
+                if not len(jp_content_list) == 2:
+                    raise ValueError("jp goal should have 2 components: %s",jp_content_list)
+                self.logger.debug(jp_content_list)
+                new_jp_formula = EP_formula()
+                new_jp_formula.ep_variable = jp_content_list[1][1:-1:]
+                new_jp_formula.ep_query = jp_content_list[0][2:-2]
+                new_jp_formula.epf_type = EPFType.JP
+                new_condition.condition_formula = new_jp_formula
+            elif "@ep" in goal_proposition_str:
 
-
-        if 0:
-            file = f.read()
-            self.logger.debug(repr(file))
-            
-            self.logger.debug("formating problem file")
-            str = self.formatDocument(file)
-            self.logger.debug(repr(str))
-            
-            if not str.startswith("(define"):
-                self.logger.error("the problem file does not start with '(define'")
-                self.logger.error(traceback.format_exc())
-                exit()
-            elif not str.endswith(")"):
-                self.logger.error("the problem file does not end with ')'")
-                self.logger.error(traceback.format_exc())
-                exit()
-            str = str[7:-1:]
-            self.logger.debug(repr(str))
-            
-            self.logger.debug("extract p_name")
-            try:
-                found = re.search('\(problem [0-9a-z_]*\)',str).group(0)
-                p_name = found[9:-1:]
-                self.logger.info(f"parsing problem: [{p_name}]")
-                # self.logger.debug(p_name)
-            except AttributeError:
-                self.logger.error("error when extract problem name")
-                self.logger.error(traceback.format_exc())
-                exit()
-                
-            self.logger.debug("extract d_name")
-            try:
-                found = re.search('\(:domain [0-9a-z_]*\)',str).group(0)
-                d_name = found[9:-1:]
-                self.logger.debug(d_name)
-            except AttributeError:
-                self.logger.error("error when extract domain name")
-                self.logger.error(traceback.format_exc())
-                exit()            
-
-            self.logger.debug("extract agents")
-            try:
-                found = re.search('\(:agents [0-9a-z_ ]*\)',str).group(0)
-                agent_index = found[9:-1:].split(" ")
-                self.logger.debug(agent_index)
-            except AttributeError:
-                self.logger.error("error when extract agents")
-                self.logger.error(traceback.format_exc())
-                exit()
-
-            self.logger.debug("extract objects")
-            try:
-                found = re.search('\(:objects [0-9a-z_ ]*\)',str).group(0)
-                obj_index = found[10:-1:].split(" ")
-                self.logger.debug(obj_index)
-            except AttributeError:
-                self.logger.error("error when extract objects")
-                self.logger.error(traceback.format_exc())
-                exit()
-
-            self.logger.debug("extract variables")
-            try:
-                found = re.search('\(:variables([(][0-9a-z_ \[\],]*[)])*\)',str).group(0)
-                self.logger.debug( found)
-                vars_list = re.findall('\([0-9a-z_ \[\],]*\)',found[10:-1:])
-                self.logger.debug(vars_list)
-                for var_str in vars_list:
-                    var_str = var_str[1:-1:].split(' ')
-                    variable_name = var_str[0]
-                    target_entities_list =[] 
-                    for entities in var_str[1:]:
-                        target_entities_list.append(entities[1:-1:].split(","))
-                    variables.update({variable_name:target_entities_list})
-                self.logger.debug(variables)
-            except AttributeError:
-                self.logger.error("error when extract variables")
-                self.logger.error(traceback.format_exc())
-                exit()
-                
-            self.logger.debug("extract init")
-            try:
-                found = re.search("\(:init(\(= \([0-9a-z_ ]*\) [0-9a-z_\'\"]*\))*\)",str).group(0)
-                self.logger.debug( found)
-                init_list = re.findall('\(= \([0-9a-z_ ]*\) [0-9a-z_\'\"]*\)',found[6:-1:])
-                self.logger.debug(init_list)
-                for init_str in init_list:
-                    init_str = init_str[3:-1:]
-                    i,j = re.search("\(.*\)", init_str).span()
-                    var_str = init_str[i+1:j-1:].replace(" ","-")
-                    value = init_str[j+1::]
-                    # value = re.search('".*"',init_str[j+1::]).group(0)
-                    if "'" in value:
-                        value = value.replace("'","")
-                    elif '"' in value:
-                        value = value.replace('"',"")
-                    else:
-                        value =int(value)
-                    i_state.update({var_str:value})
-                    
-                self.logger.debug(i_state)
-            except AttributeError:
-                self.logger.error("error when extract init")
-                self.logger.error(traceback.format_exc())
-                exit()            
-
-            self.logger.debug("extract goal")
-            try:
-                self.logger.debug(str)
-                
-                # \(:goal\(and(\(:[a-z]* ((?:\?|\+\-)+ [a-z]* \[[a-z0-9,]*\] )*\((?:>|<|=|>=|<=)+ \([ 0-9a-z_]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\)))\)\)
-                # (\(:[a-z]* ((?:\?|\+|\-) [a-z]* \[[a-z0-9,]*\] )+\((?:>|<|=|>=|<=)+ \([ 0-9a-z_]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)\))+
-
-                goal_str_prefix = "(:goal(and"
-                goal_str_suffix = "))"
-                goal_re_str = "\(:goal\(and"+ "(" + BOTH_RE_PREFIX + PREDICATE_RE + ")*" +"\)\)"
-                
-                found = re.search(goal_re_str,str).group(0)
-                self.logger.debug(found)
-                found = found[len(goal_str_prefix)+1:-len(goal_str_suffix)-1]
-                predicate_list = found.split(")(")
-                self.logger.debug(predicate_list)
-                g_states = self.predicator_convertor(predicate_list)
-                # self.logger.debug(found)
-                
-                # # loading ontic goals
-                # self.logger.debug("extract ontic goal propositions")
-                # g_states["ontic_g"] = list()
-                # # ontic_goal_list = re.findall('\(= \([0-9a-z_ ]*\) [0-9a-z_\'\"]*\)',found[10:-1:])
-                # ontic_goal_list = re.findall(ontic_re_prefix+predicate_re,found[10:-1:])  
-                # ontic_prefix = "(:ontic ("
-                # ontic_surfix = ")"
-                # self.logger.debug('ontic goal list: [%s]',ontic_goal_list)
-                # for goal_str in ontic_goal_list:
-                #     self.logger.debug(goal_str)
-                #     key = goal_str.replace(' ?',"?")
-                #     goal_str = goal_str[len(ontic_prefix):-len(ontic_surfix):]
-                #     self.logger.debug(goal_str)
-                #     goal_str_list = goal_str.split(" ")
-                #     symbol  = goal_str_list[0]
-                #     value = goal_str_list[-1]
-                #     goal_str = goal_str[(len(symbol)+2):-(len(value)+3):]
-                #     self.logger.debug(goal_str)
-                #     goal_list = goal_str.split(') ')
-                #     variable = goal_list[0].replace(' ?','?').replace(' ','-')
-                #     v_value = goal_list[1]
-                #     if "'" in v_value:
-                #         v_value = v_value.replace("'","")
-                #     elif '"' in v_value:
-                #         v_value = v_value.replace('"',"")
-                #     elif '?' in v_value:
-                #         v_value = v_value.replace(' ?',"?").replace(')','').replace('(','')
-                #     else:
-                #         v_value =int(v_value)                            
-                    
-                #     self.logger.debug("ontic_g: [%s]",(key,symbol,variable,v_value,value))
-
-                #     g_states["ontic_g"].append((key,symbol,variable,v_value,value))
-                
-                # # loading epismetic goals
-                # self.logger.debug("extract epistemic goal propositions")
-                # g_states["epistemic_g"] = list()
-                # # self.logger.debug("found [%s]",found)
-                # # self.logger.debug("found[10:-1:] [%s]",found[10:-1:])
-                # # self.logger.debug("found replaced [%s]",found[10:-1:].replace(")-1)",") -1)"))
-                # self.logger.debug(found)
-                # epistemic_goal_list = re.findall(epistemic_re_prefix+predicate_re,found)  
-                # epistemic_prefix = "(= (:epistemic "
-                # epistemic_surfix = ")"
-                # self.logger.debug(epistemic_goal_list)
-                # self.logger.debug(epistemic_goal_list)
-                # for goal_str in epistemic_goal_list:
-                #     self.logger.debug(goal_str)
-                #     self.epistemic_decoder(goal_str)
-                    
-                #     self.logger.debug("goal string 1: [%s]",goal_str)
-                #     key = goal_str.replace(' ?',"?")
-                #     goal_str = goal_str[len(epistemic_prefix):-len(epistemic_surfix):]
-                #     self.logger.debug("goal string 2: [%s]",goal_str)
-                #     goal_str_list = goal_str.split(" ")
-                #     # symbol  = goal_str_list[0]
-                #     value = goal_str_list[-1]
-                #     goal_str = goal_str[:-(len(value)+2):]
-                #     value = int(value)
-                #     query = goal_str
-                #     self.logger.debug("goal string 3: [%s]",goal_str)
-                    
-                #     # i,j = re.search('\)\) .*',goal_str).span()
-                #     # value1 = int(goal_str[i+3:j:])
-                    
-                #     p,q = re.search('(?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)',goal_str).span()
-                #     # query = goal_str[:p-1]
-                #     goal_str = goal_str[p:q-1]
-                #     self.logger.debug("goal string 4: [%s]",goal_str)
-                    
-                    
-                #     goal_list = goal_str.split(' ')
-                #     symbol = goal_list[0]
-                #     goal_str = goal_str[(len(symbol)+2)::]
-                #     goal_list = goal_str.split(') ')
-                #     old_variable = goal_list[0]
-                #     variable = goal_list[0].replace(' ?','?').replace(' ','-')
-                #     self.logger.debug("old variable string: [%s]",old_variable)
-                #     self.logger.debug("new variable string: [%s]",variable)
-                #     self.logger.debug("query string: [%s]",query)
-                #     query = query.replace(old_variable,variable) 
-                #     self.logger.debug("query string: [%s]",query)
-                #     key = key.replace(old_variable,variable)
-                #     v_value = goal_list[1]
-                #     if "'" in v_value:
-                #         v_value = v_value.replace("'","")
-                #     elif '"' in v_value:
-                #         v_value = v_value.replace('"',"")
-                #     elif '?' in v_value:
-                #         v_value = v_value.replace(' ?',"?").replace(')','').replace('(','')
-                #     elif "(" in v_value and ")" in v_value:
-                        
-                #         v_value = v_value[1:-1]
-                #         old_v_value = v_value
-                #         v_value = v_value.replace(" ","-")
-                #         query = query.replace(old_v_value,v_value)
-                #     else:
-                #         v_value =int(v_value)
-
-                #     self.logger.debug("epistemic_p: [%s]",(key,symbol,query,variable,v_value,value))
-                #     g_states["epistemic_g"].append((key,symbol,query,variable,v_value,value))
-
-                    
-                self.logger.debug(g_states)
-            except AttributeError:
-                self.logger.error("error when extract goal")
-                self.logger.error(traceback.format_exc())
-                traceback.print_exc()
-                exit()   
-                            
-            self.logger.debug("extract domains")
-            try:
-                self.logger.debug(str)
-                
-                found = re.search('\(:domains(\([0-9a-z_ \[\],\'\"]*\))*\)',str).group(0)
-                self.logger.debug( found)
-                domains_list = re.findall('\([0-9a-z_ \[\],\'\"]*\)',found[9:-1:])
-                self.logger.debug(domains_list)
-                for domain_str in domains_list:
-                    domain_str = domain_str[1:-1:].split(' ')
-                    if not domain_str[1] in ['enumerate','integer','string']:
-                        self.logger.error(f"domain {domain_str[0]}'s basic_type {domain_str[1]} does not exist")
-                        assert(f"domain {domain_str[0]}'s basic_type {domain_str[1]} does not exist")
-                    else:
-                        if "'" in domain_str[2]:
-                            value = domain_str[2].replace("'","")[1:-1:].split(",")
-                        elif '"' in domain_str[2]:
-                            value = domain_str[2].replace('"',"")[1:-1:].split(",")
-                        else:
-                            value = [ int(i) for i in domain_str[2][1:-1:].split(",")]
-                        domains.update({domain_str[0]:{"basic_type":domain_str[1],"values":value}})
-                self.logger.debug(domains)
-            except AttributeError:
-                
-                self.logger.error("error when extract domains")
-                self.logger.error(traceback.format_exc())
-                exit()
-                
-            return domains,i_state,g_states,agent_index,obj_index,variables,d_name,p_name
-
+                goal_proposition_str = goal_proposition_str[4:-1:]
+                ep_content = find_each_section(goal_proposition_str)
+                if not len(ep_content) == 2:
+                    raise ValueError("epistemic goal should have 2 components: %s",ep_content)
+                new_ep_formula = EP_formula()
+                new_ep_formula.ep_formula_str = goal_proposition_str
+                new_ep_formula.epf_type = EPFType.EP
+                new_ep_formula.ep_query = ep_content[0]
+                varphi_str = ep_content[1][1:-1:]
+                varphi_list = varphi_str.split(" ")
+                varphi_operator_str = varphi_list[0]
+                if not varphi_operator_str in condition_operator_dict.keys():
+                    raise ValueError("Error when parsing goal [%s] (it should start with a valid operator)",goal_proposition_str)
+                varphi_value_str = varphi_list[-1]
+                print(varphi_value_str)
+                varphi_content_str = varphi_str[len(varphi_operator_str)+2:-len(varphi_value_str)-2:]
+                function_schema_name = functions[varphi_content_str].function_schema_name
+                value_type = function_schemas[function_schema_name].value_type
+                self.logger.debug(varphi_content_str)
+                varphi_value = self.str2value(value_type,varphi_value_str)
+                varphi = Condition()
+                varphi.condition_operator = condition_operator_dict[varphi_operator_str]
+                varphi.target_value = varphi_value
+                varphi.condition_type = ConditionType.ONTIC
+                varphi.condition_variable = varphi_content_str
+                new_ep_formula.ep_varphi = varphi
+                new_condition.condition_type = ConditionType.EP
+                if value_str == "ep.true":
+                    new_condition.target_value = Ternary.TRUE
+                elif value_str == "ep.false":
+                    new_condition.target_value = Ternary.FALSE
+                elif value_str == "ep.unknown":
+                    new_condition.target_value = Ternary.UNKNOWN
+                else:
+                    ternary_name_list = [n.name for n in Ternary] 
+                    raise ValueError("Ternary value type %s does not exist in %s when generate goal: %s",value_str,ternary_name_list,goal_proposition_str)
+                new_condition.condition_formula = new_ep_formula
+            else:
+                new_condition.condition_type = ConditionType.ONTIC
+                new_condition.condition_variable = goal_content_str
+                new_condition.target_value = self.str2value(value_type,value_str)
+            goals.update({goal_condition_name:new_condition})
+                # self.logger.debug(goal_proposition_str)
+                # effect = self.parsingEffect(goal_proposition_str,"goal")
+                # self.logger.debug(effect)
+        self.logger.debug(goals)
+        return domain_name,problem_name,enetities,types,function_schemas,action_schemas,rules,functions,initial_state,goals
 
     def keyWordParser(self,keyword,reg_prefix,reg_str,reg_surfix,input_str):
         self.logger.debug("extract %s",keyword)
@@ -691,7 +566,7 @@ class PDDLParser:
             for i in range(len(match_types)):
                 parameters[match_variables[i]] = match_types[i]
             self.logger.debug(parameters)
-            print(action_content_str)
+            self.logger.debug(action_content_str)
             
             # find effect first, which is easier for the re
             # extract effects
@@ -703,20 +578,117 @@ class PDDLParser:
             # since there are uncertain nesting level of brackets in the effect
             # using manual approach instead of regular expression
             effects : typing.List[Effect] = []
-            effects_str = effects_str[1:-1] # remove the first and last bracket
-            for effect_str in effects_str.split(")("):
+            # effects_str = effects_str[1:-1] # remove the first and last bracket
+            # for effect_str in effects_str.split(")("):
 
-                effects.append(self.parsingEffect(effect_str,action_name))
+            #     effects.append(self.parsingEffect(effect_str,action_name))
+            effect_str_list = find_each_section(effects_str)
+            print(effect_str_list)
+            for effect_str in effect_str_list:
+                print(effect_str)
+                effect_str = effect_str[1:-1:]
+                print(effect_str)
+                effect = self.parsingEffect(effect_str,action_name)
+                effects.append(effect)
             
             # TODO I need to apply the action and check goal at the same time.
             
-            # extract precondition
-            preconditions = []
+            # extract preconditions
+            preconditions: typing.Dict[str,Condition] = {}
             # find precondition string
-            precondition_str, remaining_str = self.keyWordParser("precondition",PRECONDITION_REG_PREFIX,PRECONDITION_REG,PRECONDITION_REG_SURFIX,action_content_str)
+            preconditions_str, remaining_str = self.keyWordParser("precondition",PRECONDITION_REG_PREFIX,PRECONDITION_REG,PRECONDITION_REG_SURFIX,action_content_str)
             if not remaining_str == "":
                 raise ValueError("The remaining string [%s] after action parsing is not empty",remaining_str)
+
+            precondition_str_list = find_each_section(preconditions_str)
+            print(precondition_str_list)
             
+            for precondition_str in precondition_str_list:
+                precondition_name = precondition_str
+                self.logger.debug(precondition_str)
+                precondition_str = precondition_str[1:-1:]
+                operator_str = precondition_str.split(" ")[0]
+                if not operator_str in condition_operator_dict.keys():
+                    raise ValueError("Error when parsing precondition [%s] (it should start with a valid operator)",precondition_str)
+                new_condition = Condition()
+                
+                new_condition.condition_operator = condition_operator_dict[operator_str]
+                value_str = precondition_str.split(" ")[-1]
+                precondition_content_str = precondition_str[len(operator_str)+2:-len(value_str)-2:]
+                if value_str.startswith("(") and value_str.endswith(")"):
+                    new_condition.target_variable = value_str[1:-1:]
+                else:
+                    new_condition.target_value = value_str
+
+                if "@jp" in precondition_str:
+                    precondition_str = precondition_str[4:-1:]
+                    new_condition.condition_type = ConditionType.EP
+                    # new_condition.target_value = value_str
+                    
+                    jp_content_list = find_each_section(precondition_str)
+                    if not len(jp_content_list) == 2:
+                        raise ValueError("jp precondition should have 2 components: %s",jp_content_list)
+                    self.logger.debug(jp_content_list)
+                    new_jp_formula = EP_formula()
+                    new_jp_formula.ep_variable = jp_content_list[1][1:-1:]
+                    new_jp_formula.ep_query = jp_content_list[0][2:-2]
+                    new_jp_formula.epf_type = EPFType.JP
+                    new_condition.condition_formula = new_jp_formula
+                    # function_schema_name = self.precondition_variable2function_schema_name(precondition_content_str)
+                    # value_type = function_schemas[function_schema_name].value_type
+                    # new_condition.target_value = self.str2value(value_type,value_str)
+                    
+                    
+                elif "@ep" in precondition_str:
+                    precondition_proposition_str = precondition_str[4:-1:]
+                    ep_content = find_each_section(precondition_proposition_str)
+                    if not len(ep_content) == 2:
+                        raise ValueError("epistemic precondition should have 2 components: %s",ep_content)
+                    new_ep_formula = EP_formula()
+                    
+                    new_ep_formula.epf_type = EPFType.EP
+                    new_ep_formula.ep_query = ep_content[0][2:-2:]
+                    varphi_str = ep_content[1]
+                    new_ep_formula.ep_formula_str = varphi_str
+                    varphi_str = varphi_str[1:-1:]
+                    varphi_list = varphi_str.split(" ")
+                    varphi_operator_str = varphi_list[0]
+                    if not varphi_operator_str in condition_operator_dict.keys():
+                        raise ValueError("Error when parsing precondition [%s] (it should start with a valid operator)",precondition_str)
+                    
+                    
+                    varphi_value_str = varphi_list[-1]
+                    
+                    varphi_content_str = varphi_str[len(varphi_operator_str)+2:-len(varphi_value_str)-2:]
+
+                    varphi = Condition()
+                    varphi.condition_operator = condition_operator_dict[varphi_operator_str]
+                    # varphi.target_value = varphi_value_str
+                    if varphi_value_str.startswith("(") and value_str.endswith(")"):
+                        varphi.target_variable = value_str[1:-1:]
+                    else:
+                        varphi.target_value = varphi_value_str
+                    varphi.condition_variable = varphi_content_str
+                    
+                    varphi.condition_type = ConditionType.ONTIC
+                    
+                    new_ep_formula.ep_varphi = varphi                    
+                    new_condition.condition_type = ConditionType.EP
+                    if value_str == "ep.true":
+                        new_condition.target_value = Ternary.TRUE
+                    elif value_str == "ep.false":
+                        new_condition.target_value = Ternary.FALSE
+                    elif value_str == "ep.unknown":
+                        new_condition.target_value = Ternary.UNKNOWN
+                    else:
+                        ternary_name_list = [n.name for n in Ternary] 
+                        raise ValueError("Ternary value type %s does not exist in %s when generate precondition: %s",value_str,ternary_name_list,precondition_str)
+                    new_condition.condition_formula = new_ep_formula
+                else:
+                    new_condition.condition_type = ConditionType.ONTIC
+                    new_condition.condition_variable = precondition_content_str
+                    # new_condition.target_value = value_str
+                preconditions.update({precondition_name:new_condition})
             
             # TODO
             # match the preconditions
@@ -727,145 +699,69 @@ class PDDLParser:
         self.logger.debug(action_schemas)
         
         return domain_name,types,function_schemas,action_schemas
-            # self.logger.debug("extract actions")
-            # try:
-            #     action_list = str.split("(:action ")[1::]
 
-            #     for action_str in action_list:
-            #         parameters = []
-            #         preconditions = {}
-            #         effects = []
-            #         action_str = action_str[:-1:]
-            #         action_name = action_str.split(" ")[0]
-                    
-            #         # decode parameters
-            #         parameters_str = re.search(':parameters\(.*\):precondition',action_str).group()
-            #         self.logger.debug('parameters_str: [%s]',parameters_str)
-            #         for p_str in parameters_str[12:-14:].split(","):
-            #             if p_str == '':
-            #                 continue
-            #             self.logger.debug('single parameters_str: [%s]',p_str)
-            #             p_str = p_str.replace(" ","")
-            #             p = p_str.split("-")
-            #             parameters.append((p[0],p[1]))
-            #         self.logger.debug('parameters: [%s]',parameters)
-                    
-            #         self.logger.debug("extract preconditions")
-            #         try:
-                        
-            #             preconditions_str = re.search(':precondition\(and.*\):effect', action_str).group()
-            #             preconditions_str = preconditions_str[18:-9:]
-            #             self.logger.debug(preconditions_str)
-            #             # preconditions_str = preconditions_str[len(goal_str_prefix)+1:-len(goal_str_suffix)-1]
-            #             predicator_list = preconditions_str.split(")(")
-            #             self.logger.debug("precondition list: %s" % (predicator_list))
-            #             preconditions = self.predicator_convertor(predicator_list)
 
-            #         except AttributeError:
-                        
-            #             self.logger.error("error when extract precondition")
-            #             self.logger.error(traceback.format_exc())
-            #             traceback.print_exc()
-            #             exit() 
-                    
-            #         #decode effects
-            #         effects_str = re.search(':effect\(and\(.*\)\)',action_str).group()
-            #         self.logger.debug('effects_str: [%s]',effects_str)  
-            #         for e_str in effects_str[11:-2:].split("(= "):
-            #             if e_str == '':
-            #                 continue
-            #             self.logger.debug('single effect_str: [%s]',e_str)
-            #             e_list = e_str[1:].split(") ")
-            #             # if len(e_list) == 1:
-            #             #     e_list = e_list[0].split(" ")
-            #             effects.append((e_list[0].replace(" ?","?").replace(" ","-").replace("(","").replace(")",""),e_list[1].replace(" ","").replace("(","").replace(")","").replace('"','').replace("'",'')))
-            #         self.logger.debug('effects: [%s]',effects)
-                    
-            #         actions.update({action_name: {"parameters":parameters,"precondition":preconditions,"effect":effects}})
-            #     self.logger.debug(actions)
-            # except AttributeError:
-            #     self.logger.error("error when extract actions")
-            #     self.logger.error(traceback.format_exc())
-            #     exit()          
-            # return actions,d_name
-
+    def precondition_variable2function_schema_name(self, pre_str):
+        if "?" in pre_str:
+            function_schema_name = pre_str.split("?")[0]
+        elif " " in pre_str:
+            function_schema_name = pre_str.split(" ")[0]
+        else:
+            function_schema_name = pre_str
+        return function_schema_name
 
 
     def parsingEffect(self,effect_str,action_name):
-        
-
-        effect_type = None
-        effect_inner_effect = None
-        effect_condition = None
+    
         
         new_effect = Effect()
-        if effect_str.startswith("when"):
-            print("when")
-            # this is conditional effect, which should be handled later
+        effect_content_list = effect_str.split(" ")
+        effect_type_str = effect_content_list[0]
+        if not effect_type_str in EFFECT_TYPE_DICT.keys():
+            raise ValueError("Error effect [%s] for action [%s] is not a valid effect from: [%s]",effect_str,action_name,EFFECT_TYPE_DICT.keys())
+        effect_type = EFFECT_TYPE_DICT[effect_type_str]
+        new_effect.effect_type = effect_type
+        
+        if JP_PREFIX in effect_str:
             
-            # determine the effect type for conditional effect
+            # this is a effect that contain jp
+            effect_str = effect_str[len(effect_type_str)+1::]
+            effect_content_list  = find_each_section(effect_str)
+            if not len(effect_content_list) == 2:
+                raise ValueError("Error when parsing effect [%s] for action [%s]: an effect should have 2 components",effect_content_list,action_name)
+            target_variable_name = effect_content_list[0][1:-1]
+            new_effect.target_variable_name = target_variable_name
+            new_effect.update_type = UpdateType.EPSITEMIC
+            jp_str = effect_content_list[1][1:-1]
+            jp_content_list = find_each_section(jp_str)
+            if not len(jp_content_list) == 2:
+                raise ValueError("Error when parsing effect [%s] for action [%s]: a jp effect should have 2 components",jp_content_list,action_name)
+            query_str = jp_content_list[0][2:-2]
+            ep_variable_str = jp_content_list[1][1:-1]
+            new_jp = EP_formula()
             
-            
-            # extract effect first as it ensures the only match
-            conditional_effect_str, len_holder = self.keyWordParser("Effect in Conditional Effect",EFFECT_CONDITION_REG_PREFIX,EFFECT_CONDITION_REG,EFFECT_CONDITION_REG_SURFIX,effect_str)
-            effect_str =effect_str[:len(len_holder)]
-            effect_type_str = conditional_effect_str.split(" ")[0]
-            print(effect_type_str)
-            conditional_effect_str = conditional_effect_str[len(effect_type_str)+1:]
-            target_variable_name, jp_str = self.keyWordParser("Variable in Conditional Effect","\(","\w*\??\w*","\) ",conditional_effect_str)
-            
-            print(target_variable_name)
-            print(jp_str)
-            
-            # effect_inner_effect = self.parsingEffect()
+            new_jp.ep_query = query_str
+            new_jp.ep_variable = ep_variable_str
+            new_jp.epf_type = EPFType.JP
+            new_effect.update = new_jp
+            print(effect_content_list)
         else:
-            print(effect_str)
-            
-            # if effect_str.startswith("increase"):
-            #     effect_type = EffectType.INCREASE
-            # elif effect_str.startswith("decrease"):
-            #     effect_type = EffectType.DECREASE
-            # elif effect_str.startswith("assign"):
-            #     effect_type = EffectType.ASSIGN
-            effect_content_list = effect_str.split(" ")
+            self.logger.debug(effect_str)
             if not len(effect_content_list) == 3:
-                raise ValueError("Error when parsing effect [%s] for actoin [%s]",effect_str,action_name)
-           
-           
-            effect_type_str = effect_content_list[0]
+                raise ValueError("Error when parsing effect [%s] for action [%s]: a normal effect should have 3 components",effect_str,action_name)
             target_variable_name = effect_content_list[1][1:-1]
-            
-            if not effect_type_str in EFFECT_TYPE_DICT.keys():
-                raise ValueError("Error effect [%s] for action [%s] is not a valid effect from: [%s]",effect_str,action_name,EFFECT_TYPE_DICT.keys())
+            new_effect.target_variable_name = target_variable_name
             update_str = effect_content_list[2]
-            update_is_variable = False
             pattern = r'^\(\w*\??\w*\)$'
-            print(repr(update_str))
+            self.logger.debug(repr(update_str))
             if re.match(pattern, update_str):
                 # then this is a variable too
-                update_is_variable = True
-                update = update_str[1:-1]
-                print("udpdate is a variable")
+                new_effect.update_type = UpdateType.ONTIC
+                new_effect.update = update_str[1:-1]
+                self.logger.debug("udpdate is a variable")
             else:
-                # then it is not a variable
-                # so it is either a enum in the format of a string
-                # or it is an integer
-                int_pattern = r'^[+-]?\d+$'
-                string_pattern = r"^(['\"])(.*)\1$"
-                if re.match(int_pattern, update_str):
-                    # then it is an integer
-                    update = int(update_str)
-                elif re.match(string_pattern, update_str):
-                    update = update_str[1:-1]
-                else:
-                    raise ValueError("The effect update is neither integer or a string")
-            new_effect.update_is_variable = update_is_variable
-            new_effect.update = update
-            
-            
-        effect_type = EFFECT_TYPE_DICT[effect_type_str]
-        new_effect.target_variable_name = target_variable_name
-        new_effect.effect_type = effect_type
+                new_effect.update = update_str
+                new_effect.update_type = UpdateType.CONSTENT
         return new_effect
 
 
@@ -1026,7 +922,15 @@ class PDDLParser:
         self.logger.debug(repr(input_str)) 
         return input_str      
     
-
+    def str2value(self,value_type,value_str):
+        if value_type == VALUE_TYPE.ENUMERATE:
+            value = value_str.replace("'","")
+        elif value_type == VALUE_TYPE.INTEGER:
+            value = int(value_str)
+        else:
+            raise ValueError("value type %s does not exist %s",value_type,value_str)
+        
+        return value
     # def epistemic_converter(self,ep_content):
     #     self.logger.debug("epistemic converter: [%s]",ep_content)
     #     header_index = ep_content.find(" ")
@@ -1096,5 +1000,6 @@ class PDDLParser:
                         
     #                     self.logger.error("error when extract precondition")
     #                     self.logger.error(traceback.format_exc())
-    #                     traceback.print_exc()
+    #                     traceback.self.logger.debug_exc()
     #                     exit() 
+    

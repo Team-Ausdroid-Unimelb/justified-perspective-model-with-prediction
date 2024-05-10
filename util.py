@@ -573,15 +573,18 @@ class FunctionSchema:
         output_str = f"(FunctionSchema {self.name}): {self.content_type_list}"
 
         if self.value_type == VALUE_TYPE.INTEGER:
-            output_str += f"\n\t{self.value_range}, {self.value_type}."
+            output_str += f" {self.value_range}, {self.value_type}."
         elif self.value_type == VALUE_TYPE.ENUMERATE:
-            output_str += f"\n\t[{','.join(self.value_range)}], {self.value_type}."
+            output_str += f" [{','.join(self.value_range)}], {self.value_type}."
         else:
-            raise ValueError("Value type not found. Probably did not define %s in the problem :ranges",self.name)
+            output_str += f"{self.value_range}, {self.value_type}."
+            # raise ValueError("Value type not found. Probably did not define %s in the problem :ranges",self.name)
         return output_str
     
     def __str__(self) -> str:
         return self.__repr__()    
+
+NONE_VALUE = "jp.none"
 
 class Function:
     def __init__(self,function_name,function_schema_name,entity_index_list) -> None:
@@ -639,13 +642,15 @@ class UpdateType(Enum):
     ONTIC = 2
     EPSITEMIC = 3
 
+
 class Effect:
     def __init__(self) -> None:
         self.effect_type = None
         self.effect_condition = None
-        self.update = None
         self.target_variable_name = None
         self.update_type = None
+        # update can be a value as constant or it can be a variable or it can be a ep formula
+        self.update = None
         pass
     def __repr__(self) -> str:
 
@@ -661,8 +666,13 @@ class ActionSchema:
         self.parameters = parameters
         self.preconditions = preconditions
         self.effects = effects
-        
         pass
+    
+    def __str__(self) -> str:
+        return f"ActionSchema: {self.name} \n{self.parameters} \n{self.preconditions} \n{self.effects}\n"
+    
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
 
@@ -685,3 +695,81 @@ class Entity:
     def __repr__(self): # show when in a dictionary
         return self.__str__()
         # return self
+        
+        
+EPFType = Enum("EPFType", "EP JP")
+        
+class EP_formula:
+    
+    def __init__(self) -> None:
+        self.epf_type = None
+        self.ep_query = None
+        self.ep_varphi = None
+        self.ep_variable = None
+        self.ep_formula_str = None
+        pass
+    
+    def __str__(self) -> str:
+        ep_varphi = self.ep_varphi if self.ep_varphi != None else "No Varphi"
+        ep_variable = self.ep_variable if self.ep_variable != None else "No Variable"
+        ep_formula_str = self.ep_formula_str if self.ep_formula_str != None else "No Formula"
+        
+            
+        return " {"+f" EP_formula: <{self.epf_type}> <{self.ep_query}>: [<{ep_variable}>;  <{ep_formula_str}>: <{ep_varphi}>]" + "} "
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+
+ConditionType = Enum("ConditionType", "EP ONTIC")
+
+ConditionOperatorType = Enum("ConditionOperatorType", "EQUAL GREATER GREATER_EQUAL LESS LESS_EQUAL NOT_EQUAL")
+
+condition_operator_dict = {
+    "=": ConditionOperatorType.EQUAL,
+    ">": ConditionOperatorType.GREATER,
+    ">=": ConditionOperatorType.GREATER_EQUAL,
+    "<": ConditionOperatorType.LESS,
+    "<=": ConditionOperatorType.LESS_EQUAL,
+    "!=": ConditionOperatorType.NOT_EQUAL,
+}
+
+class Condition:
+    def __init__(self) -> None:
+        self.condition_operator = None
+        self.condition_type = None
+        self.target_value = None
+        self.condition_variable = None
+        self.target_variable = None
+        
+        # this is for ep
+        self.condition_formula = None
+        
+        pass
+    
+    def __str__(self) -> str:
+        condition_formula = self.condition_formula if self.condition_formula != None else "No condition formula"
+        condition_variable = self.condition_variable if self.condition_variable != None else "No condition variable"
+        target_variable = self.target_variable if self.target_variable != None else "No target variable"
+        target_value = self.target_value if self.target_value != None else "No target Value"
+        return " {"+f"Condition: <{self.condition_operator}> <{self.condition_type}> [<{condition_formula}> <{condition_variable}>] [<{target_variable}> <{target_value}>]" + "} "
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+
+Ternary = Enum("Ternary", "TRUE FALSE UNKNOWN")
+
+
+def find_each_section(s):
+    stack = []
+    pairs = []
+
+    for i, char in enumerate(s):
+        if char == '(':
+            stack.append(i)
+        elif char == ')':
+            if stack:
+                start = stack.pop()
+                if stack == []:
+                    pairs.append(s[start:i+1])
+
+    return pairs

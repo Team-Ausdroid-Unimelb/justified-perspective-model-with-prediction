@@ -30,12 +30,21 @@
     ;define actions here
     (:action turn_clockwise
         :parameters (?i - turnable)
-        :precondition ()
+        :precondition (
+            (= (dir ?i) (x ?i))
+            ; this representation is for return value from justified perspective function
+            ; the range of the @jp depends on the variable
+            (= (@jp ("b [?i] b [?i]") (v ?i)) 't')
+            (!= ((@jp ("b [?i] b [a]") (v ?i))) jp.none)
+            ; this representation is for evaluation of en epistemic formula with justified perspective model
+            ; the range of the @ep has three possible value, ep.true, ep.unknown and ep.false
+            (= (@ep ("+ b [?i] + b [?i]") (= (v ?i) 1)) ep.true)
+        )
         :effect (
             ; increase sth by 1
-            ; (increase (dir ?i) 1)
-            (when (!= ((@jp ("b [?i] b [a]") (v?i))) None) (assign (x ?i) (@jp ("b [b] b [a]") (v?i))))
-            ; (assign (dir ?i) (v ?i))
+            (increase (dir ?i) 1)
+            (assign (x ?i) (@jp ("b [?i] b [a]") (v ?i)))
+            (assign (dir ?i) (y ?i))
         )
     )
     
