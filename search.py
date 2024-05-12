@@ -5,13 +5,13 @@ import psutil
 import os
 
 from util import setup_logger, PriorityQueue, GLOBAL_PERSPECTIVE_INDEX,make_hashable
-from util import Entity,EntityType,Condition,ConditionType,EP_formula,Ternary
+from util import Entity,EntityType,Condition,ConditionType,EP_formula,Ternary,EPFType
 # import util
 
 
 # LOGGER_NAME = "forward_search:bfsdc"
 LOGGER_LEVEL = logging.INFO
-LOGGER_LEVEL = logging.DEBUG
+# LOGGER_LEVEL = logging.DEBUG
 
 SPLIT_KEY_WORD = "@"
 
@@ -37,7 +37,7 @@ class Search:
         self.max_goal_num = 0
         self.timeout = datetime.timedelta(seconds=timeout)
         self.memoryout = 10*1024
-
+        self.unknown_goal_name = []
     # Do i need to reset here?
 
     class SearchNode:
@@ -86,11 +86,14 @@ class Search:
         #     return False
         # return True
 
-    def _unknown_check(self,succ_node):
-        if succ_node.remaining_goal <= self.max_goal_num:
-            return True
-        else:
-            return False
+    def _unknown_check(self,succ_node,goal_dict):
+        
+        for goal_name,goal_value in goal_dict.items():
+            if goal_name in self.unknown_goal_name:
+                if not goal_value:
+                    return False
+        return True
+            
 
     #BFS with duplicate check on the state + epistemic formula
     # for novelty checking purpose, we need to move the goal check process at where the node is generated
@@ -99,6 +102,19 @@ class Search:
         start_time = datetime.datetime.now()
 
         self.max_goal_num = len(list(problem.goals.keys()))
+        # intitalise unknown goal name
+        for key,item in problem.goals.items():
+            goal_condition: Condition = item
+            if goal_condition.condition_type == ConditionType.EP:
+                ep_formula: EP_formula = goal_condition.condition_formula
+                if ep_formula.epf_type == EPFType.EP:
+                    if goal_condition.target_value == Ternary.UNKNOWN:
+                        self.unknown_goal_name.append(key)
+                    elif "$" in ep_formula.ep_query:
+                        self.unknown_goal_name.append(key)
+        self.logger.debug(f'unknown goal name: {self.unknown_goal_name}')
+                
+        
         # check whether the initial state is the goal state
         init_state = problem.initial_state
         init_path = [(init_state,'')]
@@ -202,7 +218,7 @@ class Search:
                         remaining_goal_num,goal_dict,g_p_dict = problem.is_goal(new_path)
                         succ_node = self.SearchNode(succ_state,remaining_goal_num,g_p_dict,new_path)
 
-                        if self._unknown_check(succ_node):
+                        if self._unknown_check(succ_node,goal_dict):
                             self.generated += 1
                             h = self._h(succ_node,goal_dict,problem)
                             g = self._gn(succ_node)
@@ -295,7 +311,7 @@ class Search:
         
 
         max_depth = 0
-        num_of_unknown_goals = 0
+
         goal_agents = set()
         
         for epistemic_condition_name in epistemic_goal_list:
@@ -304,10 +320,6 @@ class Search:
             temp_depth = ep_formula.ep_query.count('[')
             if temp_depth > max_depth:
                 max_depth = temp_depth
-            if "$" in ep_formula.ep_query:
-                num_of_unknown_goals +=1
-            elif epistemic_condition.target_value == Ternary.UNKNOWN:
-                num_of_unknown_goals +=1
             query_prefix_list = ep_formula.ep_query.split(' ')
             for temp_str in query_prefix_list:
                 if '[' in temp_str:
@@ -328,7 +340,7 @@ class Search:
         #             temp_agent_list = temp_agent_str.split(',')
         #             for agent_id in temp_agent_list:
         #                 goal_agents.add(agent_id)
-        
+        num_of_unknown_goals = len(self.unknown_goal_name)
         self.result.update({'max_goal_depth':max_depth})
         self.result.update({'num_of_unknown_goals':num_of_unknown_goals})
         self.result.update({'num_of_goal_agents':len(goal_agents)})
