@@ -6,7 +6,6 @@ import re
 import traceback
 import typing
 
-from util import EpistemicQuery
 TIMEZONE = pytz.timezone('Australia/Melbourne')
 DATE_FORMAT = '%d-%m-%Y_%H-%M-%S'
 timestamp = datetime.datetime.now().astimezone(TIMEZONE).strftime(DATE_FORMAT)
@@ -86,7 +85,7 @@ GOAL_REG_SURFIX= "\)\)"
 
 LOGGER_NAME = "pddl_parser"
 LOGGER_LEVEL = logging.INFO
-LOGGER_LEVEL = logging.DEBUG
+# LOGGER_LEVEL = logging.DEBUG
 from util import setup_logger,find_each_section
 from util import Type,FunctionSchema,Parameters,EffectType,Effect,UpdateType,ActionSchema,EntityType,Entity
 from util import VALUE_TYPE,value_type_dict,RULE_TYPE,rule_type_dict,Function,Rule,EP_formula,EPFType,Condition,ConditionType,Ternary,condition_operator_dict
@@ -322,7 +321,7 @@ class PDDLParser:
                     else:
                         raise ValueError("precondition %s condition_type is invalid",precondition)
             
-            for effect in action_schema.effects:
+            for effect in action_schema.effects.values():
                 if not effect.target_variable_name == None:
                     if effect.update_type == UpdateType.ONTIC:
                         # there is nothing to change for an ontic effect
@@ -331,6 +330,8 @@ class PDDLParser:
                         function_schema_name = self.precondition_variable2function_schema_name(effect.target_variable_name)
                         value_type = function_schemas[function_schema_name].value_type
                         effect.update = self.str2value(value_type,effect.update)
+                        if effect.effect_type == EffectType.INCREASE or effect.effect_type == EffectType.DECREASE:
+                            effect.update = int(effect.update)
                     elif effect.update_type == UpdateType.EPSITEMIC:
                         # there is nothing to change for an epistemic effect
                         pass
@@ -579,7 +580,7 @@ class PDDLParser:
             action_content_str = action_content_str[:len(len_holder)]            
             # since there are uncertain nesting level of brackets in the effect
             # using manual approach instead of regular expression
-            effects : typing.List[Effect] = []
+            effects : typing.Dict[str,Effect] = dict()
             # effects_str = effects_str[1:-1] # remove the first and last bracket
             # for effect_str in effects_str.split(")("):
 
@@ -587,11 +588,12 @@ class PDDLParser:
             effect_str_list = find_each_section(effects_str)
             self.logger.debug(effect_str_list)
             for effect_str in effect_str_list:
+                effect_name = effect_str
                 self.logger.debug(effect_str)
                 effect_str = effect_str[1:-1:]
                 self.logger.debug(effect_str)
                 effect = self.parsingEffect(effect_str,action_name)
-                effects.append(effect)
+                effects.update({effect_name:effect})
             
             # TODO I need to apply the action and check goal at the same time.
             

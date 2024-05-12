@@ -1,31 +1,18 @@
-# from model import Problem,E_TYPE,PDDL_TERNARY
 import logging 
-import math
-from typing import Tuple
-import numpy as np
-import traceback
-
-import re
-
-from util import PDDL_TERNARY
-from util import EpistemicQuery,E_TYPE
-AGENT_ID_PREFIX = "dir-"
-# not applicable as it using x and y
-# AGENT_LOC_PREFIX = 'agent_at-'
-# OBJ_LOC_PREFIX = 'shared-s'
-
+import typing
+from util import Function,FunctionSchema,Entity,EntityType,setup_logger
+from datetime import datetime
 
 LOGGER_NAME = "bbl"
 LOGGER_LEVEL = logging.INFO
-from util import setup_logger
- 
-# declare common variables
-# common_constants = {
+LOGGER_LEVEL = logging.DEBUG
 
-# }
+#####
+import numpy as np
+import math
 common_constants = {
-    'angle-a': 90,
-    'angle-b': 90,
+    'angle a': 90,
+    'angle b': 90,
 }
 
 dir_dict = {
@@ -39,87 +26,56 @@ dir_dict = {
     'nw':135,
 }
 
+#####
+
 class ExternalFunction:
     logger = None
     
     def __init__(self, handlers):
-        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=logging.INFO) 
-
-
-    def extractVariables(self,eq):
-        # expected output would be a list of (var_name,value)
-        if not type(eq) == EpistemicQuery:
-            # print(eq)
-            # default is a single pair of var_name and value
-            if not re.search("\([0-9a-z _\-\'\"]*,[0-9a-z _\'\"]*\)",eq) == None:
-                var_name = eq.split(",")[0][1:]
-                value = eq.split(",")[1][:-1]
-                return [(var_name.replace('"','').replace("'",''),value.replace('"','').replace("'",''))]
-            else:
-                # customized function here
-                pass
-        else:
-            return self.extractVariables(eq.q_content)
-            
-    # customized evaluation function
-    def evaluateS(self,world,statement):
-
-        #default evaluation for variables
-        if world == {}:
-            self.logger.debug("unknown due to the world is empty")
-            return 2
-        if not re.search("\([0-9a-z _\-\'\"]*,[0-9a-z _\'\"]*\)",statement) == None:
-            var_name = statement.split(",")[0][1:].replace("'",'').replace('"','')
-            value = statement.split(",")[1][:-1].replace("'",'').replace('"','')
-            
-            self.logger.debug("var_name is {} in the world {}",var_name,world)
-            if var_name in world:
-                self.logger.debug("True")
-                return 1
-            else:
-                self.logger.debug("False")
-                return 0
-        else:
-            self.logger.warning("the evaluation of the seeing equation has not defined")
-            self.logger.debug("Undefined, return 0. unknown due to the world is empty")
-            return 0
-
-    def agentsExists(self,path,g_group_index):
-        state = path[-1][0]
-        for agt_id in g_group_index:
-            if not AGENT_ID_PREFIX+agt_id in state.keys():
-                return False
-        return True
-
-
-    def checkVisibility(self,state,agt_index,var_index,entities,variables):
+        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=LOGGER_LEVEL) 
+    
+    def checkVisibility(self,state,agent_index,var_name,entities:typing.Dict[str,Entity],
+                        functions:typing.Dict[str,Function],
+                        function_schemas:typing.Dict[str,FunctionSchema]):
+        if not agent_index in entities.keys():
+            raise ValueError(f"agent_index [{agent_index}] not found in entities")
+        if not entities[agent_index].enetity_type == EntityType.AGENT:
+            raise ValueError(f"agent_index [{agent_index}] is not an agent")
+        if var_name not in functions.keys():
+            raise ValueError(f"var_name [{var_name}] not found in functions")
         
-        # logger.debug(f"checkVisibility(_,_,{agt_index},{var_index})")
+        function = functions[var_name]
+        function_schemas_name = function.function_schema_name
+        target_list = function.entity_index_list
+        
+        # for the bbl domain, all visibility function should be the same
+        # based on whether the agents physically see the objects/agents or not
+        # and all functions in bbl domain have only one entity
+        if len(target_list) != 1:
+            raise ValueError("all function in bbl should have only one entity",var_name)
+
+        target_index = target_list[0]
         try:
-            tgt_index = variables[var_index].v_parent
-            # check if the agt_index can be found
-            assert(entities[agt_index].e_type== E_TYPE.AGENT)
-            
             #extract necessary variables from state
             # logger.debug(f"loading variables from state")
-            tgt_x = state[f"x-{tgt_index}"]
-            tgt_y = state[f"y-{tgt_index}"]
-            agt_x = state[f"x-{agt_index}"]
-            agt_y = state[f"y-{agt_index}"]
-            agt_dir = dir_dict[state[f"dir-{agt_index}"]]
+            target_x = state[f"x {target_index}"]
+            target_y = state[f"y {target_index}"]
+            agent_x = state[f"x {agent_index}"]
+            agent_y = state[f"y {agent_index}"]
+            agent_dir = dir_dict[state[f"dir {agent_index}"]]
             
             # extract necessary common constants from given domain
             # logger.debug(f"necessary common constants from given domain")
-            agt_angle = common_constants[f"angle-{agt_index}"]
+            agent_angle = common_constants[f"angle {agent_index}"]
             
             # agent is able to see anything in the same location
-            if tgt_x == agt_x and tgt_y == agt_y:
-                return PDDL_TERNARY.TRUE
+            if target_x == agent_x and target_y == agent_y:
+                return True
             
             # generate two vector
-            v1 = np.array((tgt_y - agt_y,tgt_x - agt_x))
+            v1 = np.array((target_y - agent_y,target_x - agent_x))
             v1 = v1 / np.linalg.norm(v1)
-            radians = math.radians(agt_dir)
+            radians = math.radians(agent_dir)
             v2 = np.array((math.cos(radians),math.sin(radians)))
             # logger.debug(f'v1 {v1}, v2 {v2}')
             cos_ = v1.dot(v2)
@@ -127,41 +83,17 @@ class ExternalFunction:
             d_degrees = math.degrees(d_radians)
             # logger.debug(f'delta angle degree is {round(d_degrees,3)}')
             
-            if d_degrees <= agt_angle/2.0 and d_degrees >= - agt_angle/2.0:
-                inside = PDDL_TERNARY.TRUE
+            if d_degrees <= agent_angle/2.0 and d_degrees >= - agent_angle/2.0:
+                inside = True
             else:
-                inside =PDDL_TERNARY.FALSE
+                inside = False
             # logger.debug(f'visibility is {inside}')
             return inside
-        except KeyError:
-            # logger.warning(traceback.format_exc())
-            # logger.warning(f"variable {agt_index} not found when check visibility in state {state}")
-            # logging.error("error when checking visibility")
-            self.logger.debug(traceback.format_exc())
-            self.logger.debug("variable {} not found when check visibility in state {}",agt_index,state)
-            return PDDL_TERNARY.UNKNOWN
-        except TypeError:
-            # logger.warning(traceback.format_exc())
-            # logger.warning("variable is None d when check visibility in state {state}")
-            self.logger.debug(traceback.format_exc())
-            self.logger.debug("variable {} not found when check visibility in state {}",agt_index,state)
-            # logging.error("error when checking visibility")
-            return PDDL_TERNARY.UNKNOWN
-
-    # customise action filters
-    # to filter out the irrelevant actions
-    def filterActionNames(self,problem,action_dict):
-        # print(action_dict.keys())
-        related_action_names = list()
-        for action_name in action_dict.keys():
-            agent_index = action_name.split('-')[1]
-            if agent_index == 'a' or agent_index == 'b':
-                related_action_names.append(action_name)
-        return related_action_names
-
-# if __name__ == "__main__":
-    
-#     pass
-    
-
-    
+        except KeyError as e:
+            self.logger.debug(e)
+            self.logger.debug("state: %s",state)
+            return False
+        except TypeError as e:
+            self.logger.debug(e)
+            self.logger.debug("state: %s",state)
+            return False

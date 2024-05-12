@@ -12,18 +12,14 @@ import traceback
 
 LOGGER_NAME = "pddl_model"
 LOGGER_LEVEL = logging.INFO
-# LOGGER_LEVEL = logging.DEBUG
+LOGGER_LEVEL = logging.DEBUG
 
 
-from util import setup_logger,PDDL_TERNARY
-
-from util import eval_var_from_str,valid_variable
-
-
+from util import setup_logger
 from util import Ternary
 from util import Condition,ConditionType,Effect,EffectType,EP_formula,EPFType,Action,UpdateType
-from util import extract_v_from_s,evaluation,multiple_parameter_replace,multiple_parameter_replace_with_ep
-from util import ActionSchema,Type
+from util import extract_v_from_s,evaluation,multiple_parameter_replace,multiple_parameter_replace_with_ep,updateEffect
+from util import ActionSchema,Type,Function,FunctionSchema
 from util import VARIABLE_FILLER
 # Class of the problem
 class Problem:
@@ -40,7 +36,7 @@ class Problem:
     # epistemic_model = None
     # logger = None
 
-    def __init__(self, enetities,types: typing.Dict[str,Type],function_schemas,action_schemas: typing.Dict[str,ActionSchema],rules,functions,initial_state,goals, external=None,handlers=None):
+    def __init__(self, enetities,types: typing.Dict[str,Type],function_schemas: typing.Dict[str,FunctionSchema],action_schemas: typing.Dict[str,ActionSchema],rules,functions:typing.Dict[str,Function],initial_state,goals, external=None,handlers=None):
         
         self.logger = None
         self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=LOGGER_LEVEL)
@@ -83,27 +79,73 @@ class Problem:
         
         self.epistemic_model = epistemic_model.EpistemicModel(self.logger,self.entities,self.functions,self.function_schemas,self.external)
 
-    # def generate_successor(self,state:typing.Dict[str,any],action,previous_path):
-    #     new_state = state.copy()
-    #     if not action == None:
-    #         pass
-    #     path = previous_path.copy().append((new_state,action))
-    #     goal_dict = self.check_conditions(self.goals,path,)
-    #     ep_conditions_dict : typing.Dict[str,Condition] = dict()
-    #     # # checking the goal condition after generated the next state
-    #     for condition_key,condition in conditions.items():
-    #         if condition.condition_type == ConditionType.EP:
-    #             ep_conditions_dict.update({condition_key:condition})
+    def generate_successor(self,state:typing.Dict[str,any],action: Action,previous_path):
+        self.logger.debug("generate successor for action: %s",action.name)
+        new_state = state.copy()
+        p_dict = dict()
+        ontic_name_list = []
+        jp_dictionary = dict()
 
-    def is_goal(self,path,p_dict):
-        condition_dict, dup_dict = self.check_conditions(self.goals,path,p_dict)
+
+
+        for effect_name,item in action.effects.items():
+            effect : Effect = item
+            variable_name = effect.target_variable_name
+            function_schema_name = self.functions[variable_name].function_schema_name
+            value1 = extract_v_from_s(variable_name,new_state)
+            if effect.update_type == UpdateType.CONSTENT:
+                value2 = effect.update
+                self.logger.debug("comparing %s vs %s",value1,value2)
+                new_value =  updateEffect(self.logger,effect.effect_type,value1,value2,self.function_schemas[function_schema_name])
+                if new_value == None:
+                    return None
+                new_state[variable_name] = new_value
+            elif effect.update_type == UpdateType.EPSITEMIC:
+                ep_formula :EP_formula = effect.update
+                if ep_formula.epf_type == EPFType.JP:
+                    jp_dictionary.update({effect_name:ep_formula})
+                # going to handle the constent update first
+            elif effect.update_type == UpdateType.ONTIC:
+                ontic_name_list.append(effect_name)
+                
+        for ontic_effect_name in ontic_name_list:
+            
+            effect : Effect = action.effects[ontic_effect_name]
+            variable_name = effect.target_variable_name
+            function_schema_name = self.functions[variable_name].function_schema_name
+            value1 = extract_v_from_s(variable_name,new_state)
+            if effect.update_type == UpdateType.ONTIC:
+                variable2_name = effect.update
+                value2 = extract_v_from_s(variable2_name,new_state)
+                new_value =  updateEffect(self.logger,effect.effect_type,value1,value2,self.function_schemas[function_schema_name])
+                if new_value == None:
+                    return None
+                new_state[variable_name] = new_value
+            else:
+                # going to handle the constent update first
+                pass
+        path = previous_path+[(new_state,action.name)]
+        result_dict,p_dict = self.epistemic_model.epistemicEffectHandler(jp_dictionary, path,p_dict)
+        for effect_name, value2 in result_dict.items():
+            variable_name = action.effects[effect_name].target_variable_name
+            function_schema_name = self.functions[variable_name].function_schema_name
+            value1 = extract_v_from_s(variable_name,new_state)
+            new_value =  updateEffect(self.logger,effect.effect_type,value1,value2,self.function_schemas[function_schema_name])
+            if new_value == None:
+                raise ValueError("New Value if out of range when updating",effect_name,state)
+            new_state[variable_name] = value2
+        return new_state
+
+    def is_goal(self,path):
+        p_dict = dict()
+        condition_dict, p_dict = self.check_conditions(self.goals,path,p_dict)
         
         remaining_goal_number = list(condition_dict.values()).count(False)
-        return remaining_goal_number,condition_dict,dup_dict
+        self.logger.debug(remaining_goal_number,condition_dict)
+        return remaining_goal_number,condition_dict,p_dict
 
     def check_conditions(self,conditions:typing.Dict[str,Condition],path,p_dict):
         goal_dict = dict()
-        p_dict = dict()
         current_state,current_action  = path[-1]
         
         ep_conditions_dict : typing.Dict[str,Condition] = dict()
@@ -126,24 +168,26 @@ class Problem:
                 goal_dict.update({condition_key:result})
             else:
                 raise ValueError("condition type not found",condition_key)
-        
-        ep_condition_dict,p_dict = self.epistemic_model.epistemicConditionsHandler(ep_conditions_dict,path,p_dict)
 
-        return ep_condition_dict,p_dict
+        result_dict,p_dict = self.epistemic_model.epistemicConditionsHandler(ep_conditions_dict,path,p_dict)
+
+        return result_dict,p_dict
 
 
     def get_all_legal_actions(self,state,path,p_dict):
         
+        self.logger.debug("get_all_legal_actions")
+        self.logger.debug(p_dict.keys())
         all_actions,ep_condition_dict,ep_condition_actionname_dict = self.get_all_actions(state)
-        # print(all_actions.keys())
+        # self.logger.debug(all_actions.keys())
         
         legal_actions : typing.Dict[str,Action] = dict()
 
         ep_condition_result_dict,p_dict = self.check_conditions(ep_condition_dict,path,p_dict)
-        
+        # self.logger.debug(p_dict.keys())
         for action_name,action_item in all_actions.items():
-            # print(action_name)
-            # print(action)
+            # self.logger.debug(action_name)
+            # self.logger.debug(action)
             # if self.check_conditions(action.preconditions,path,p_dict):
             #     legal_actions.update({action_name:action})
             precondition_flag = True
@@ -165,13 +209,13 @@ class Problem:
     def get_all_actions(self,state):
         all_actions : typing.Dict[str,Action] = dict()
         self.logger.debug("action_schemas:")
-        # print(self.action_schemas)
+        # self.logger.debug(self.action_schemas)
         ep_condition_dictionary: typing.Dict[str,Condition] = dict()
         ep_condition_actionname_dictionary : typing.Dict[str,str] = dict()
         
         for action_schema_name,action_schema in self.action_schemas.items():
-            print(action_schema_name)
-            print("--------------------")
+            self.logger.debug(action_schema_name)
+            self.logger.debug("--------------------")
             parameters_dict = action_schema.parameters
             new_parameter_replacement_list = [[]]
             
@@ -191,7 +235,7 @@ class Problem:
                             temp_parameter_replacement.append(new_replacements)
                 new_parameter_replacement_list = temp_parameter_replacement
             
-            print(new_parameter_replacement_list)
+            self.logger.debug(new_parameter_replacement_list)
             
             for parameter_replacement in new_parameter_replacement_list:
                 new_action_name = action_schema_name
@@ -202,8 +246,8 @@ class Problem:
                 
                 new_preconditions: typing.Dict[str,Condition] = dict()
                 for precondition_name,precondition_item in action_schema.preconditions.items():
-                    print(precondition_name)
-                    print(precondition_item)
+                    self.logger.debug(precondition_name)
+                    self.logger.debug(precondition_item)
                     new_precondition_name = multiple_parameter_replace_with_ep(precondition_name,parameter_replacement,VARIABLE_FILLER)
                     new_precondition = Condition()
                     new_precondition.condition_operator = precondition_item.condition_operator
@@ -247,9 +291,10 @@ class Problem:
                         raise ValueError("condition type not found",precondition_name)
                     new_preconditions.update({new_precondition_name:new_precondition})
                 
-                new_effects : typing.List[Effect] = []
-                for effect_item in action_schema.effects:
+                new_effects : typing.Dict[str,Effect] = dict()
+                for effect_name,effect_item in action_schema.effects.items():
                     new_effect = Effect()
+                    new_effect_name = multiple_parameter_replace_with_ep(effect_name,parameter_replacement,VARIABLE_FILLER)
                     new_effect.effect_type = effect_item.effect_type
                     new_effect.target_variable_name = multiple_parameter_replace(effect_item.target_variable_name,parameter_replacement,VARIABLE_FILLER)
                     new_effect.update_type = effect_item.update_type
@@ -271,7 +316,7 @@ class Problem:
                         new_effect.update = new_ep_formula
                     else:
                         raise ValueError("Update type not found")
-                    new_effects.append(new_effect)
+                    new_effects.update({new_effect_name:new_effect})
                 
                 new_action = Action(new_action_name,new_parameters,new_preconditions,new_effects)
                 all_actions.update({new_action_name:new_action})
@@ -283,7 +328,7 @@ class Problem:
 
     def checking_action_by_ontic_preconditions(self,preconditions:typing.Dict[str,Condition],parameter_replacement,current_state):
         for precondition_name,precondition_item in preconditions.items():
-            # print(precondition_name)
+            # self.logger.debug(precondition_name)
             operator = precondition_item.condition_operator
             variable_name = multiple_parameter_replace(precondition_item.condition_variable,parameter_replacement,VARIABLE_FILLER)
             
@@ -298,8 +343,8 @@ class Problem:
                 else: # it means the target is a value
                     value2 = precondition_item.target_value
 
-                if evaluation(self.logger,value1,value2,operator) == Ternary.FALSE:
-                    # print("return False")
+                if evaluation(self.logger,operator,value1,value2) == Ternary.FALSE:
+                    # self.logger.debug("return False")
                     return False
                     
             else:

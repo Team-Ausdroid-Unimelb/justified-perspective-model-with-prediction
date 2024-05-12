@@ -61,7 +61,9 @@
 
     
         (:goal (and 
-                (= (@ep ("b [b]") (= (secret_value as) 't')) ep.true)
+                ; (= (@ep ("+ b [b] $ b [c]") (= (secret_value as) 't')) ep.true)
+                (= (@jp ("b [b] b [a]") (secret_value as)) 't')
+                (= (@ep ("+ s [b] $ s [c]") (= (secret_value as) 't')) ep.true)
             )
         )
 

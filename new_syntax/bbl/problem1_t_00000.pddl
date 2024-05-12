@@ -4,7 +4,6 @@
 
         (:agents
             a b - turnable
-            c - locatable
         )
         (:objects 
             p - askable
@@ -26,13 +25,8 @@
         ; 
         (:goal 
             (and 
-                (= (dir a) 'n')
-                ; this representation is for return value from justified perspective function
-                ; the range of the @jp depends on the variable
-                (= (@jp ("b [b] b [a]") (v p)) 't')
-                ; this representation is for evaluation of en epistemic formula with justified perspective model
-                ; the range of the @ep has three possible value, ep.true, ep.unknown and ep.false
-                (= (@ep ("+ b [b] + b [a]") (= (v p) 1)) ep.true)
+                (= (@ep ("+ b [b] + b [a]") (= (v p) 't')) ep.true)
+                ; (= (@ep ("+ b [b]") (= (v p) 't')) ep.true)
             )
         )
 

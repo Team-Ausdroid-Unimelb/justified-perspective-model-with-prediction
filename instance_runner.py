@@ -12,11 +12,12 @@ import time
 import gc
 
 import logging
-import forward_pddl_model as pddl_model
+# import forward_pddl_model as pddl_model
 # import pddl_model as pddl_model
+import pddl_model
 
 from pddl_parser import PDDLParser
-from latex_converter import epgoal2latex
+# from latex_converter import epgoal2latex
 # import util
 from util import setup_logger_handlers,setup_logger
 
@@ -75,7 +76,8 @@ class Instance:
         logger.info('parser domain and problem')
         logger.info(self.domain_path)
         logger.info(self.problem_path)
-        pddl_parser.run(self.domain_path,self.problem_path)
+        # pddl_parser.run(self.domain_path,self.problem_path)
+        domain_name,problem_name,enetities,types,function_schemas,action_schemas,rules,functions,initial_state,goals = pddl_parser.run(self.domain_path,self.problem_path)
         # logger.info(f"loading problem file: {self.problem_path}")
         # variable_domains,i_state,g_states,agent_index,obj_index,variables,vd_name,p_name= pddl_parser.problemParser(self.problem_path)
         # logger.info(f"finish loading problem file: {p_name}")
@@ -84,7 +86,6 @@ class Instance:
         # actions,domain_name = pddl_parser.domainParser(f"{self.domain_path}")
         # logger.info(f"finish loading domain file: {domain_name}")        
         
-
         
         # loading external function
         if type(self.external_function) ==str:
@@ -108,12 +109,11 @@ class Instance:
             
             
         logger.info(f'Initialize problem')
-        problem = pddl_model.Problem(variable_domains,i_state,g_states,agent_index,obj_index,variables,actions,self.external_function,belief_mode=belief_mode,handlers=logger_handlers)
+        problem = pddl_model.Problem(enetities,types,function_schemas,action_schemas,rules,functions,initial_state,goals,self.external_function,handlers=logger_handlers)
         problem.logger.handlers = logger.handlers
 
         logger.info(f'starting search')
         start_search_time = datetime.datetime.now().astimezone(TIMEZONE)
-        import func_timeout
         
         if time_debug:
             search_class_ref = getattr( self.search_module, self.search_name)
@@ -122,21 +122,11 @@ class Instance:
             temp_result = search_algorithm.searching(problem)
             # result = search_algorithm.searching(problem)
         else:
-            
-            try:
-                search_class_ref = getattr( self.search_module, self.search_name)
-                search_algorithm = search_class_ref(logger_handlers,self.search_name,timeout)
-                temp_result = search_algorithm.searching(problem)
-                # result = search_algorithm.searching(problem)
-                # result = func_timeout.func_timeout(timeout, search_algorithm.searching,args=(problem,))
-            except func_timeout.FunctionTimedOut:
-                result.update({"running": f"timeout after {timeout}"})
-            except:
-                traceback.print_exc()
-                exit()
-
         
-        # result = self.search.searching(problem,self.external_function.filterActionNames)
+            search_class_ref = getattr( self.search_module, self.search_name)
+            search_algorithm = search_class_ref(logger_handlers,self.search_name,timeout)
+            temp_result = search_algorithm.searching(problem)
+
         end_search_time = datetime.datetime.now().astimezone(TIMEZONE)
         
         result = temp_result.copy()
@@ -145,20 +135,19 @@ class Instance:
         init_time = start_search_time - start_time
         search_time = end_search_time - start_search_time
         
-        ep_dict = problem.goals.epistemic_dict
-        ep_goal_latex_str = epgoal2latex(ep_dict)
+        # ep_dict = problem.goals.epistemic_dict
+        # ep_goal_latex_str = epgoal2latex(ep_dict)
 
         logger.info(f'initialization time: { init_time}')
         logger.info(f'search time: {search_time }') 
             
-            
-        result.update({'domain_name':domain_name})  
-        result.update({'problem':p_name})
+        result.update({'domain_name':domain_name})
+        result.update({'problem':problem_name})
         result.update({'search':self.instance_name.split('_')[0]})
         result.update({'init_time':init_time.total_seconds()})
         result.update({'search_time':search_time.total_seconds()})
         # maybe ontic goal as well?
-        result.update({'goals':ep_goal_latex_str})
+        # result.update({'goals':ep_goal_latex_str})
         
         
 

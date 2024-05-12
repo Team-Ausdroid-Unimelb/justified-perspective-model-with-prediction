@@ -91,405 +91,349 @@ class PriorityQueue:
             
 
 
-### PDDL value type
-
-# PDDL_TERNARY 
-# ternary true value
-class PDDL_TERNARY(Enum):
-    TRUE = 1
-    UNKNOWN = 0
-    FALSE = -1
-    def __lt__(self, other):
-        if self.__class__ is other.__class__:
-            return self.value < other.value
-    # def __repr__(self): 
-    #     # show when in a dictionary
-        
-    #     return PDDL_TERNARY(self)
-
-# the following classes are for pddl_model
-
-class D_TYPE(Enum):
-    ENUMERATE = 1
-    INTEGER = 2 
-    AGENT = 3
-
-def dTypeConvert(logger,str):
-    logger.debug(f"converting D_TYPE for {str}")
-    if str == "enumerate":
-        return D_TYPE.ENUMERATE
-    elif str == "integer":
-        return D_TYPE.INTEGER
-    elif str == "agent":
-        return D_TYPE.AGENT
-    else:
-        logger.error(f"D_TYPE not found for {str}")
 
 
 
 
-# class Action:
-#     a_name = None
-#     a_parameters = []
-#     a_preconditions = None
-#     a_effects = None
+
+
+
+# class EP_VALUE(Enum):
+#     HAVENT_SEEN = 1
+#     NOT_SEEING = 2
+#     CONFLICT = 3
+
+# def intersectBeliefValue(v1,v2):
+#     if v1 == v2:
+#         return v1
+#     elif v1 == EP_VALUE.HAVENT_SEEN or v2 == EP_VALUE.HAVENT_SEEN:
+#         return EP_VALUE.HAVENT_SEEN
+#     elif v1 == EP_VALUE.NOT_SEEING or v2 == EP_VALUE.NOT_SEEING:
+#         return EP_VALUE.NOT_SEEING
+#     else:
+#         return EP_VALUE.CONFLICT
+
+# def intersectUpdates(v1,v2):
+#     return v1 and v2
+
+# def intersectKnowledgeValue(v1,v2):
+#     if v1 == v2:
+#         return v1
+#     else:
+#         return EP_VALUE.NOT_SEEING
     
-#     def __init__(self,a_name, a_parameters, a_preconditions, a_effects):
-#         self.a_name = a_name
-#         self.a_parameters = a_parameters
-#         self.a_preconditions = Conditions(a_preconditions['ontic'],a_preconditions['epistemic'])
-#         self.a_effects = a_effects
+# def unionBeliefValue(v1,v2):
+#     if v1 == v2:
+#         return v1
+#     elif v1 == EP_VALUE.HAVENT_SEEN:
+#         if not v2 == EP_VALUE.NOT_SEEING:
+#             return v2
+#         else:
+#             return v1
+#     elif v2 == EP_VALUE.HAVENT_SEEN:
+#         if not v1 == EP_VALUE.NOT_SEEING:
+#             return v1
+#         else:
+#             return v2
+#     else:
+#         return EP_VALUE.CONFLICT
 
+# def unionUpdate(v1,v2):
+#     return v1 or v2
+
+# def unionKnowledgeValue(v1,v2):
+#     if v1 == v2:
+#         return v1
+#     elif v1 == EP_VALUE.NOT_SEEING:
+#         return v2
+#     elif v2 == EP_VALUE.NOT_SEEING:
+#         return v1
+#     else:
+#         assert False, "value conflicted in the knowledge, which should not happen"
+
+
+# class Variable():
+#     v_name = None
+#     v_domain_name = None
+#     v_parent = None
+    
+#     def __init__(self,name,domain_name,v_parent):
+#         self.v_name = name
+#         self.v_domain_name = domain_name
+#         self.v_parent = v_parent
+        
 #     def __str__(self): # show only in the print(object)
-#         return f"<Action: {self.a_name}; parameters: {self.a_parameters}; precondition: {self.a_preconditions}; effects: {self.a_effects}>\n"
+#         return f"<Variable: v_name: {self.v_name}; v_domain_name: {self.v_domain_name}; v_parent: {self.v_parent}>\n"
 
 #     def __repr__(self): # show when in a dictionary
-#         return f"<Action: {self.a_name}; parameters: {self.a_parameters}; precondition: {self.a_preconditions}; effects: {self.a_effects}>\n"
-    
-# def ActionList2DictKey(action_list):
-#     action_str = '-'
-#     for action_name in action_list:
-#         action_str = action_str+','+action_name
-#     return action_str
-
-
-
-class EP_VALUE(Enum):
-    HAVENT_SEEN = 1
-    NOT_SEEING = 2
-    CONFLICT = 3
-
-def intersectBeliefValue(v1,v2):
-    if v1 == v2:
-        return v1
-    elif v1 == EP_VALUE.HAVENT_SEEN or v2 == EP_VALUE.HAVENT_SEEN:
-        return EP_VALUE.HAVENT_SEEN
-    elif v1 == EP_VALUE.NOT_SEEING or v2 == EP_VALUE.NOT_SEEING:
-        return EP_VALUE.NOT_SEEING
-    else:
-        return EP_VALUE.CONFLICT
-
-def intersectUpdates(v1,v2):
-    return v1 and v2
-
-def intersectKnowledgeValue(v1,v2):
-    if v1 == v2:
-        return v1
-    else:
-        return EP_VALUE.NOT_SEEING
-    
-def unionBeliefValue(v1,v2):
-    if v1 == v2:
-        return v1
-    elif v1 == EP_VALUE.HAVENT_SEEN:
-        if not v2 == EP_VALUE.NOT_SEEING:
-            return v2
-        else:
-            return v1
-    elif v2 == EP_VALUE.HAVENT_SEEN:
-        if not v1 == EP_VALUE.NOT_SEEING:
-            return v1
-        else:
-            return v2
-    else:
-        return EP_VALUE.CONFLICT
-
-def unionUpdate(v1,v2):
-    return v1 or v2
-
-def unionKnowledgeValue(v1,v2):
-    if v1 == v2:
-        return v1
-    elif v1 == EP_VALUE.NOT_SEEING:
-        return v2
-    elif v2 == EP_VALUE.NOT_SEEING:
-        return v1
-    else:
-        assert False, "value conflicted in the knowledge, which should not happen"
-
-
-class Variable():
-    v_name = None
-    v_domain_name = None
-    v_parent = None
-    
-    def __init__(self,name,domain_name,v_parent):
-        self.v_name = name
-        self.v_domain_name = domain_name
-        self.v_parent = v_parent
+#         return f"<Variable: v_name: {self.v_name}; v_domain_name: {self.v_domain_name}; v_parent: {self.v_parent}>\n"
         
-    def __str__(self): # show only in the print(object)
-        return f"<Variable: v_name: {self.v_name}; v_domain_name: {self.v_domain_name}; v_parent: {self.v_parent}>\n"
-
-    def __repr__(self): # show when in a dictionary
-        return f"<Variable: v_name: {self.v_name}; v_domain_name: {self.v_domain_name}; v_parent: {self.v_parent}>\n"
-        
-def eval_var_from_str(logger,eval_str,state):
-    # for example(= (face c) 'head'))\
-    logger.debug("eval_str: [%s]" % (eval_str))
-    while eval_str[0] == "(":
-        # removing top level brackets
-        eval_str = eval_str[1:-1]
-    var_list  = re.findall("\([0-9a-z_, -]*\)",eval_str)
-    logger.debug("eq string is [%s]",eval_str)
-    logger.debug("state is [%s]",state)
-    # currently only support at most two variables
-    if len(var_list) == 1:
-        key1 = var_list[0][1:-1]
-        value1 = state[key1] if key1 in state.keys() else EP_VALUE.NOT_SEEING
-        value2_str = eval_str.split(" ")[-1]
-        if "'" not in value2_str and '"' not in value2_str:
-            value2 = int(value2_str)
-        else:
-            value2 = value2_str.replace("'","").replace('"',"")
-    elif len(var_list) == 2:
-        key1 = var_list[0][1:-1]
-        key2 = var_list[1][1:-1]
-        value1 = state[key1] if key1 in state.keys() else EP_VALUE.NOT_SEEING
-        value2 = state[key2] if key2 in state.keys() else EP_VALUE.NOT_SEEING
-    else:
-        raiseNotDefined()
+# def eval_var_from_str(logger,eval_str,state):
+#     # for example(= (face c) 'head'))\
+#     logger.debug("eval_str: [%s]" % (eval_str))
+#     while eval_str[0] == "(":
+#         # removing top level brackets
+#         eval_str = eval_str[1:-1]
+#     var_list  = re.findall("\([0-9a-z_, -]*\)",eval_str)
+#     logger.debug("eq string is [%s]",eval_str)
+#     logger.debug("state is [%s]",state)
+#     # currently only support at most two variables
+#     if len(var_list) == 1:
+#         key1 = var_list[0][1:-1]
+#         value1 = state[key1] if key1 in state.keys() else EP_VALUE.NOT_SEEING
+#         value2_str = eval_str.split(" ")[-1]
+#         if "'" not in value2_str and '"' not in value2_str:
+#             value2 = int(value2_str)
+#         else:
+#             value2 = value2_str.replace("'","").replace('"',"")
+#     elif len(var_list) == 2:
+#         key1 = var_list[0][1:-1]
+#         key2 = var_list[1][1:-1]
+#         value1 = state[key1] if key1 in state.keys() else EP_VALUE.NOT_SEEING
+#         value2 = state[key2] if key2 in state.keys() else EP_VALUE.NOT_SEEING
+#     else:
+#         raiseNotDefined()
         
     
-    symbol = eval_str.split(" ")[0]
+#     symbol = eval_str.split(" ")[0]
     
-    if symbol == "=":
-        if value1 == EP_VALUE.NOT_SEEING or value2 == EP_VALUE.NOT_SEEING or value1 == None or value2 == None:
-            return PDDL_TERNARY.UNKNOWN
-        elif value1 == value2:
-            return PDDL_TERNARY.TRUE
-        else:
-            return PDDL_TERNARY.FALSE
-    elif symbol == ">":
-        if value1 == EP_VALUE.NOT_SEEING or value2 == EP_VALUE.NOT_SEEING or value1 == None or value2 == None:
-            return PDDL_TERNARY.UNKNOWN
-        elif value1 > value2:
-            return PDDL_TERNARY.TRUE
-        else:
-            return PDDL_TERNARY.FALSE
-    elif symbol == ">=":
-        if value1 == EP_VALUE.NOT_SEEING or value2 == EP_VALUE.NOT_SEEING or value1 == None or value2 == None:
-            return PDDL_TERNARY.UNKNOWN
-        elif value1 >= value2:
-            return PDDL_TERNARY.TRUE
-        else:
-            return PDDL_TERNARY.FALSE
-    elif symbol == "<":
-        if value1 == EP_VALUE.NOT_SEEING or value2 == EP_VALUE.NOT_SEEING or value1 == None or value2 == None:
-            return PDDL_TERNARY.UNKNOWN
-        elif value1 < value2:
-            return PDDL_TERNARY.TRUE
-        else:
-            return PDDL_TERNARY.FALSE    
-    elif symbol == "<=":
-        if value1 == EP_VALUE.NOT_SEEING or value2 == EP_VALUE.NOT_SEEING or value1 == None or value2 == None:
-            return PDDL_TERNARY.UNKNOWN
-        elif value1 <= value2:
-            return PDDL_TERNARY.TRUE
-        else:
-            return PDDL_TERNARY.FALSE
-    elif symbol == "-=":
-        # not equal
-        if value1 == EP_VALUE.NOT_SEEING or value2 == EP_VALUE.NOT_SEEING or value1 == None or value2 == None:
-            return PDDL_TERNARY.UNKNOWN
-        elif not value1 == value2:
-            return PDDL_TERNARY.TRUE
-        else:
-            return PDDL_TERNARY.FALSE
-    else:
-        traceback.print_exc()
-        raise ValueError()
-        # equality relation
-        # equality relation
-        # equality relation
-        # match = re.search("\([0-9a-z_, -]*\)",eval_str)
+#     if symbol == "=":
+#         if value1 == EP_VALUE.NOT_SEEING or value2 == EP_VALUE.NOT_SEEING or value1 == None or value2 == None:
+#             return PDDL_TERNARY.UNKNOWN
+#         elif value1 == value2:
+#             return PDDL_TERNARY.TRUE
+#         else:
+#             return PDDL_TERNARY.FALSE
+#     elif symbol == ">":
+#         if value1 == EP_VALUE.NOT_SEEING or value2 == EP_VALUE.NOT_SEEING or value1 == None or value2 == None:
+#             return PDDL_TERNARY.UNKNOWN
+#         elif value1 > value2:
+#             return PDDL_TERNARY.TRUE
+#         else:
+#             return PDDL_TERNARY.FALSE
+#     elif symbol == ">=":
+#         if value1 == EP_VALUE.NOT_SEEING or value2 == EP_VALUE.NOT_SEEING or value1 == None or value2 == None:
+#             return PDDL_TERNARY.UNKNOWN
+#         elif value1 >= value2:
+#             return PDDL_TERNARY.TRUE
+#         else:
+#             return PDDL_TERNARY.FALSE
+#     elif symbol == "<":
+#         if value1 == EP_VALUE.NOT_SEEING or value2 == EP_VALUE.NOT_SEEING or value1 == None or value2 == None:
+#             return PDDL_TERNARY.UNKNOWN
+#         elif value1 < value2:
+#             return PDDL_TERNARY.TRUE
+#         else:
+#             return PDDL_TERNARY.FALSE    
+#     elif symbol == "<=":
+#         if value1 == EP_VALUE.NOT_SEEING or value2 == EP_VALUE.NOT_SEEING or value1 == None or value2 == None:
+#             return PDDL_TERNARY.UNKNOWN
+#         elif value1 <= value2:
+#             return PDDL_TERNARY.TRUE
+#         else:
+#             return PDDL_TERNARY.FALSE
+#     elif symbol == "-=":
+#         # not equal
+#         if value1 == EP_VALUE.NOT_SEEING or value2 == EP_VALUE.NOT_SEEING or value1 == None or value2 == None:
+#             return PDDL_TERNARY.UNKNOWN
+#         elif not value1 == value2:
+#             return PDDL_TERNARY.TRUE
+#         else:
+#             return PDDL_TERNARY.FALSE
+#     else:
+#         traceback.print_exc()
+#         raise ValueError()
+#         # equality relation
+#         # equality relation
+#         # equality relation
+#         # match = re.search("\([0-9a-z_, -]*\)",eval_str)
         
     
-def convertBooltoPDDL_TERNARY(bool):
-    return PDDL_TERNARY.TRUE if bool else PDDL_TERNARY.FALSE
+# def convertBooltoPDDL_TERNARY(bool):
+#     return PDDL_TERNARY.TRUE if bool else PDDL_TERNARY.FALSE
    
         
-class Domain():
-    d_name = None
-    d_values = None
-    d_type = None
-    agency = False
+# class Domain():
+#     d_name = None
+#     d_values = None
+#     d_type = None
+#     agency = False
     
-    def __init__(self,d_name,d_values,agency,d_type):
-        self.d_name = d_name
-        self.d_values = d_values
-        self.agency = agency
-        self.d_type = d_type
+#     def __init__(self,d_name,d_values,agency,d_type):
+#         self.d_name = d_name
+#         self.d_values = d_values
+#         self.agency = agency
+#         self.d_type = d_type
     
-    def __str__(self): # show only in the print(object)
-        return f"<d_name: {self.d_name}; d_values: {self.d_type}; d_values: {self.d_values}; isAgent?(agency): {self.agency}>\n"
+#     def __str__(self): # show only in the print(object)
+#         return f"<d_name: {self.d_name}; d_values: {self.d_type}; d_values: {self.d_values}; isAgent?(agency): {self.agency}>\n"
 
-    def __repr__(self): # show when in a dictionary
-        return f"<d_name: {self.d_name}; d_values: {self.d_type}; d_values: {self.d_values}; isAgent?(agency): {self.agency}>\n"
+#     def __repr__(self): # show when in a dictionary
+#         return f"<d_name: {self.d_name}; d_values: {self.d_type}; d_values: {self.d_values}; isAgent?(agency): {self.agency}>\n"
     
-    def isAgent(self):
-        return self.agency
+#     def isAgent(self):
+#         return self.agency
 
-class Conditions():
-    ontic_dict = dict()
-    epistemic_dict = dict()
+# class Conditions():
+#     ontic_dict = dict()
+#     epistemic_dict = dict()
 
-    def __init__(self,ontic_list,epistemic_list) -> None:
-        self.ontic_dict = dict()
-        self.epistemic_dict = dict()
+#     def __init__(self,ontic_list,epistemic_list) -> None:
+#         self.ontic_dict = dict()
+#         self.epistemic_dict = dict()
 
-        for ontic_tuple in ontic_list:
-            # print(ontic_tuple)
-            # (key,symbol,variable,value)
-            key,symbol,variable,value = ontic_tuple
-            # value = PDDL_TERNARY(int(value))
-            self.ontic_dict[key] = OnticCondition(symbol,variable,value)
-        for epistemic_tuple in epistemic_list:
-            # (key,query_str,query_prefix,symbol,variable,value)
-            key,query_str,query_prefix,symbol,variable,value = epistemic_tuple
-            # value = PDDL_TERNARY(int(value))
-            self.epistemic_dict[key] = EpistemicCondition(query_str,query_prefix,symbol,variable,value)
+#         for ontic_tuple in ontic_list:
+#             # print(ontic_tuple)
+#             # (key,symbol,variable,value)
+#             key,symbol,variable,value = ontic_tuple
+#             # value = PDDL_TERNARY(int(value))
+#             self.ontic_dict[key] = OnticCondition(symbol,variable,value)
+#         for epistemic_tuple in epistemic_list:
+#             # (key,query_str,query_prefix,symbol,variable,value)
+#             key,query_str,query_prefix,symbol,variable,value = epistemic_tuple
+#             # value = PDDL_TERNARY(int(value))
+#             self.epistemic_dict[key] = EpistemicCondition(query_str,query_prefix,symbol,variable,value)
 
-    def __str__(self) -> str:
-        return f"Conditions: \n Ontic: {self.ontic_dict} \n Epistemic: {self.epistemic_dict}"
+#     def __str__(self) -> str:
+#         return f"Conditions: \n Ontic: {self.ontic_dict} \n Epistemic: {self.epistemic_dict}"
 
-class OnticCondition():
-    variable_name = ""
-    v_value = ""
-    value = ""
-    symbol = ""
+# class OnticCondition():
+#     variable_name = ""
+#     v_value = ""
+#     value = ""
+#     symbol = ""
     
-    def __init__(self,symbol,variable_name,value) -> None:
-        self.symbol = symbol
-        self.variable_name = variable_name
-        self.value =  value
+#     def __init__(self,symbol,variable_name,value) -> None:
+#         self.symbol = symbol
+#         self.variable_name = variable_name
+#         self.value =  value
 
-    def __str__(self): # show only in the print(object)
-        return f" symbol is {self.symbol}; variable_name is {self.variable_name}; value is {self.value}; \n"
+#     def __str__(self): # show only in the print(object)
+#         return f" symbol is {self.symbol}; variable_name is {self.variable_name}; value is {self.value}; \n"
 
-    def __repr__(self): # show when in a dictionary
-        return f" symbol is {self.symbol}; variable_name is {self.variable_name}; value is {self.value}; \n"
+#     def __repr__(self): # show when in a dictionary
+#         return f" symbol is {self.symbol}; variable_name is {self.variable_name}; value is {self.value}; \n"
 
 
 
-class EpistemicCondition():
-    variable_name = ""
-    v_value = ""
-    value = ""
-    symbol = ""
-    query = ""
+# class EpistemicCondition():
+#     variable_name = ""
+#     v_value = ""
+#     value = ""
+#     symbol = ""
+#     query = ""
 
-    # "(:epistemic + db [a,b,c,d] + eb [a,b,c,d] (= (secret-a) 't'))"
-    # query_str,query_prefix,symbol,variable,value
-    def __init__(self,query_str,query_prefix,symbol,variable,value) -> None:
-        self.symbol = symbol # = 
-        self.query = query_str # "+ db [a,b,c,d] + eb [a,b,c,d] (= (secret-a) 't')"
-        self.query_prefix = query_prefix # "+ db [a,b,c,d] + eb [a,b,c,d]"
-        self.variable_name = variable #"secret-a"
-        self.value =  value # 't'
+#     # "(:epistemic + db [a,b,c,d] + eb [a,b,c,d] (= (secret-a) 't'))"
+#     # query_str,query_prefix,symbol,variable,value
+#     def __init__(self,query_str,query_prefix,symbol,variable,value) -> None:
+#         self.symbol = symbol # = 
+#         self.query = query_str # "+ db [a,b,c,d] + eb [a,b,c,d] (= (secret-a) 't')"
+#         self.query_prefix = query_prefix # "+ db [a,b,c,d] + eb [a,b,c,d]"
+#         self.variable_name = variable #"secret-a"
+#         self.value =  value # 't'
  
-    def __str__(self): # show only in the print(object)
-        return f" symbol is {self.symbol};\n variable_name is {self.variable_name};\n value is {self.value}; \n query is {self.query};\n query_prefix is {self.query_prefix}.\n\n"
+#     def __str__(self): # show only in the print(object)
+#         return f" symbol is {self.symbol};\n variable_name is {self.variable_name};\n value is {self.value}; \n query is {self.query};\n query_prefix is {self.query_prefix}.\n\n"
 
-    def __repr__(self): # show when in a dictionary
-        return f" symbol is {self.symbol};\n variable_name is {self.variable_name};\n value is {self.value}; \n query is {self.query};\n query_prefix is {self.query_prefix}.\n\n"
+#     def __repr__(self): # show when in a dictionary
+#         return f" symbol is {self.symbol};\n variable_name is {self.variable_name};\n value is {self.value}; \n query is {self.query};\n query_prefix is {self.query_prefix}.\n\n"
 
-# the following classes are for epistemic model
-class Q_TYPE(Enum):
-    MUTUAL = 0
-    DISTRIBUTION = -1
-    COMMON = 1
+# # the following classes are for epistemic model
+# class Q_TYPE(Enum):
+#     MUTUAL = 0
+#     DISTRIBUTION = -1
+#     COMMON = 1
     
-class EQ_TYPE(Enum):
-    KNOWLEDGE = 1
-    SEEING = 0
-    BELIEF = 2
+# class EQ_TYPE(Enum):
+#     KNOWLEDGE = 1
+#     SEEING = 0
+#     BELIEF = 2
     
-class EpistemicQuery:
-    q_type = None
-    q_content = None
-    eq_type = None
-    ep_value = None
-    value_type = None
-    header_str = ""
-    agents_str = ""
-    q_group = []
-    value_type_mapping = {
-        '+': PDDL_TERNARY.TRUE,
-        '-': PDDL_TERNARY.FALSE,
-        '$': PDDL_TERNARY.UNKNOWN
-    }
+# class EpistemicQuery:
+#     q_type = None
+#     q_content = None
+#     eq_type = None
+#     ep_value = None
+#     value_type = None
+#     header_str = ""
+#     agents_str = ""
+#     q_group = []
+#     value_type_mapping = {
+#         '+': PDDL_TERNARY.TRUE,
+#         '-': PDDL_TERNARY.FALSE,
+#         '$': PDDL_TERNARY.UNKNOWN
+#     }
     
-    mapping = {
-        'k': (Q_TYPE.MUTUAL, EQ_TYPE.KNOWLEDGE),
-        'ek': (Q_TYPE.MUTUAL, EQ_TYPE.KNOWLEDGE),
-        'dk': (Q_TYPE.DISTRIBUTION ,EQ_TYPE.KNOWLEDGE),
-        'ck': (Q_TYPE.COMMON, EQ_TYPE.KNOWLEDGE),
-        's': (Q_TYPE.MUTUAL, EQ_TYPE.SEEING),
-        'es': (Q_TYPE.MUTUAL, EQ_TYPE.SEEING),
-        'ds': (Q_TYPE.DISTRIBUTION, EQ_TYPE.SEEING),
-        'cs': (Q_TYPE.COMMON, EQ_TYPE.SEEING),
-        'b': (Q_TYPE.MUTUAL, EQ_TYPE.BELIEF),
-        'eb': (Q_TYPE.MUTUAL, EQ_TYPE.BELIEF),
-        'db': (Q_TYPE.DISTRIBUTION, EQ_TYPE.BELIEF),
-        'cb': (Q_TYPE.COMMON, EQ_TYPE.BELIEF),
-    }
+#     mapping = {
+#         'k': (Q_TYPE.MUTUAL, EQ_TYPE.KNOWLEDGE),
+#         'ek': (Q_TYPE.MUTUAL, EQ_TYPE.KNOWLEDGE),
+#         'dk': (Q_TYPE.DISTRIBUTION ,EQ_TYPE.KNOWLEDGE),
+#         'ck': (Q_TYPE.COMMON, EQ_TYPE.KNOWLEDGE),
+#         's': (Q_TYPE.MUTUAL, EQ_TYPE.SEEING),
+#         'es': (Q_TYPE.MUTUAL, EQ_TYPE.SEEING),
+#         'ds': (Q_TYPE.DISTRIBUTION, EQ_TYPE.SEEING),
+#         'cs': (Q_TYPE.COMMON, EQ_TYPE.SEEING),
+#         'b': (Q_TYPE.MUTUAL, EQ_TYPE.BELIEF),
+#         'eb': (Q_TYPE.MUTUAL, EQ_TYPE.BELIEF),
+#         'db': (Q_TYPE.DISTRIBUTION, EQ_TYPE.BELIEF),
+#         'cb': (Q_TYPE.COMMON, EQ_TYPE.BELIEF),
+#     }
     
-    # def __init__(self,header_str,agents_str,value,content):
-    def __init__(self,value_type_str,header_str,agents_str,content):    
-        self.q_type,self.eq_type = self.mapping[header_str]
-        self.header_str = header_str
-        self.agents_str = agents_str
-        self.q_group = agents_str[1:-1].split(",")
-        self.q_content = content
-        self.value_type = self.value_type_mapping[value_type_str]
+#     # def __init__(self,header_str,agents_str,value,content):
+#     def __init__(self,value_type_str,header_str,agents_str,content):    
+#         self.q_type,self.eq_type = self.mapping[header_str]
+#         self.header_str = header_str
+#         self.agents_str = agents_str
+#         self.q_group = agents_str[1:-1].split(",")
+#         self.q_content = content
+#         self.value_type = self.value_type_mapping[value_type_str]
         
-    def show(self):
-        # for debug purpose
-        output = f"<epistemic: q_type: {self.q_type}; eq_type: {self.eq_type}; q_group: {self.q_group}; q_content: {self.q_content} >"
-        return output
+#     def show(self):
+#         # for debug purpose
+#         output = f"<epistemic: q_type: {self.q_type}; eq_type: {self.eq_type}; q_group: {self.q_group}; q_content: {self.q_content} >"
+#         return output
         
-    def __str__(self): 
-        # show only in the print(object)
-        output = f"{self.header_str} {self.agents_str} {self.q_content}"
-        return output
+#     def __str__(self): 
+#         # show only in the print(object)
+#         output = f"{self.header_str} {self.agents_str} {self.q_content}"
+#         return output
 
-    def __repr__(self): 
-        # show when in a dictionary
-        output = f"{self.header_str} {self.agents_str} {self.q_content}"
-        return output
+#     def __repr__(self): 
+#         # show when in a dictionary
+#         output = f"{self.header_str} {self.agents_str} {self.q_content}"
+#         return output
     
-    def agtStr2List(agent_str="[]"):
-        return agent_str[1:-1].split(",")
+#     def agtStr2List(agent_str="[]"):
+#         return agent_str[1:-1].split(",")
     
-    def agtList2Str(agent_list=[]):
+#     def agtList2Str(agent_list=[]):
 
-        return "[" + ",".join(agent_list)+ "]"
+#         return "[" + ",".join(agent_list)+ "]"
     
-    def partial_eq2str(q_type,eq_type,agent_list):
+#     def partial_eq2str(q_type,eq_type,agent_list):
         
-        q_type_str = ""
-        if q_type == Q_TYPE.MUTUAL:
-            if len(agent_list) > 1:
-                q_type_str = "e"
-        elif q_type == Q_TYPE.DISTRIBUTION:
-            q_type_str = "d"
-        elif q_type == Q_TYPE.COMMON:
-            q_type_str = "c"
-        else:
-            raiseNotDefined()
+#         q_type_str = ""
+#         if q_type == Q_TYPE.MUTUAL:
+#             if len(agent_list) > 1:
+#                 q_type_str = "e"
+#         elif q_type == Q_TYPE.DISTRIBUTION:
+#             q_type_str = "d"
+#         elif q_type == Q_TYPE.COMMON:
+#             q_type_str = "c"
+#         else:
+#             raiseNotDefined()
             
-        eq_type_str = ""
+#         eq_type_str = ""
         
-        if eq_type == EQ_TYPE.SEEING:
-            eq_type_str = "s"
-        elif eq_type == EQ_TYPE.KNOWLEDGE:
-            eq_type_str = "k"
-        elif eq_type == EQ_TYPE.BELIEF:
-            eq_type_str = "b"
-        else:
-            raiseNotDefined()
-        return f"{q_type_str}{eq_type_str} {EpistemicQuery.agtList2Str(agent_list)} "
+#         if eq_type == EQ_TYPE.SEEING:
+#             eq_type_str = "s"
+#         elif eq_type == EQ_TYPE.KNOWLEDGE:
+#             eq_type_str = "k"
+#         elif eq_type == EQ_TYPE.BELIEF:
+#             eq_type_str = "b"
+#         else:
+#             raiseNotDefined()
+#         return f"{q_type_str}{eq_type_str} {EpistemicQuery.agtList2Str(agent_list)} "
                 
 
 
@@ -528,18 +472,18 @@ def valid_variable(v_name,problem):
         raise ValueError("%s is not in variables %s. Probably you spelled it wrong."%(v_name,str(problem.variables.keys())))
     
     
-class E_TYPE(Enum):
-    AGENT = 1
-    OBJECT = 2
+# class E_TYPE(Enum):
+#     AGENT = 1
+#     OBJECT = 2
 
-def eTypeConvert(logger,str):
-    logger.debug(f"converting E_TYPE for {str}")
-    if str == "agent":
-        return EntityType.AGENT
-    elif str == "object":
-        return EntityType.OBJECT
-    else:
-        logger.error(f"E_TYPE not found for {str}")
+# def eTypeConvert(logger,str):
+#     logger.debug(f"converting E_TYPE for {str}")
+#     if str == "agent":
+#         return EntityType.AGENT
+#     elif str == "object":
+#         return EntityType.OBJECT
+#     else:
+#         logger.error(f"E_TYPE not found for {str}")
 
 # new syntax ________________
 VARIABLE_FILLER = " "
@@ -658,7 +602,55 @@ class Effect:
     
     def __str__(self) -> str:
         return self.__repr__()    
-    
+
+def updateEffect(logger,effect_type:EffectType,value1,value2,function_schema: FunctionSchema):
+    # print(value1,type(value1),value2,type(value2),function_schema.value_type,function_schema.value_range)
+    if effect_type == EffectType.ASSIGN:
+        if function_schema.value_type == VALUE_TYPE.INTEGER:
+            if not type(value2) == int:
+                raise ValueError("Effect Error: the second value in Assign should be an integer")
+            else:
+                if value2 < function_schema.value_range[0] or value2 > function_schema.value_range[1]:
+                    logger.error("value out of range: when assign %s in function_schema: %s",value2,function_schema.name)
+                    return None
+                else:
+                    return value2
+        elif function_schema.value_type == VALUE_TYPE.ENUMERATE:
+            if not value2 in function_schema.value_range:
+                raise ValueError("Effect Error: the second value in Assign should be in the value range")
+            else:
+                return value2
+    elif effect_type == EffectType.INCREASE:
+        if function_schema.value_type == VALUE_TYPE.INTEGER:
+            if not type(value2) == int:
+                raise ValueError("Effect Error: the second value in Increase should be an integer")
+            else:
+                if value1 + value2 < function_schema.value_range[0] or value1 + value2 > function_schema.value_range[1]:
+                    logger.error("value out of range: when increase %s + %s in function_schema: %s",value1,value2,function_schema.name)
+                    return None
+                else:
+                    return value1 + value2
+        elif function_schema.value_type == VALUE_TYPE.ENUMERATE:
+            if not type(value2) == int:
+                raise ValueError("Effect Error: the second value in Increase should be an integer")
+            else:
+                return function_schema.value_range[(function_schema.value_range.index(value1)+value2)%len(function_schema.value_range)]
+    elif effect_type == EffectType.DECREASE:
+        if function_schema.value_type == VALUE_TYPE.INTEGER:
+            if not type(value2) == int:
+                raise ValueError("Effect Error: the second value in Decrease should be an integer")
+            else:
+                if value1 - value2 < function_schema.value_range[0] or value1 - value2 > function_schema.value_range[1]:
+                    logger.error("value out of range: when decrease %s - %s in function_schema: %s",value1,value2,function_schema.name)
+                    return None
+                else:
+                    return value1 - value2
+        elif function_schema.value_type == VALUE_TYPE.ENUMERATE:
+            if not type(value2) == int:
+                raise ValueError("Effect Error: the second value in Decrease should be an integer")
+            else:
+                return function_schema.value_range[(function_schema.value_range.index(value1)-value2)%len(function_schema.value_range)]
+
 class ActionSchema:
     def __init__(self,name,parameters,preconditions,effects) -> None:
         self.name = name
@@ -800,7 +792,7 @@ bool2Ternary_dict = {
     False: Ternary.FALSE
 }
 
-def evaluation(logger,value1,value2,operator):
+def evaluation(logger,operator,value1,value2):
     if value1 == special_value.UNSEEN or value2 == special_value.UNSEEN:
         return Ternary.UNKNOWN
     if value1 == special_value.HAVENT_SEEN or value2 == special_value.HAVENT_SEEN:
@@ -895,3 +887,22 @@ def multiple_parameter_replace_with_ep(text,replacements,fillers):
     text = multiple_parameter_replace(text,replacements,fillers)
     return text
     
+    
+def make_hashable(obj):
+    """
+    Convert a nested structure to a hashable type.
+    
+    Parameters:
+    obj: The object to convert (could be a dict, list, tuple, set, etc.)
+
+    Returns:
+    A hashable version of the object.
+    """
+    if isinstance(obj, dict):
+        return frozenset((k, make_hashable(v)) for k, v in obj.items())
+    elif isinstance(obj, list):
+        return tuple(make_hashable(i) for i in obj)
+    elif isinstance(obj, set):
+        return frozenset(make_hashable(i) for i in obj)
+    else:
+        return obj

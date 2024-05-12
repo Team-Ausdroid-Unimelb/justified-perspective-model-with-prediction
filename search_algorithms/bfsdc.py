@@ -12,8 +12,8 @@ class bfsdc(Search):
     # the below are functions should not change to test different search algorithm
     # the changable are the self.h_weight and self.g_weight
     def _h(self,node,problem,p_path):
-        h,es = self.heuristic(node,problem,p_path)
-        return h,es
+        h = self.heuristic(node,problem,p_path)
+        return h
     
     def _f(self,h,g):
         f = g*self.g_weight+h*self.h_weight
