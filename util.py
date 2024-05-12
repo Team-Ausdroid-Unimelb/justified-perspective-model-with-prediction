@@ -128,29 +128,29 @@ def dTypeConvert(logger,str):
 
 
 
-class Action():
-    a_name = None
-    a_parameters = []
-    a_preconditions = None
-    a_effects = None
+# class Action:
+#     a_name = None
+#     a_parameters = []
+#     a_preconditions = None
+#     a_effects = None
     
-    def __init__(self,a_name, a_parameters, a_preconditions, a_effects):
-        self.a_name = a_name
-        self.a_parameters = a_parameters
-        self.a_preconditions = Conditions(a_preconditions['ontic'],a_preconditions['epistemic'])
-        self.a_effects = a_effects
+#     def __init__(self,a_name, a_parameters, a_preconditions, a_effects):
+#         self.a_name = a_name
+#         self.a_parameters = a_parameters
+#         self.a_preconditions = Conditions(a_preconditions['ontic'],a_preconditions['epistemic'])
+#         self.a_effects = a_effects
 
-    def __str__(self): # show only in the print(object)
-        return f"<Action: {self.a_name}; parameters: {self.a_parameters}; precondition: {self.a_preconditions}; effects: {self.a_effects}>\n"
+#     def __str__(self): # show only in the print(object)
+#         return f"<Action: {self.a_name}; parameters: {self.a_parameters}; precondition: {self.a_preconditions}; effects: {self.a_effects}>\n"
 
-    def __repr__(self): # show when in a dictionary
-        return f"<Action: {self.a_name}; parameters: {self.a_parameters}; precondition: {self.a_preconditions}; effects: {self.a_effects}>\n"
+#     def __repr__(self): # show when in a dictionary
+#         return f"<Action: {self.a_name}; parameters: {self.a_parameters}; precondition: {self.a_preconditions}; effects: {self.a_effects}>\n"
     
-def ActionList2DictKey(action_list):
-    action_str = '-'
-    for action_name in action_list:
-        action_str = action_str+','+action_name
-    return action_str
+# def ActionList2DictKey(action_list):
+#     action_str = '-'
+#     for action_name in action_list:
+#         action_str = action_str+','+action_name
+#     return action_str
 
 
 
@@ -646,7 +646,6 @@ class UpdateType(Enum):
 class Effect:
     def __init__(self) -> None:
         self.effect_type = None
-        self.effect_condition = None
         self.target_variable_name = None
         self.update_type = None
         # update can be a value as constant or it can be a variable or it can be a ep formula
@@ -654,7 +653,7 @@ class Effect:
         pass
     def __repr__(self) -> str:
 
-        output_str = f"(Condition: {self.effect_condition}; Effect {self.effect_type.name} {self.target_variable_name} {self.update})"
+        output_str = f"(Effect {self.effect_type.name} {self.target_variable_name} {self.update})"
         return output_str
     
     def __str__(self) -> str:
@@ -674,7 +673,18 @@ class ActionSchema:
     def __repr__(self) -> str:
         return self.__str__()
 
-
+class Action:
+    def __init__(self,name,parameters,preconditions,effects) -> None:
+        self.name = name
+        self.parameters = parameters
+        self.preconditions = preconditions
+        self.effects = effects
+    
+    def __str__(self) -> str:
+        return f"ActionSchema: {self.name} \n{self.parameters} \n{self.preconditions} \n{self.effects}\n"
+    
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
 class EntityType(Enum):
@@ -757,7 +767,12 @@ class Condition:
         return self.__str__()
 
 Ternary = Enum("Ternary", "TRUE FALSE UNKNOWN")
+eq_ternay_dict = {
+    '+': Ternary.TRUE,
+    '!': Ternary.FALSE,
+    "$": Ternary.UNKNOWN
 
+}
 
 def find_each_section(s):
     stack = []
@@ -773,3 +788,110 @@ def find_each_section(s):
                     pairs.append(s[start:i+1])
 
     return pairs
+
+def extract_v_from_s(variable_name, state):
+    if variable_name in state.keys():
+        return state[variable_name]
+    else:
+        raise ValueError("Variable not found in the state", variable_name, state)
+
+bool2Ternary_dict = {
+    True: Ternary.TRUE,
+    False: Ternary.FALSE
+}
+
+def evaluation(logger,value1,value2,operator):
+    if value1 == special_value.UNSEEN or value2 == special_value.UNSEEN:
+        return Ternary.UNKNOWN
+    if value1 == special_value.HAVENT_SEEN or value2 == special_value.HAVENT_SEEN:
+        return Ternary.UNKNOWN
+    if operator == ConditionOperatorType.EQUAL:
+        return bool2Ternary_dict[value1 == value2]
+    elif operator == ConditionOperatorType.GREATER:
+        return bool2Ternary_dict[value1 > value2]
+    elif operator == ConditionOperatorType.GREATER_EQUAL:
+        return bool2Ternary_dict[value1 >= value2]
+    elif operator == ConditionOperatorType.LESS:
+        return bool2Ternary_dict[value1 < value2]
+    elif operator == ConditionOperatorType.LESS_EQUAL:
+        return bool2Ternary_dict[value1 <= value2]
+    elif operator == ConditionOperatorType.NOT_EQUAL:
+        return bool2Ternary_dict[value1 != value2]
+    else:
+        raise ValueError("Operator not found", operator,value1,value2)
+    
+    
+EpistemicType = Enum("EpistemicType", "Knowledge Seeing Belief")
+EpistemicGroupType = Enum("EpistemicGroupType", "Individual Uniform Distribution Common")
+
+ep_type_dict = {
+    "k": (EpistemicGroupType.Individual,EpistemicType.Knowledge),
+    "ek": (EpistemicGroupType.Uniform,EpistemicType.Knowledge),
+    "dk": (EpistemicGroupType.Distribution,EpistemicType.Knowledge),
+    "ck": (EpistemicGroupType.Common,EpistemicType.Knowledge),
+    "s": (EpistemicGroupType.Individual,EpistemicType.Seeing),
+    "es": (EpistemicGroupType.Uniform,EpistemicType.Seeing),
+    "ds": (EpistemicGroupType.Distribution,EpistemicType.Seeing),
+    "cs": (EpistemicGroupType.Common,EpistemicType.Seeing),
+    "b": (EpistemicGroupType.Individual,EpistemicType.Belief),
+    "eb": (EpistemicGroupType.Uniform,EpistemicType.Belief),
+    "db": (EpistemicGroupType.Distribution,EpistemicType.Belief),
+    "cb": (EpistemicGroupType.Common,EpistemicType.Belief),
+}
+
+def compareTernary(t1,t2):
+    if t1 == t2:
+        return Ternary.TRUE
+    else:
+        if t2 == Ternary.UNKNOWN:
+            return Ternary.UNKNOWN
+        else:
+            return Ternary.FALSE
+        
+def format_JPstr2PerspectiveKey(jp_str):
+    jp_content_list = jp_str.split(" ")
+    perspective_key = ""
+    for jp_content in jp_content_list:
+        if "[" in jp_content:
+            # then it means agents
+            pass
+        else:
+            jp_content = jp_content.replace("s","o").replace("k","o").replace("b","f")
+        perspective_key += jp_content
+        perspective_key += " "
+    return perspective_key
+
+
+def str_replace_last(s, old, new):
+    li = s.rsplit(old, 1)
+    return new.join(li)
+
+special_value  = Enum("special_value", "UNSEEN HAVENT_SEEN")
+
+
+def multiple_parameter_replace(text, replacements, fillers):
+    """
+    Replace multiple substrings in text based on a list of tuples (target, replacement).
+
+    Parameters:
+    text (str): The original string.
+    replacements (list of tuples): A list of (target, replacement) tuples.
+
+    Returns:
+    str: The modified string.
+    """
+    for target, replacement in replacements:
+        text = text.replace(target, fillers+replacement)
+    return text
+
+def multiple_parameter_replace_with_ep(text,replacements,fillers):
+    ep_possible_filler1 = "["
+    ep_possible_filler2 = ","
+    
+    ep_possible_replacements1 = [(ep_possible_filler1+k,ep_possible_filler1+v) for k,v in replacements]
+    ep_possible_replacements2 = [(ep_possible_filler2+k,ep_possible_filler2+v) for k,v in replacements]
+    text  = multiple_parameter_replace(text,ep_possible_replacements1,"")
+    text = multiple_parameter_replace(text,ep_possible_replacements2,"")
+    text = multiple_parameter_replace(text,replacements,fillers)
+    return text
+    
