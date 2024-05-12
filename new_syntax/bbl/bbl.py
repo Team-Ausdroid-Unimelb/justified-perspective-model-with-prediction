@@ -5,7 +5,7 @@ from datetime import datetime
 
 LOGGER_NAME = "bbl"
 LOGGER_LEVEL = logging.INFO
-LOGGER_LEVEL = logging.DEBUG
+# LOGGER_LEVEL = logging.DEBUG
 
 #####
 import numpy as np

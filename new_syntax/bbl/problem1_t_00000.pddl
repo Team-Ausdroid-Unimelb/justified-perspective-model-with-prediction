@@ -5,6 +5,7 @@
         (:agents
             a b - turnable
         )
+
         (:objects 
             p - askable
         )
@@ -25,7 +26,7 @@
         ; 
         (:goal 
             (and 
-                (= (@ep ("+ b [b] + b [a]") (= (v p) 't')) ep.true)
+                (= (@ep ("+ b [b] + b [a] ") (= (v p) 't')) ep.true)
                 ; (= (@ep ("+ b [b]") (= (v p) 't')) ep.true)
             )
         )
