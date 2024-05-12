@@ -401,22 +401,24 @@ class PDDLParser:
                 new_condition.condition_formula = new_jp_formula
             elif "@ep" in goal_proposition_str:
 
-                goal_proposition_str = goal_proposition_str[4:-1:]
+                goal_proposition_str = goal_proposition_str[4::]
                 ep_content = find_each_section(goal_proposition_str)
                 if not len(ep_content) == 2:
                     raise ValueError("epistemic goal should have 2 components: %s",ep_content)
                 new_ep_formula = EP_formula()
                 new_ep_formula.ep_formula_str = goal_proposition_str
                 new_ep_formula.epf_type = EPFType.EP
-                new_ep_formula.ep_query = ep_content[0]
+                new_ep_formula.ep_query = ep_content[0][2:-2:]
                 varphi_str = ep_content[1][1:-1:]
                 varphi_list = varphi_str.split(" ")
                 varphi_operator_str = varphi_list[0]
                 if not varphi_operator_str in condition_operator_dict.keys():
                     raise ValueError("Error when parsing goal [%s] (it should start with a valid operator)",goal_proposition_str)
                 varphi_value_str = varphi_list[-1]
-                print(varphi_value_str)
+                self.logger.debug(varphi_str)
+                self.logger.debug(varphi_value_str)
                 varphi_content_str = varphi_str[len(varphi_operator_str)+2:-len(varphi_value_str)-2:]
+                self.logger.debug(varphi_content_str)
                 function_schema_name = functions[varphi_content_str].function_schema_name
                 value_type = function_schemas[function_schema_name].value_type
                 self.logger.debug(varphi_content_str)
@@ -583,11 +585,11 @@ class PDDLParser:
 
             #     effects.append(self.parsingEffect(effect_str,action_name))
             effect_str_list = find_each_section(effects_str)
-            print(effect_str_list)
+            self.logger.debug(effect_str_list)
             for effect_str in effect_str_list:
-                print(effect_str)
+                self.logger.debug(effect_str)
                 effect_str = effect_str[1:-1:]
-                print(effect_str)
+                self.logger.debug(effect_str)
                 effect = self.parsingEffect(effect_str,action_name)
                 effects.append(effect)
             
@@ -601,7 +603,7 @@ class PDDLParser:
                 raise ValueError("The remaining string [%s] after action parsing is not empty",remaining_str)
 
             precondition_str_list = find_each_section(preconditions_str)
-            print(precondition_str_list)
+            self.logger.debug(precondition_str_list)
             
             for precondition_str in precondition_str_list:
                 precondition_name = precondition_str
@@ -744,7 +746,7 @@ class PDDLParser:
             new_jp.ep_variable = ep_variable_str
             new_jp.epf_type = EPFType.JP
             new_effect.update = new_jp
-            print(effect_content_list)
+            self.logger.debug(effect_content_list)
         else:
             self.logger.debug(effect_str)
             if not len(effect_content_list) == 3:
