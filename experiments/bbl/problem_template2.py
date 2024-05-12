@@ -10,41 +10,26 @@ class PDDL_Template:
         (:domain bbl)
 
         (:agents
-            a b c d
+            a b - turnable
         )
+        
         (:objects 
-            p
-        )
-
-        (:variables
-            (dir [a,b,c,d])
-            (x [a,b,c,d,p])
-            (y [a,b,c,d,p])
-            (v [p])
+            p - askable
         )
     '''
 
 
     problem_init = '''
         (:init
-            (= (dir a) 'sw')
-            (= (dir b) 'n')
-            (= (x a) 3)
-            (= (x b) 2)
-            (= (x p) 1)
-            (= (y a) 3)
-            (= (y b) 2)
-            (= (y p) 1)
-
-            (= (x c) 3)
-            (= (y c) 3)
-            (= (dir c) 'n')
-
-            (= (x d) 3)
-            (= (y d) 3)
-            (= (dir d) 'n')
-
-            (= (v p) 't')
+            (assign (dir a) 'sw')
+            (assign (dir b) 'n')
+            (assign (x a) 3)
+            (assign (x b) 2)
+            (assign (x p) 1)
+            (assign (y a) 3)
+            (assign (y b) 2)
+            (assign (y p) 1)
+            (assign (v p) 't')
         )
     '''
 
@@ -54,21 +39,34 @@ class PDDL_Template:
 
 
     problem_surfix = '''
-        (:domains
+        (:ranges
             (dir enumerate ['w','nw','n','ne','e','se','s','sw'])
             (x integer [0,4])
             (y integer [0,4])
             (v enumerate ['t','f'])
         )
+
+        (:rules
+            (static (dir a) [])
+            (static (dir b) [])
+            (static (dir p) [])
+            (static (x a) [])
+            (static (x b) [])
+            (static (x p) [])
+            (static (y a) [])
+            (static (y b) [])
+            (static (y p) [])
+            (static (v p) [])
+        )
     )
     '''
 
 
-    problem_path = os.path.join("experiments","bbl")
+    # problem_path = os.path.join("experiments","bbl")
 
 
 
-    MAX_DEPTH = 4
+    MAX_DEPTH = 5
     # this is a agent indifference domain
 
     agent_index_list = ["a","b"]
@@ -77,4 +75,4 @@ class PDDL_Template:
 
     # the ternary list does not contain -1, which means false value does not make sense in BBL
     # because the the value of v is not changable
-    ternary_list = ['+','$','-']
+    ternary_list = ['+','$','!']
