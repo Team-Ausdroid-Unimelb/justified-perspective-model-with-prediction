@@ -3,369 +3,782 @@ import logging
 import os
 import copy
 import re
-from typing import List
-from epistemic_model import EpistemicModel
-from forward_epistemic_model import EpistemicModel
+import typing
+# from epistemic_model import EpistemicModel
+# from forward_epistemic_model import EpistemicModel
+
+import epistemic_model
+import traceback
 
 LOGGER_NAME = "pddl_model"
 LOGGER_LEVEL = logging.INFO
 # LOGGER_LEVEL = logging.DEBUG
 
+
 from util import setup_logger,PDDL_TERNARY
 
-from util import Variable,Action
-from util import Domain,D_TYPE,dTypeConvert
-from util import Entity,E_TYPE,eTypeConvert
-from util import Conditions
+from util import eval_var_from_str,valid_variable
 
+
+from util import Ternary
+from util import Condition,ConditionType,Effect,EffectType,EP_formula,EPFType,Action,UpdateType
+from util import extract_v_from_s,evaluation,multiple_parameter_replace,multiple_parameter_replace_with_ep
+from util import ActionSchema,Type
+from util import VARIABLE_FILLER
 # Class of the problem
 class Problem:
-    initial_state = {}
-    abstract_actions = {} 
-    entities = {} # agent indicators, should be unique
-    variables = {} #variable
-    domains = {}
-    initial_state = {}
-    goals = {}
-    external = None
-    epistemic_calls = 0
-    epistemic_call_time = timedelta(0)
-    epistemic_model = None
-    logger = None
+    # initial_state = dict()
+    # actions = dict() 
+    # entities = dict() # agent indicators, should be unique
+    # variables = dict() #variable
+    # domains = dict()
+    # initial_state = dict()
+    # goals = None
+    # external = None4
+    # epistemic_calls = 0
+    # epistemic_call_time = timedelta(0)
+    # epistemic_model = None
+    # logger = None
 
-    def __init__(self, domains,i_state,g_states,agent_index,obj_index,variables,actions, external=None,handlers=None):
-        self.initial_state = {}
-        self.abstract_actions = {} 
-        self.entities = {} # agent indicators, should be unique
-        self.variables = {} #variable
-        self.domains = {}
-        self.initial_state = {}
-        self.goals = {}
+    def __init__(self, enetities,types: typing.Dict[str,Type],function_schemas,action_schemas: typing.Dict[str,ActionSchema],rules,functions,initial_state,goals, external=None,handlers=None):
+        
+        self.logger = None
+        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=LOGGER_LEVEL)
+        
+        self.initial_state = initial_state
+        self.logger.debug("initial_state:")
+        self.logger.debug(self.initial_state)
+        
+        self.action_schemas : typing.Dict[str,ActionSchema] =  action_schemas
+        self.logger.debug("action_schemas:")
+        self.logger.debug(self.action_schemas)
+        
+        self.entities = enetities
+        self.logger.debug("entities:")
+        self.logger.debug(self.entities)
+        
+        self.types: typing.Dict[str,Type] = types
+        self.logger.debug("types:")
+        self.logger.debug(self.types)
+        
+        self.function_schemas = function_schemas
+        self.logger.debug("function_schemas:")
+        self.logger.debug(self.function_schemas)
+        
+        self.rules = rules
+        self.logger.debug("rules:")
+        self.logger.debug(self.rules)
+        
+        self.functions = functions
+        self.logger.debug("functions:")
+        self.logger.debug(self.functions)
+        
+        self.goals = goals
+        self.logger.debug("goals:")
+        self.logger.debug(self.goals)
+        
+        self.external = external
         self.epistemic_calls = 0
         self.epistemic_call_time = timedelta(0)
-        self.logger = None
-        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=LOGGER_LEVEL) 
-        self.logger.debug("initialize entities")
         
-        self.entities = {}
-        for i in agent_index:
-            e_temp = Entity(i,E_TYPE.AGENT)
-            self.entities.update({i:e_temp})
-        for i in obj_index:
-            e_temp = Entity(i,E_TYPE.OBJECT)
-            self.entities.update({i:e_temp})        
+        self.epistemic_model = epistemic_model.EpistemicModel(self.logger,self.entities,self.functions,self.function_schemas,self.external)
 
-        self.variables = {}
-        for d_name,targets in variables.items():
+    # def generate_successor(self,state:typing.Dict[str,any],action,previous_path):
+    #     new_state = state.copy()
+    #     if not action == None:
+    #         pass
+    #     path = previous_path.copy().append((new_state,action))
+    #     goal_dict = self.check_conditions(self.goals,path,)
+    #     ep_conditions_dict : typing.Dict[str,Condition] = dict()
+    #     # # checking the goal condition after generated the next state
+    #     for condition_key,condition in conditions.items():
+    #         if condition.condition_type == ConditionType.EP:
+    #             ep_conditions_dict.update({condition_key:condition})
 
-            suffix_list = self._generateVariables(targets)
-
-            for suffix in suffix_list:
-                var_name = f"{d_name}{suffix}"
-                v_parent = suffix.split('-')[1]
-                v_temp = Variable(var_name,d_name,v_parent)
-                self.variables.update({var_name:v_temp})
-            
-        # grounding all actions or do not ground any actions?    
-        for a_name, parts in actions.items():
-            
-            p = [ (i,eTypeConvert(self.logger,t))for i,t in parts['parameters']]
-            a_temp = Action(a_name, p,parts['precondition'], parts['effect'])
-            self.abstract_actions.update({a_name:a_temp})
-        self.logger.debug(self.abstract_actions)
+    def is_goal(self,path,p_dict):
+        condition_dict, dup_dict = self.check_conditions(self.goals,path,p_dict)
         
+        remaining_goal_number = list(condition_dict.values()).count(False)
+        return remaining_goal_number,condition_dict,dup_dict
 
-        self.domains = {}
-        for d_name in domains.keys():
-            values = domains[d_name]['values']
-            d_type = dTypeConvert(self.logger,domains[d_name]['basic_type'])
-            if d_type == D_TYPE.INTEGER:
-                bound = domains[d_name]['values']
-                values = list(range(bound[0],bound[1]+1))
-
-            domain_temp = Domain(d_name,values,d_name=='agent',d_type)
-            self.domains.update({d_name:domain_temp})
-
-
-        self.goals = Conditions(g_states['ontic_g'],g_states['epistemic_g'])
-        self.logger.debug(self.goals)
-        self.initial_state = i_state
-        self.external = external
-        self.epistemic_model = EpistemicModel(handlers,self.entities,self.variables,external)
-    
+    def check_conditions(self,conditions:typing.Dict[str,Condition],path,p_dict):
+        goal_dict = dict()
+        p_dict = dict()
+        current_state,current_action  = path[-1]
         
-    def isGoal(self,state,path):
-        is_goal=True
-        goal_dict = {}
-        actions = [ a  for s,a in path]
-        actions = actions[1:]
-
-
-        for k,v in self.goals.ontic_dict.items():
-            if not state[k] == v:
-                is_goal = False
-                goal_dict.update({k+" "+str(v):False})
-            else:
-                goal_dict.update({k+" "+str(v):True})
-            
-        # adding epistemic checker here
-        current_time = datetime.now()
-        self.epistemic_calls +=1
-        p_dict,epistemic_dict = \
-            self.epistemic_model.epistemicGoalsHandler(self.goals.epistemic_dict,"",path)
-        self.epistemic_call_time += datetime.now() - current_time
-        
-        for k,v in self.goals.epistemic_dict.items():
-            if not epistemic_dict[k].value == v:
-                is_goal = False
-                goal_dict.update({k+" "+str(v):False})
-            else:
-                goal_dict.update({k+" "+str(v):True})
-        return is_goal,p_dict,epistemic_dict,goal_dict
-    
-    def isGoalP(self,state,path):
-        is_goal=True
-        # let's keep iw1 version and extend it later
-        epistemic_items_set = {}
-        p_dict = {}
-
-        actions = [ a  for s,a in path]
-        actions = actions[1:]
-
-        for k,i in self.goals.ontic_dict.items():
-            if not state[k] == i:
-                is_goal = False
-                break
-            
-        # adding epistemic checker here
-
-        for eq,value in self.goals.epistemic_dict:
-            self.epistemic_calls +=1
-            current_time = datetime.now()
-            temp_e_v, temp_p_dict = self.epistemic_model.checkingEQstrP(self.external,eq,path,state,self.entities,self.variables)
-            self.epistemic_call_time += datetime.now() - current_time
-            if not temp_e_v == value:
-                is_goal=False
-            p_dict.update(temp_p_dict)
-        return is_goal,p_dict    
-    
-    def getAllActions(self,state,path):
-        all_actions = {}
-        
-        # get all type of actions
-        for a_name, abstract_a in self.abstract_actions.items():
-            self.logger.debug(f'action: {abstract_a} ')
-            # generate all possible combination parameters for each type of action
-            if abstract_a.a_parameters == []:
-                a_temp_name = a_name
-                a_temp_parameters = copy.deepcopy(abstract_a.a_parameters)
-                a_temp_pre = copy.deepcopy(abstract_a.a_preconditions)
-                a_temp_pre_dict = {'ontic_p':a_temp_pre.ontic_dict,'epistemic_p':a_temp_pre.epistemic_dict}
-                a_temp_effects = copy.deepcopy(abstract_a.a_effects)
-                # if self._checkPreconditions(state,a_temp_precondition,path):
-                all_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_pre_dict,a_temp_effects)})
-            else:
-                for params in self._generateParams(abstract_a.a_parameters):
-                    a_temp_name = a_name
-                    a_temp_parameters = copy.deepcopy(abstract_a.a_parameters)
-
-                    
-                    a_temp_ontic_p_list = copy.deepcopy(list(abstract_a.a_preconditions.ontic_dict.items()))
-                    a_temp_epistemic_p_list = copy.deepcopy(list(abstract_a.a_preconditions.epistemic_dict.items()))
-                    a_temp_effects = copy.deepcopy(abstract_a.a_effects)
-                    for i,v in params:
-                        a_temp_name = a_temp_name + "-" + v
-                        for j in range(len(a_temp_parameters)):
-                            v_name, v_effects = a_temp_parameters[j]
-                            v_name = v_name.replace(f'{i}',f'-{v}')
-                            a_temp_parameters[j] = (v_name,v_effects)
-                        
-                        # update parameters in the ontic precondition
-                        self.logger.debug(f"a_temp_ontic_p_list{a_temp_ontic_p_list}")
-                        for j in range(len(a_temp_ontic_p_list)):
-                            v_name, v_effects = a_temp_ontic_p_list[j]
-                            v_name = v_name.replace(f'{i}',f'-{v}')
-                            if type(v_effects) == str:
-                                v_effects = v_effects.replace(f'{i}',f'-{v}')
-                            a_temp_ontic_p_list[j] = (v_name,v_effects)
-
-                        # update parameters in the epistemic precondition
-                        for j in range(len(a_temp_epistemic_p_list)):
-                            v_name, v_effects = a_temp_epistemic_p_list[j]
-                            v_name = v_name.replace(f'{i}',f'-{v}').replace('[-','[').replace(',-',',')
-                            # precondition effect of epistemic is only going to be int
-                            # v_effects = v_effects.replace(f'{i}',f'-{v}')
-                            a_temp_epistemic_p_list[j] = (v_name,v_effects)                            
-                        
-                        # update parameters in the effects
-                        for j in range(len(a_temp_effects)):
-                            v_name, v_effects = a_temp_effects[j]
-                            v_name = v_name.replace(f'{i}',f'-{v}')
-                            v_effects = v_effects.replace(f'{i}',f'-{v}')
-                            a_temp_effects[j] = (v_name,v_effects)
-
-                    a_temp_pre_dict = {'ontic_p':dict(a_temp_ontic_p_list),'epistemic_p':dict(a_temp_epistemic_p_list)}
-                    all_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_pre_dict,a_temp_effects)})
-                    
-        return all_actions
-
-    def checkAllPreconditions(self,state,path,ontic_pre_dict,epistemic_pre_dict):
-
-        pre_dict = {}
-        flag_dict = {}
-        
-        # checking ontic preconditions
-        for action_name,ontic_pre in ontic_pre_dict.items():
-            pre_dict[action_name] = {}
-            flag_dict[action_name] = True
-            for k,e in ontic_pre.items():
-                try:
-                    if k in state.keys():
-                        if e in state.keys():
-                            if not state[k] == state[e]:
-                                flag_dict[action_name] = False
-                                pre_dict[action_name].update({k+":"+str(e):False})
-                            else:
-                                pre_dict[action_name].update({k+":"+str(e):True})
-                        elif not state[k] == e:
-                            flag_dict[action_name] = False
-                            pre_dict[action_name].update({k+":"+str(e):False})
-                        else:
-                            pre_dict[action_name].update({k+":"+str(e):True})
-                    else:
-                        self.logger.error(f'variable {k} not in state {state}')
-                        
-                except:
-                    self.logger.error("Error when checking precondition: {}\n with state: {}")
-                    
-                    flag_dict[action_name] = False
-
-
-        # get all ep_pre into one dict
-        temp_ep_dict = {}
-        self.logger.debug(f"epistemic_pre_dict: {epistemic_pre_dict}")
-        for action_name,ep_pre in epistemic_pre_dict.items():
-            temp_ep_dict.update(ep_pre) 
-              
-        current_time = datetime.now()
-        self.epistemic_calls +=1
-        p_dict,epistemic_dict = self.epistemic_model.epistemicGoalsHandler(temp_ep_dict,"",path)
-        self.epistemic_call_time += datetime.now() - current_time
-
-        ep_dict = {}
-        for action_name,ep_pre in epistemic_pre_dict.items():
-            ep_dict[action_name] = {}
-            for k,v in ep_pre.items():
-                if not epistemic_dict[k].value == v:
-                    flag_dict[action_name] = False
-                    pre_dict[action_name].update({k+":"+str(e):False})
-                    # pre_flag = False
-                    # pre_dict.update({k+" "+str(v):False})
+        ep_conditions_dict : typing.Dict[str,Condition] = dict()
+        # # checking the goal condition after generated the next state
+        for condition_key,condition in conditions.items():
+            if condition.condition_type == ConditionType.EP:
+                ep_conditions_dict.update({condition_key:condition})
+                # save and handled later
+            elif condition.condition_type == ConditionType.ONTIC :
+                variable_name = condition.condition_variable
+                value1 = extract_v_from_s(variable_name,current_state)
+                if not condition.target_variable == None:
+                    target_variable_name =  condition.target_variable
+                    value2 = extract_v_from_s(target_variable_name,current_state)
+                elif not condition.target_value == None:
+                    value2 = condition.target_value
                 else:
-                    pre_dict[action_name].update({k+":"+str(e):True})
-        
-        return flag_dict,p_dict,epistemic_dict,pre_dict    
-
-
-
-    # generate all possible parameter combinations
-    def _generateVariables(self,params):
-        # self.logger.debug(f'params: {params}')
-        param_list = []
-
-        if params == []:
-            return []
-        else:
-            
-            for i in params[0]:
-                next_param = copy.deepcopy(params[1:])
-                rest = self._generateVariables(next_param)
-                if len(rest) == 0:
-                    param_list = param_list + [f"-{i}"]
-                else:
-                    param_list = param_list + [ f"-{i}{t}" for t in rest ]
-        return param_list
-
-    # generate all possible parameter combinations
-    def _generateParams(self,params):
-        param_list = []
-
-        if params == []:
-            return []
-        else:
-            i,v = params[0]
-
-            for k,l in self.entities.items():
-
-                if l.e_type == v:
-                    next_param = copy.deepcopy(params[1:])
-                    rest = self._generateParams(next_param)
-                    if len(rest) == 0:
-                        param_list = param_list + [[(i,k)]]
-                    else:
-                        param_list = param_list + [ [(i,k)]+ t for t in self._generateParams(next_param) ]
-        return param_list
-                    
-    # TODO adding action cost
-    def generateSuccessor(self,state,action,path):
-        
-        # TODO valid action
-        # need to go nested on the brackets
-
-        new_state = copy.deepcopy(state)
-        
-        for v_name,update in action.a_effects:
-            old_value = state[v_name]
-            # v_name = v_name.replace('?','-')
-            # # self.logger.debug(f'single effect update: {v_name}/{old_value}/{update}')
-            # if update in state:
-            #     new_state[v_name] = state[update]
-            # elif '-' in update:
-            if update.startswith('-'):
-                delta_value = int(update.split('-')[1])
-                domain_name = self.variables[v_name].v_domain_name
-
-                if self.domains[domain_name].d_type == D_TYPE.ENUMERATE:
-                    index = self.domains[domain_name].d_values.index(old_value)
-                    new_index = (index-delta_value) % len(self.domains[domain_name].d_values)
-                    new_value = self.domains[domain_name].d_values[new_index]
-                    new_state[v_name] = new_value
-                elif self.domains[domain_name].d_type == D_TYPE.INTEGER:
-                    old_int = int(old_value)
-                    # # self.logger.debug(f'old_int: {old_int}')
-                    new_value = old_int - delta_value
-
-                    new_state[v_name] = new_value
-                    
-            elif update.startswith('+'):
-                delta_value = int(update.split('+')[-1])
-                domain_name = self.variables[v_name].v_domain_name
-                if self.domains[domain_name].d_type == D_TYPE.ENUMERATE:
-                    index = self.domains[domain_name].d_values.index(old_value)
-                    new_index = (index+delta_value) % len(self.domains[domain_name].d_values)
-                    new_state[v_name] = self.domains[domain_name].d_values[new_index]
-                elif self.domains[domain_name].d_type == D_TYPE.INTEGER:
-                    old_int = int(old_value)
-                    new_value = old_int + delta_value
-                    new_state[v_name] = new_value
+                    raise ValueError("One of the condition target variable or value should not be None",condition_key)
+                result = evaluation(value1,value2,condition.condition_operator)
+                goal_dict.update({condition_key:result})
             else:
+                raise ValueError("condition type not found",condition_key)
+        
+        ep_condition_dict,p_dict = self.epistemic_model.epistemicConditionsHandler(ep_conditions_dict,path,p_dict)
+
+        return ep_condition_dict,p_dict
+
+
+    def get_all_legal_actions(self,state,path,p_dict):
+        
+        all_actions,ep_condition_dict,ep_condition_actionname_dict = self.get_all_actions(state)
+        # print(all_actions.keys())
+        
+        legal_actions : typing.Dict[str,Action] = dict()
+
+        ep_condition_result_dict,p_dict = self.check_conditions(ep_condition_dict,path,p_dict)
+        
+        for action_name,action_item in all_actions.items():
+            # print(action_name)
+            # print(action)
+            # if self.check_conditions(action.preconditions,path,p_dict):
+            #     legal_actions.update({action_name:action})
+            precondition_flag = True
+            for precondition_name in action_item.preconditions.keys():
+                if precondition_name in ep_condition_actionname_dict.keys():
+                    if not ep_condition_result_dict[precondition_name]:
+                        precondition_flag = False
+                        break
+            if precondition_flag:
+                legal_actions.update({action_name:action_item})
+        
+        return legal_actions,p_dict
+        
+        # for action_name,action in self.action_schemas.items():
+        #     all_actions.update({action_name:Action(action_name,action)})
+        # return all_actions
+
+
+    def get_all_actions(self,state):
+        all_actions : typing.Dict[str,Action] = dict()
+        self.logger.debug("action_schemas:")
+        # print(self.action_schemas)
+        ep_condition_dictionary: typing.Dict[str,Condition] = dict()
+        ep_condition_actionname_dictionary : typing.Dict[str,str] = dict()
+        
+        for action_schema_name,action_schema in self.action_schemas.items():
+            print(action_schema_name)
+            print("--------------------")
+            parameters_dict = action_schema.parameters
+            new_parameter_replacement_list = [[]]
+            
+            ontic_preconditions : typing.Dict[str,Condition] = dict()
+            for precondition_name,precondition_item in action_schema.preconditions.items():
+                if precondition_item.condition_type == ConditionType.ONTIC:
+                    ontic_preconditions.update({precondition_name:precondition_item})
+            
+            # this is generated by filtering out the parameters that are not passing the ontic preconditions
+            for parameter_name,parameter_type in parameters_dict.items():
+                temp_parameter_replacement = []
+                for new_parameter_replacement in new_parameter_replacement_list:
+                    entity_index_list = self.types[parameter_type].entity_index_list
+                    for enetity_id in entity_index_list:
+                        new_replacements = new_parameter_replacement + [(parameter_name,enetity_id)]
+                        if self.checking_action_by_ontic_preconditions(ontic_preconditions,new_replacements,state):
+                            temp_parameter_replacement.append(new_replacements)
+                new_parameter_replacement_list = temp_parameter_replacement
+            
+            print(new_parameter_replacement_list)
+            
+            for parameter_replacement in new_parameter_replacement_list:
+                new_action_name = action_schema_name
+                new_parameters = dict()
+                for parameter_name,parameter_value in parameter_replacement:
+                    new_action_name += VARIABLE_FILLER + parameter_value
+                    new_parameters.update({parameter_value:parameters_dict[parameter_name]})
                 
-                domain_name = self.variables[v_name].v_domain_name
-                if self.domains[domain_name].d_type == D_TYPE.INTEGER:
-                    if re.search("[a-z]|[A-Z]", update):
-                        update = state[update]
-                    new_state[v_name] = int(update)
-                else:
-                    new_state[v_name] = update
-        return new_state
+                new_preconditions: typing.Dict[str,Condition] = dict()
+                for precondition_name,precondition_item in action_schema.preconditions.items():
+                    print(precondition_name)
+                    print(precondition_item)
+                    new_precondition_name = multiple_parameter_replace_with_ep(precondition_name,parameter_replacement,VARIABLE_FILLER)
+                    new_precondition = Condition()
+                    new_precondition.condition_operator = precondition_item.condition_operator
+                    if not precondition_item.target_variable == None:
+                        new_precondition.target_variable = multiple_parameter_replace(precondition_item.target_variable,parameter_replacement,VARIABLE_FILLER)
+                    elif not precondition_item.target_value == None:
+                        new_precondition.target_value = precondition_item.target_value
+                    else:
+                        raise ValueError("One of the condition target variable or value should not be None",precondition_name)
+                    
+                    if precondition_item.condition_type == ConditionType.ONTIC:
+                        new_precondition.condition_type = ConditionType.ONTIC
+                        new_precondition.condition_variable = multiple_parameter_replace(precondition_item.condition_variable,parameter_replacement,VARIABLE_FILLER)
+                    elif precondition_item.condition_type == ConditionType.EP:
+                        new_precondition.condition_type = ConditionType.EP
+                        new_ep_formula = EP_formula()
+                        old_ep_formula = precondition_item.condition_formula
+                        new_ep_formula.epf_type = old_ep_formula.epf_type
+                        new_ep_formula.ep_query = multiple_parameter_replace(old_ep_formula.ep_query,parameter_replacement,"")
+                        
+                        if new_ep_formula.epf_type == EPFType.EP:
+                            new_ep_formula.ep_formula_str = multiple_parameter_replace_with_ep(old_ep_formula.ep_formula_str,parameter_replacement,"")
+                            new_varphi = Condition()
+                            old_varphi = old_ep_formula.varphi
+                            new_varphi.condition_operator = old_varphi.condition_operator
+                            new_varphi.condition_type = old_varphi.condition_type
+                            new_varphi.condition_variable = multiple_parameter_replace(old_varphi.condition_variable,parameter_replacement,VARIABLE_FILLER)
+                            if old_varphi.target_variable == None:
+                                new_varphi.target_value = old_varphi.target_value
+                            elif old_varphi.target_value == None:
+                                new_varphi.target_variable = multiple_parameter_replace(old_varphi.target_variable,parameter_replacement,VARIABLE_FILLER)
+                            else:
+                                raise ValueError("One of the condition target variable or value should not be None",precondition_name)
+                            new_ep_formula.varphi = new_varphi
+                        elif new_ep_formula.epf_type == EPFType.JP:
+                            new_ep_formula.ep_variable = multiple_parameter_replace(old_ep_formula.ep_variable,parameter_replacement,VARIABLE_FILLER)
+                        new_precondition.condition_formula = new_ep_formula
+                        ep_condition_actionname_dictionary.update({new_precondition_name:new_action_name})
+                        ep_condition_dictionary.update({new_precondition_name:new_precondition})
+                    else:
+                        raise ValueError("condition type not found",precondition_name)
+                    new_preconditions.update({new_precondition_name:new_precondition})
+                
+                new_effects : typing.List[Effect] = []
+                for effect_item in action_schema.effects:
+                    new_effect = Effect()
+                    new_effect.effect_type = effect_item.effect_type
+                    new_effect.target_variable_name = multiple_parameter_replace(effect_item.target_variable_name,parameter_replacement,VARIABLE_FILLER)
+                    new_effect.update_type = effect_item.update_type
+                    if new_effect.update_type == UpdateType.CONSTENT:
+                        new_effect.update = effect_item.update
+                    elif new_effect.update_type == UpdateType.ONTIC:
+                        new_effect.update = multiple_parameter_replace(effect_item.update,parameter_replacement,VARIABLE_FILLER)
+                    elif new_effect.update_type == UpdateType.EPSITEMIC:
+                        new_ep_formula = EP_formula()
+                        old_ep_formula = effect_item.update
+                        new_ep_formula.epf_type = old_ep_formula.epf_type
+                        new_ep_formula.ep_query = multiple_parameter_replace_with_ep(old_ep_formula.ep_query,parameter_replacement,"")
+                        if new_ep_formula.epf_type == EPFType.EP:
+                            raise ValueError("EP formula should be be in effect")
+                        elif new_ep_formula.epf_type == EPFType.JP:
+                            new_ep_formula.ep_variable = multiple_parameter_replace(old_ep_formula.ep_variable,parameter_replacement,VARIABLE_FILLER)
+                        else:
+                            raise ValueError("EP formula type not found")
+                        new_effect.update = new_ep_formula
+                    else:
+                        raise ValueError("Update type not found")
+                    new_effects.append(new_effect)
+                
+                new_action = Action(new_action_name,new_parameters,new_preconditions,new_effects)
+                all_actions.update({new_action_name:new_action})
+        return all_actions,ep_condition_dictionary,ep_condition_actionname_dictionary
+                
         
-        
+        #     all_actions.update({action_name:Action(action_name,action)})
+        # return all_actions
+
+    def checking_action_by_ontic_preconditions(self,preconditions:typing.Dict[str,Condition],parameter_replacement,current_state):
+        for precondition_name,precondition_item in preconditions.items():
+            # print(precondition_name)
+            operator = precondition_item.condition_operator
+            variable_name = multiple_parameter_replace(precondition_item.condition_variable,parameter_replacement,VARIABLE_FILLER)
+            
+            if not "?" in variable_name:
+                value1 = extract_v_from_s(variable_name,current_state)
+                if not precondition_item.target_variable == None:
+                    target_variable_name = multiple_parameter_replace(precondition_item.target_variable,parameter_replacement,VARIABLE_FILLER)
+                    if not "?" in target_variable_name:
+                        value2=extract_v_from_s(target_variable_name,current_state)
+                    else:
+                        continue # still have unreplaced parameters in this condition  
+                else: # it means the target is a value
+                    value2 = precondition_item.target_value
+
+                if evaluation(self.logger,value1,value2,operator) == Ternary.FALSE:
+                    # print("return False")
+                    return False
+                    
+            else:
+                continue # still have unreplaced parameters in this condition        
+            
+        return True
+
+
+
+
+
     
-    def __str__(self):
-        return f"Problem: \n\t entities: {self.entities}\n\t variables: {self.variables}\n\t abstract_actions: {self.abstract_actions}\n\t domains: {self.domains}\n\t initial_state: {self.initial_state}\n\t goals: {self.goals}\n"
+    # def isGoal(self,state,path,p_path):
+    #     is_goal=True
+    #     goal_dict = dict()
+    #     # self.logger.debug("checking goal for state: {state} with path: {path}")
+
+    #     # generate perspectives for duplicate check
+    #     action_list = [a for s,a in path]
+    #     self.logger.debug(action_list)
+    #     action_list_str = ActionList2DictKey(action_list)
+    #     self.logger.debug(action_list_str)
+    #     self.logger.debug("checking goal for actions: [%s]",action_list_str)
+
+
+    #     # actions = [ a  for s,a in path]
+    #     # actions = actions[1:]
+        
+    #     for key,v in self.goals.ontic_dict.items():
+    #         symbol = v.symbol
+    #         variable_name = v.variable_name
+    #         # v_value = v.v_value
+    #         value = v.value
+    #         # valid_variable(variable_name,self)
+    #         # if symbol == "=":
+    #         #     if not state[variable_name] == value:
+    #         #         is_goal = False
+    #         #         goal_dict.update({k:False})
+    #         #     else:
+    #         #         goal_dict.update({k:True})
+    #         # elif symbol == "-="
+
+    #         ontic_str = key.replace(":ontic ","")
+    #         result = eval_var_from_str(self.logger,ontic_str,state)
+    #         if result == PDDL_TERNARY.TRUE:
+    #             goal_dict.update({key:True})
+    #         else:
+    #             is_goal = False
+    #             goal_dict.update({key:False})
+
+            
+    #     # adding epistemic checker here
+    #     current_time = datetime.now()
+    #     self.epistemic_calls +=1
+
+    #     # if self.epistemic_model.goal_p_keys == None:
+    #     #     # goal perspective keys has not generated yet
+    #     #     self.epistemic_model.goal_p_keys = self.epistemic_model.allPerspectiveKeys(epistemic_goals_dict=self.goals.epistemic_dict,prefix="")
+    #     #     self.epistemic_model.all_p_keys = self.epistemic_model.all_p_keys + self.epistemic_model.goal_p_keys
+    #     epistemic_dict = \
+    #         self.epistemic_model.epistemicGoalsHandler(self.goals.epistemic_dict,"",path,p_path)
+    #     self.epistemic_call_time += datetime.now() - current_time
+        
+    #     for k,item in self.goals.epistemic_dict.items():
+    #         v_name = item.variable_name
+    #         # valid_variable(v_name,self)
+    #         if epistemic_dict[k] == PDDL_TERNARY.FALSE:
+    #             # is_goal = False
+    #             goal_dict.update({k:False})
+    #         elif epistemic_dict[k] == PDDL_TERNARY.TRUE:
+    #             goal_dict.update({k:True})
+    #         else:
+    #             raise ValueError("This should not happen in checking epistemic goal")
+                
+    #     # self.logger.debug("epistemic_dict {epistemic_dict}")
+    #     # self.logger.debug("p_dict {p_dict}")
+    #     # remainning goal proposition is checked by False value in goal_dict
+    #     self.logger.debug(p_path)
+    #     self.logger.debug(p_path.keys())
+    #     self.logger.debug(action_list_str)
+        
+    #     # self.logger.info("p_path and action [%s]  is: \n [%s]",action_list_str,p_path)
+    #     p_dict = dict()
+    #     if not epistemic_dict == {}:
+    #         # if there is no epistemic goal, then we do not need to update the p_path
+    #         assert action_list_str in p_path.keys(), "action string not in p_path"
+            
+    #         # if "-,,move_right-a,sharing-b,move_right-b" in action_list_str:
+    #         # if "-,,single_peek-a,subtraction1-c,return-a,single_peek-b" in action_list_str:
+    #         #     self.logger.info("p_path for action [%s]  is: \n [%s]",action_list_str,p_path[action_list_str])
+    #         # self.logger.info("p_path for action [%s]  is: \n [%s]",action_list_str,p_path[action_list_str])
+    #         for k,p in p_path[action_list_str].items():
+    #             temp_p = dict()
+    #             temp_p["observation"] = p["observation"][-1]
+    #             temp_p["perspectives"] = p["perspectives"][-1]
+    #             p_dict[k] = temp_p
+    #     return p_dict,epistemic_dict,goal_dict
+    
+    # def getAllActions(self,state,path):
+    #     all_actions = dict()
+    #     self.logger.debug("abstract actions %s" % (abstract_actions))
+    #     # get all type of actions
+    #     for a_name, abstract_a in abstract_actions.items():
+    #         # # self.logger.debug('action: {a} ')
+            
+            
+    #         # generate all possible combination parameters for each type of action
+    #         # # self.logger.debug('all params: {self._generateParams(a.a_parameters)}')
+
+    #         if abstract_a.a_parameters == []:
+    #             a_temp_name = a_name
+    #             a_temp_parameters = copy.deepcopy(abstract_a.a_parameters)
+    #             a_temp_pre = copy.deepcopy(abstract_a.a_preconditions)
+    #             a_temp_pre_dict = {'ontic':a_temp_pre.ontic_dict,'epistemic':a_temp_pre.epistemic_dict}
+    #             # a_temp_ontic_p = copy.deepcopy(list(abstract_a.a_precondition.ontic_dict))
+    #             # a_temp_epistemic_p = copy.deepcopy(list(abstract_a.a_precondition.epistemic_dict))
+    #             a_temp_effects = copy.deepcopy(abstract_a.a_effects)
+    #             # if self._checkPreconditions(state,a_temp_precondition,path):
+    #             all_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_pre_dict,a_temp_effects)})
+    #                 # # self.logger.debug('legal action after single precondition check: {all_actions}') 
+    #         else:
+    #             for params in self._generateParams(abstract_a.a_parameters):
+    #                 a_temp_name = a_name
+    #                 a_temp_parameters = copy.deepcopy(abstract_a.a_parameters)
+    #                 # self.logger.debug("abstract action")
+    #                 # self.logger.debug(abstract_a.a_preconditions.ontic_dict.items())
+    #                 temp_ontic_tuple_list = list()
+    #                 for key,con_obj in abstract_a.a_preconditions.ontic_dict.items():
+    #                     symbol = con_obj.symbol
+    #                     variable_name = con_obj.variable_name
+    #                     value = con_obj.value
+    #                     # key,symbol,variable,value
+    #                     temp_ontic_tuple_list.append((key,symbol,variable_name,value))
+                        
+    #                 temp_epistemic_tuple_list = list()
+    #                 for key,con_obj in abstract_a.a_preconditions.epistemic_dict.items():
+    #                     symbol = con_obj.symbol
+    #                     query = con_obj.query
+    #                     variable_name = con_obj.variable_name
+    #                     query_prefix = con_obj.query_prefix
+    #                     value = con_obj.value
+    #                     # key,query_str,query_prefix,symbol,variable,value
+    #                     temp_epistemic_tuple_list.append((key,query,query_prefix,symbol,variable_name,value))
+    #                 # self.logger.debug(temp_ontic_tuple_list)
+    #                 # self.logger.debug(temp_epistemic_tuple_list)
+                    
+    #                 a_temp_effects = copy.deepcopy(abstract_a.a_effects)
+    #                 # # self.logger.debug('works on params: {params}')
+    #                 for i,v in params:
+    #                     # a_temp_name = a_name
+    #                     # a_temp_parameters = copy.deepcopy(a.a_parameters)
+    #                     # a_temp_precondition = copy.deepcopy(a.a_precondition)
+    #                     # a_temp_effects = copy.deepcopy(a.a_effects)
+    #                     a_temp_name = a_temp_name + "-" + v
+    #                     for j in range(len(a_temp_parameters)):
+    #                         v_name, v_effects = a_temp_parameters[j]
+    #                         v_name = v_name.replace(f'{i}',f'-{v}')
+    #                         a_temp_parameters[j] = (v_name,v_effects)
+                        
+    #                     # update parameters in the ontic precondition
+    #                     for j in range(len(temp_ontic_tuple_list)):
+    #                         key,symbol,variable_name,value = temp_ontic_tuple_list[j]
+
+    #                         old_variable_name = variable_name
+    #                         new_variable_name = old_variable_name.replace(f'{i}',f'-{v}')
+
+    #                         key = key.replace(old_variable_name,new_variable_name).replace(f'{i}',f'-{v}')
+    #                         # symbol = symbol.replace(f'{i}',f'-{v}')
+
+    #                         # v_value = v_value.replace(f'{i}',f'-{v}') if type(v_value) == str else v_value
+    #                         # self.logger.debug(type(value))
+                            
+    #                         old_value = value
+    #                         value = value.replace(f'{i}',f'-{v}')  if type(value) == str else value if type(value) ==int else value.value
+    #                         # self.logger.debug("[%s] repalced by [%s] in [%s] into [%s]" %(i,v,old_value,value))
+    #                         temp_ontic_tuple_list[j]  = (key,symbol,new_variable_name,value)
+
+
+    #                     # update parameters in the epistemic precondition
+    #                     for j in range(len(temp_epistemic_tuple_list)):
+    #                         key,query,query_prefix,symbol,variable_name,value = temp_epistemic_tuple_list[j]
+
+    #                         old_variable_name = variable_name
+    #                         new_variable_name = old_variable_name.replace(f'{i}',f'-{v}')
+
+    #                         key = key.replace(old_variable_name,new_variable_name).replace(f'{i}',f'{v}')
+    #                         query = query.replace(old_variable_name,new_variable_name).replace(f'{i}',f'{v}')
+    #                         query_prefix = query_prefix.replace(old_variable_name,new_variable_name).replace(f'{i}',f'{v}')
+    #                         # symbol = symbol.replace(f'{i}',f'-{v}')
+
+    #                         # v_value = v_value.replace(f'{i}',f'-{v}') if type(v_value) == str else v_value
+    #                         # self.logger.debug(type(value))
+    #                         value = value.replace(f'{i}',f'-{v}')  if type(value) == str else value if type(value) ==int else value.value
+    #                         temp_epistemic_tuple_list[j]  = (key,query,query_prefix,symbol,new_variable_name,value)
+    #                     # # update parameters in the epistemic precondition
+    #                     # for j in range(len(a_temp_epistemic_p_list)):
+    #                     #     v_name, v_effects = a_temp_epistemic_p_list[j]
+    #                     #     v_name = v_name.replace(f'{i}',f'-{v}').replace('[-','[').replace(',-',',')
+    #                     #     # precondition effect of epistemic is only going to be int
+    #                     #     # v_effects = v_effects.replace(f'{i}',f'-{v}')
+    #                     #     a_temp_epistemic_p_list[j] = (v_name,v_effects)                            
+                        
+                        
+    #                     # update parameters in the effects
+    #                     for j in range(len(a_temp_effects)):
+    #                         v_name, v_effects = a_temp_effects[j]
+    #                         v_name = v_name.replace(f'{i}',f'-{v}')
+    #                         v_effects = v_effects.replace(f'{i}',f'-{v}')
+    #                         a_temp_effects[j] = (v_name,v_effects)
+
+    #                 a_temp_pre_dict = {'ontic':temp_ontic_tuple_list,'epistemic':temp_epistemic_tuple_list}
+
+    #                 # self.logger.debug('a_temp_name [%s]',a_temp_name)
+    #                 # self.logger.debug('ontic [%s]',temp_ontic_tuple_list)
+    #                 # self.logger.debug('epistemic [%s]',temp_epistemic_tuple_list)
+    #                 # self.logger.debug('effects [%s]',a_temp_effects)
+    #                 # self.logger.debug(a_temp_name)
+                    
+    #                 all_actions.update({a_temp_name:Action(a_temp_name,a_temp_parameters,a_temp_pre_dict,a_temp_effects)})
+    #                 # # self.logger.debug('legal action before precondition check: {all_actions}') 
+    #     # self.logger.debug('legal actions: {all_actions.keys()}') 
+    #     return all_actions   
+
+    # def checkAllPreconditions(self,state,path,ontic_pre_dict,epistemic_pre_dict,p_path):
+
+    #     self.logger.debug('function checkAllPreconditions')
+    #     self.logger.debug('checking precondition for state: [%s]', state)
+    #     # preconditions = action.a_precondition
+
+    #     action_list = [a for s,a in path]
+    #     actions_str = ActionList2DictKey(action_list)
+    #     # self.logger.info(actions_str)
+    #     # if "move_right-b,sharing-a,move_right-c" in actions_str:
+    #     #     self.logger.setLevel(logging.DEBUG)
+
+
+    #     pre_dict = dict()
+    #     flag_dict = dict()
+        
+    #     # checking ontic preconditions
+    #     self.logger.debug('checking all ontic preconditions')
+    #     for action_name,ontic_pre in ontic_pre_dict.items():
+    #         pre_dict[action_name] = dict()
+    #         flag_dict[action_name] = True
+    #         self.logger.debug('checking ontic precondition [%s] for action [%s]',ontic_pre,action_name)
+    #         for key,ontic_obj in ontic_pre.items():
+    #             ontic_str = key.replace(":ontic ","")
+    #             # valid_variable(ontic_obj.variable_name,self)
+    #             result = eval_var_from_str(self.logger,ontic_str,state)
+    #             if result == PDDL_TERNARY.TRUE:
+    #                 pre_dict[action_name].update({key:True})
+    #             else:
+    #                 flag_dict[action_name] = False
+    #                 pre_dict[action_name].update({key:False})
+    #         self.logger.debug("pre_dict[%s]: %s",action_name, pre_dict[action_name])
+                    
+    #             #     flag_dict[action_name] = False
+    #     self.logger.debug("flag_dict [%s]", flag_dict)
+            
+    #     # adding epistemic checker here
+    #     # self.logger.debug("epistemic_pre: {preconditions['epistemic_p']}")
+
+
+
+    #     self.logger.debug("checking all epistemic preconditions")
+    #     # get all ep_pre into one list
+    #     temp_ep_dict = dict()
+    #     # this part need to be changed
+    #     self.logger.debug("epistemic_pre_dict: [%s]",epistemic_pre_dict)
+    #     for action_name,ep_dict in epistemic_pre_dict.items():
+    #         # for ep in ep_pre.items():
+    #         temp_ep_dict.update(ep_dict) 
+            
+    #     self.logger.debug("epistemic preconditions list [%s]",epistemic_pre_dict)    
+    #     current_time = datetime.now()
+    #     self.epistemic_calls +=1
+    #     # if self.epistemic_model.pre_p_keys == None:
+    #     #     # precondition perspective keys has not generated yet
+    #     #     self.epistemic_model.pre_p_keys = self.epistemic_model.allPerspectiveKeys(epistemic_goals_dict=temp_ep_dict,prefix="")
+    #     #     self.epistemic_model.all_p_keys = self.epistemic_model.all_p_keys + self.epistemic_model.pre_p_keys
+    #     epistemic_dict = self.epistemic_model.epistemicGoalsHandler(temp_ep_dict,"",path,p_path)
+    #     self.epistemic_call_time += datetime.now() - current_time
+
+    #     self.logger.debug("epistemic preconditions list [%s]",epistemic_pre_dict) 
+    #     for action_name,ep_dict in epistemic_pre_dict.items():
+    #         if not ep_dict == dict():
+    #             # flag_dict[action_name]=True
+    #             for k,item in ep_dict.items():
+    #                 v_name = item.variable_name
+    #                 # valid_variable(v_name,self)
+    #                 if epistemic_dict[k] == PDDL_TERNARY.TRUE:
+    #                     pre_dict[action_name].update({k:True})
+    #                 elif  epistemic_dict[k] == PDDL_TERNARY.FALSE:
+    #                     pre_dict[action_name].update({k:False})
+    #                     flag_dict[action_name]=False
+                        
+    #                 else:
+    #                     raise ValueError("this should not happen in check ep precondition")
+                        
+    #         # for k,ep_obj in ep_dict.items():
+    #         #     v = ep_obj.value
+    #         #     if not epistemic_dict[k] == v:
+    #         #         flag_dict[action_name] = False
+    #         #         pre_dict[action_name].update({k:False})
+    #         #         # pre_flag = False
+    #         #         # pre_dict.update({k+" "+str(v):False})
+    #         #     else:
+    #         #         pre_dict[action_name].update({k:True})
+        
+        
+    #     self.logger.debug("flag_dict: [%s]",flag_dict)
+    #     self.logger.debug("epistemic_dict: [%s]",epistemic_dict)
+    #     self.logger.debug("pre_dict: [%s]",pre_dict)
+    #     self.logger.debug("p_path.keys(): [%s]",p_path.keys())
+    #     # generate perspectives for duplicate check
+    #     action_list = [a for s,a in path]
+    #     action_list_str = ActionList2DictKey(action_list)
+        
+        
+    #     # if "-,,move_right-a,sharing-b,move_right-b" in action_list_str:
+    #     #     self.logger.info("p_path for action [%s]  is: \n [%s]",action_list_str,p_path[action_list_str])
+    #     # if "-,,single_peek-a,subtraction1-c,return-a,single_peek-b" in action_list_str:
+    #     #     self.logger.info("p_path for action [%s]  is: \n [%s]",action_list_str,p_path[action_list_str])
+    #     p_dict = dict()
+    #     if not epistemic_dict == {}:
+    #         assert action_list_str in p_path.keys(), "action string not in p_path"
+            
+    #         for k,p in p_path[action_list_str].items():
+    #             temp_p = dict()
+    #             temp_p["observation"] = p["observation"][-1]
+    #             temp_p["perspectives"] = p["perspectives"][-1]
+    #             p_dict[k] = temp_p
+    #     # return p_dict,epistemic_dict,goal_dict
+    #     return flag_dict,epistemic_dict,p_dict
+    #     # return flag_dict,epistemic_dict,pre_dict
+
+    # # generate all possible parameter combinations
+    # def _generateVariables(self,params):
+    #     self.logger.debug('params: [%s]',params)
+    #     param_list = []
+
+    #     if params == []:
+    #         return []
+    #     else:
+            
+    #         for i in params[0]:
+    #             next_param = copy.deepcopy(params[1:])
+    #             rest = self._generateVariables(next_param)
+    #             if len(rest) == 0:
+    #                 param_list = param_list + [f"-{i}" ]
+    #             else:
+    #                 param_list = param_list + [ f"-{i}{t}" for t in rest ]
+    #     return param_list
 
 
     
+    # # generate all possible parameter combinations
+    # def _generateParams(self,params):
+    #     param_list = []
+
+    #     if params == []:
+    #         return []
+    #     else:
+    #         i,v = params[0]
+
+    #         for k,l in self.entities.items():
+
+    #             if l.e_type == v:
+    #                 next_param = copy.deepcopy(params[1:])
+    #                 rest = self._generateParams(next_param)
+    #                 if len(rest) == 0:
+    #                     param_list = param_list + [[(i,k)]]
+    #                 else:
+    #                     param_list = param_list + [ [(i,k)]+ t for t in self._generateParams(next_param) ]
+    #     return param_list
+
+    # def intInDomain(self,v_name,value):
+    #     variable_obj = variables[v_name]
+    #     d_name = variable_obj.v_domain_name
+    #     domain_obj = domain[d_name]
+    #     bounds = domain_obj.d_values
+    #     return value >= bounds[0] and value <= bounds[1]
+
+
+    # # TODO adding action cost
+    # def generateSuccessor(self,state,action,path):
+        
+    #     # TODO valid action
+    #     # need to go nested on the brackets
+    #     self.logger.debug('generate successor for state: [%s]',state)
+    #     self.logger.debug('generate successor with action: [%s]',action)
+    #     new_state = copy.deepcopy(state)
+        
+    #     for v_name,update in action.a_effects:
+    #         old_value = state[v_name]
+    #         # v_name = v_name.replace('?','-')
+    #         # self.logger.debug('single effect update: {v_name}/{old_value}/{update}')
+    #         # if update in state:
+    #         #     new_state[v_name] = state[update]
+    #         # elif '-' in update:
+    #         if update.startswith('-'):
+    #             # self.logger.debug('update -')
+    #             delta_value = int(update.split('-')[1])
+    #             # self.logger.debug('delta value: {delta_value}')
+    #             domain_name = variables[v_name].v_domain_name
+    #             # self.logger.debug('domain_name {domain_name}')
+    #             if domain[domain_name].d_type == D_TYPE.ENUMERATE:
+    #                 index = domain[domain_name].d_values.index(old_value)
+    #                 # self.logger.debug('index: {index} in the domain: {domain[domain_name].d_values}')
+    #                 new_index = (index-delta_value) % len(domain[domain_name].d_values)
+    #                 # self.logger.debug('new_index: {new_index} in the domain: {domain[domain_name].d_values}')
+    #                 new_value = domain[domain_name].d_values[new_index]
+    #                 # self.logger.debug('new_value: {new_value} in the domain: {domain[domain_name].d_values}')
+    #                 new_state[v_name] = new_value
+    #             elif domain[domain_name].d_type == D_TYPE.INTEGER:
+    #                 old_int = int(old_value)
+    #                 # self.logger.debug('old_int: {old_int}')
+    #                 new_value = old_int - delta_value
+    #                 # self.logger.debug('new_value: {new_value} in the domain: {domain[domain_name].d_values}')
+    #                 new_state[v_name] = new_value
+    #                 if not self.intInDomain(v_name,new_value):
+    #                     return None
+                    
+    #         elif update.startswith('+'):
+    #             delta_value = int(update.split('+')[-1])
+    #             domain_name = variables[v_name].v_domain_name
+    #             if domain[domain_name].d_type == D_TYPE.ENUMERATE:
+    #                 index = domain[domain_name].d_values.index(old_value)
+    #                 new_index = (index+delta_value) % len(domain[domain_name].d_values)
+    #                 new_state[v_name] = domain[domain_name].d_values[new_index]
+    #             elif domain[domain_name].d_type == D_TYPE.INTEGER:
+    #                 old_int = int(old_value)
+    #                 self.logger.debug('old_int: [%s]',old_int)
+    #                 new_value = old_int + delta_value
+    #                 self.logger.debug('new_value: [%s] in the domain: [%s]',new_value,domain[domain_name].d_values)
+    #                 new_state[v_name] = new_value
+    #                 if not self.intInDomain(v_name,new_value):
+    #                     return None
+    #         # if '-' in update:
+    #         #     v2_name,value = update.split('-')
+    #         #     v2_name = v2_name.replace('?','-')
+    #         #     v2_value = state[v2_name]
+    #         #     domain_name = variables[v_name].v_domain_name
+    #         #     if domain[domain_name].d_type == D_TYPE.ENUMERATE:
+    #         #         for index, item in enumerate(domain[domain_name].d_values):
+    #         #             if item == v2_value:
+    #         #                 break
+    #         #         new_state[v_name] = domain[domain_name].d_values[(index-int(value))%len(domain[domain_name].d_values)]
+    #         # elif '+' in update:
+    #         #     v2_name,value = update.split('+')
+    #         #     v2_name = v2_name.replace('?','-')
+    #         #     v2_value = state[v2_name]
+    #         #     domain_name = variables[v_name].v_domain_name
+    #         #     if domain[domain_name].d_type == D_TYPE.ENUMERATE:
+    #         #         for index, item in enumerate(domain[domain_name].d_values):
+    #         #             if item == v2_value:
+    #         #                 break
+    #         #         new_state[v_name] = domain[domain_name].d_values[(index+int(value))%len(domain[domain_name].d_values)]
+    #         else:
+                
+    #             domain_name = variables[v_name].v_domain_name
+    #             # self.logger.debug('update {v_name} with domain {domain_name} on type {domain[domain_name].d_type} ')
+    #             if domain[domain_name].d_type == D_TYPE.INTEGER:
+    #                 if re.search("[a-z]|[A-Z]", update):
+    #                     update = state[update]
+    #                 new_state[v_name] = int(update)
+    #             elif update in state.keys():
+    #                 new_state[v_name] = state[update]
+    #             else:
+    #                 new_state[v_name] = update
+
+    #     # self.logger.debug('new state is : {new_state}')
+    #     return new_state
+        
+        
+    
+    # def __str__(self):
+    #     return f"Problem: \n\t entities: {self.entities}\n\t variables: {variables}\n\t actions: {self.actions}\n\t domains: {domain}\n\t initial_state: {self.initial_state}\n\t goals: {self.goals}\n"
+
 
 
     
