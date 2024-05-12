@@ -33,7 +33,7 @@ def loadParameter():
     # parser.add_option('-b', '--belief_mode', dest="belief_mode", type='int', help='should between 0-3', default=1)
     # parser.add_option('--time_debug', dest="time_debug", action='store_true', help='enable cProfile', default=False)
     # parser.add_option('-t', '--timeout', dest="timeout", help='timeout, default 300s', type='int', default=300)
-    parser.add_option('-d', '--domain', dest="domain_path", help='path to the domain folder, which contains problem_template.py', default='experiments/coin')
+    parser.add_option('-p', '--problem_template', dest="problem_template_file", help='path to the problem_template.py', default='experiments/bbl/problem_template2.py')
     parser.add_option('-g', '--max_goal_size', dest="max_goal_size", type='int', help='should be larger than 1 and smaller than |agt|*|agt-1|^(depth-1), also affected by |V|^|goal|', default=1)
     parser.add_option('-k', '--k_samples', dest="sample_size", type='int', help='should be larger than 1 and smaller than ?', default=5)
     parser.add_option('-e', dest="enumerate", action='store_true', help='generate all problems', default=False)
@@ -43,21 +43,27 @@ def loadParameter():
 
     return options
 
-def write_all_problems(problem_template,ternary_goal_list,prefix):
+def write_all_problems(problem_template,ternary_goal_list,prefix,problem_path):
     max_index = -1
-    file_list = os.listdir(problem_template.problem_path)
-    for file_name in file_list:
-        if not os.path.isdir( os.path.join(problem_template.problem_path,file_name)):
-            if "problem" in file_name and  ".pddl" in file_name:
-                index_str = file_name.split(".")[0].split("_")[-1]
-                # print(index_str)
-                index_int = int(index_str)
-                if index_int > max_index:
-                    max_index = index_int
+    # file_list = os.listdir(problem_path)
+    # for file_name in file_list:
+    #     if not os.path.isdir( os.path.join(problem_template.problem_path,file_name)):
+    #         if "problem" in file_name and  ".pddl" in file_name:
+    #             index_str = file_name.split(".")[0].split("_")[-1]
+    #             # print(index_str)
+    #             index_int = int(index_str)
+    #             if index_int > max_index:
+    #                 max_index = index_int
     # print(max_index)
     
     for i in range(len(ternary_goal_list)):
-        problem_index = f"{prefix}_{i+max_index+1:05d}"
+        max_depth = 0
+        for goal_str in ternary_goal_list[i]:
+            depth = goal_str.count("[")
+            if depth > max_depth:
+                max_depth = depth
+                
+        problem_index = f"{prefix}d{max_depth}_{i+max_index+1:05d}"
         output_str = problem_template.problem_prefix1
         output_str=output_str + problem_index
         output_str=output_str + problem_template.problem_prefix2
@@ -67,7 +73,7 @@ def write_all_problems(problem_template,ternary_goal_list,prefix):
             output_str=output_str + "          " + goal_str +"\n"
         output_str=output_str + problem_template.problem_goal_surfix
         output_str=output_str + problem_template.problem_surfix
-        with open(os.path.join(problem_template.problem_path,f"problem{problem_index}.pddl"),"w") as f:
+        with open(os.path.join(problem_path,f"problem{problem_index}.pddl"),"w") as f:
             f.write(output_str)
 
 def enumerate_variables(goal_list,base_case_list):
@@ -78,12 +84,13 @@ def enumerate_variables(goal_list,base_case_list):
     for base_case_list in basecase_permutations:
         temp_goal_list = []
         for i in range(len(goal_list)):
-            # (= (:epistemic b [a] (= (face c) 'head')) 1)
-            goal_str = "(:epistemic "
+            # (= (@ep ("+ b [b] + b [a]") (= (v p) 't')) ep.true)
+            goal_str = '(= (@ep ("'
             # goal_str = goal_str+"".join([ f"b [{a}] " for a in goal_list[i]])
-            goal_str = goal_str+goal_list[i]
-            goal_str = goal_str+ base_case_list[i]
-            goal_str = goal_str+") "
+            goal_str += goal_list[i]
+            goal_str += '") '
+            goal_str += base_case_list[i]
+            goal_str += " ep.true)"
             temp_goal_list.append(goal_str)
         list_goal_list.append(temp_goal_list)
     return list_goal_list
@@ -128,10 +135,11 @@ if __name__ == '__main__':
 
     options = loadParameter()
 
-    if options.domain_path == "":
+    if options.problem_template_file == "":
         raise ValueError("domain path is empty")
     else:
-        problem_template_py = os.path.join(options.domain_path,"problem_template.py")
+        problem_template_py = options.problem_template_file
+        
         module_name = "PDDL_Template"
         spec = importlib.util.spec_from_file_location(module_name,problem_template_py)
         problem_template_module = importlib.util.module_from_spec(spec)
@@ -155,7 +163,11 @@ if __name__ == '__main__':
             index_goal_list = index_goal_list+random_goal_list
 
     print(index_goal_list)
-    if problem_template.problem_path == os.path.join("experiments","grapevine"):
+    problem_path = os.path.split(problem_template_py)[0]
+    agent_number = os.path.split(problem_template_py)[1].split(".")[0].split("problem_template")[1]
+    print(agent_number)
+    
+    if problem_path == os.path.join("experiments","grapevine"):
         bound = rqg.agent_num_list[0]
         filtered_list = []
         for goal_list in index_goal_list:
@@ -165,11 +177,11 @@ if __name__ == '__main__':
     else:
         filtered_list = index_goal_list
     
-    print(filtered_list)
+    # print(filtered_list)
     var_goal_list = []
     for goal_list in filtered_list:
         ep_prefix_list = [rqg.decode_agt_num(i) for i in goal_list]
-        if problem_template.problem_path == os.path.join("experiments","grapevine"):
+        if problem_path == os.path.join("experiments","grapevine"):
             temp_var_goal = grapevine_variable(ep_prefix_list)
         else:    
             temp_var_goal = enumerate_variables(ep_prefix_list,base_cases)
@@ -178,9 +190,9 @@ if __name__ == '__main__':
             if temp_goal not in var_goal_list:
                 var_goal_list.append(temp_goal)
     
-    print(var_goal_list)
-    print(len(var_goal_list))
-    write_all_problems(problem_template,var_goal_list,f"_maxd{problem_template.MAX_DEPTH}")
+    # print(var_goal_list)
+    # print(len(var_goal_list))
+    write_all_problems(problem_template,var_goal_list,f"_a2_g1_",problem_path)
     
     
     # ternary_goal_list = []
