@@ -31,16 +31,16 @@ class bfsdcu(Search):
     
 
     # below are the function need to change to test different configration
-    def _duplication_check(self,ep_state_str):
-        if not ep_state_str in self.visited:
-            self.visited.add(ep_state_str)
-            return True
-        else:
-            return False
-        # return True
+    # def _duplication_check(self,ep_state_str):
+    #     if not ep_state_str in self.visited:
+    #         self.visited.add(ep_state_str)
+    #         return True
+    #     else:
+    #         return False
+    #     # return True
 
-    def _unknown_check(self,succ_node):
-        if succ_node.remaining_goal <= self.max_goal_num:
-            return True
-        else:
-            return False
+    # def _unknown_check(self,succ_node):
+    #     if succ_node.remaining_goal <= self.max_goal_num:
+    #         return True
+    #     else:
+    #         return False

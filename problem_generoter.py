@@ -90,7 +90,7 @@ def enumerate_variables(goal_list,base_case_list):
             goal_str += goal_list[i]
             goal_str += '") '
             goal_str += base_case_list[i]
-            goal_str += " ep.true)"
+            goal_str += ") ep.true)"
             temp_goal_list.append(goal_str)
         list_goal_list.append(temp_goal_list)
     return list_goal_list

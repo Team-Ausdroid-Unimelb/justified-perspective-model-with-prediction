@@ -30,7 +30,7 @@ import pytz
 
 import logging
 from util import setup_logger_handlers,setup_logger
-from latex_converter import LatexConverter
+# from latex_converter import LatexConverter
 import instance_runner
 
 TIMEZONE = pytz.timezone('Australia/Melbourne')
@@ -167,11 +167,11 @@ if __name__ == '__main__':
                 logger.info(f"solving time: {used_time}")
                 del ins
     
-        if options.latex_output:
-            logger.info("Generating Latex for domain:")
-            logger.info(domain_name)
-            latex_converter = LatexConverter(input_dir=output_path,output_dir="../jair/temp_table_contents")
-            latex_converter.table_generator()
+        # if options.latex_output:
+        #     logger.info("Generating Latex for domain:")
+        #     logger.info(domain_name)
+        #     latex_converter = LatexConverter(input_dir=output_path,output_dir="../jair/temp_table_contents")
+        #     latex_converter.table_generator()
 
 
     
