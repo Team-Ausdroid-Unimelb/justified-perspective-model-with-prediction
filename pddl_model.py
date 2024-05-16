@@ -64,6 +64,9 @@ class Problem:
         self.epistemic_calls = 0
         self.epistemic_call_time = timedelta(0)
         self.epistemic_call_time_max = timedelta(0)
+
+        self.domain_path = ""
+        self.problem_path = ""
         
         self.epistemic_model = epistemic_model.EpistemicModel(self.logger,self.entities,self.functions,self.function_schemas,self.external)
 

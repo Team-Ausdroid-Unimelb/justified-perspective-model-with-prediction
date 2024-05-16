@@ -110,6 +110,8 @@ class Instance:
             
         logger.info(f'Initialize problem')
         problem = pddl_model.Problem(enetities,types,function_schemas,action_schemas,rules,functions,initial_state,goals,self.external_function,handlers=logger_handlers)
+        problem.domain_path = self.domain_path
+        problem.problem_path = self.problem_path
         problem.logger.handlers = logger.handlers
 
         logger.info(f'starting search')
