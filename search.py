@@ -3,6 +3,7 @@ import datetime
 # import resource
 import psutil
 import os
+from pddl_model import Problem
 
 from util import setup_logger, PriorityQueue, GLOBAL_PERSPECTIVE_INDEX,make_hashable
 from util import Entity,EntityType,Condition,ConditionType,EP_formula,Ternary,EPFType
@@ -97,7 +98,7 @@ class Search:
 
     #BFS with duplicate check on the state + epistemic formula
     # for novelty checking purpose, we need to move the goal check process at where the node is generated
-    def searching(self,problem):
+    def searching(self,problem:Problem):
         self.logger.info("starting searching using [%s]",self.search_name)
         start_time = datetime.datetime.now()
 
@@ -119,6 +120,7 @@ class Search:
         init_state = problem.initial_state
         init_path = [(init_state,'')]
         remaining_goal_num,init_goal_dict,init_p_dict = problem.is_goal(init_path)
+        self.goal_checked +=1
        
         # init_epistemic_item_set = dict()
         
@@ -216,6 +218,7 @@ class Search:
                         
                         new_path = path + [(succ_state,action_name)]
                         remaining_goal_num,goal_dict,g_p_dict = problem.is_goal(new_path)
+                        self.goal_checked+=1
                         succ_node = self.SearchNode(succ_state,remaining_goal_num,g_p_dict,new_path)
 
                         if self._unknown_check(succ_node,goal_dict):
@@ -261,7 +264,7 @@ class Search:
 
 
 
-    def _finalise_result(self,problem):
+    def _finalise_result(self,problem:Problem):
         # logger output
         ontic_goal_list = list()
         epistemic_goal_list = list()
@@ -284,14 +287,15 @@ class Search:
         self.logger.info(f'[number of node generated]: {self.generated}')
         self.logger.info(f'[number of epistemic formulas evaluation: {problem.epistemic_calls}]')
         self.logger.info(f'[time in epistemic formulas evaluation: {problem.epistemic_call_time}]')
-        self.logger.info(f'[avg time in epistemic formulas evaluation: {0 if problem.epistemic_calls == 0 else problem.epistemic_call_time.total_seconds()/problem.epistemic_calls}]')
+        self.logger.info(f'[avg time in epistemic formulas evaluation: {0 if problem.epistemic_calls == 0 else problem.epistemic_call_time.total_seconds()*1000/problem.epistemic_calls}]')
         self.logger.info(f'[total_goal_size: {len(ontic_goal_list)+len(epistemic_goal_list)}]')
         self.logger.info(f'[ontic_goal_size: {len(ontic_goal_list)}]')
         self.logger.info(f'[epistemic_goal_size: {len(epistemic_goal_list)}]')
         self.logger.info(f'[ontic_goals: {ontic_goal_list}]')
         self.logger.info(f'[epistemic_goals: {epistemic_goal_list}]')
         self.logger.info(f'[goals: {ontic_goal_list+epistemic_goal_list}]')
-        
+        self.logger.info(f'[epistemic_call_time_max: {problem.epistemic_call_time_max.total_seconds()*1000}]')
+        self.logger.info(f'[functions: {len(list(problem.functions.keys()))}]')
         # file output
         self.result.update({'pruned':self.pruned})
         self.result.update({'pruned_by_unknown':self.pruned_by_unknown})
@@ -301,14 +305,15 @@ class Search:
         self.result.update({'generated':self.generated})
         self.result.update({'epistemic_calls':problem.epistemic_calls})
         self.result.update({'epistemic_call_time':problem.epistemic_call_time.total_seconds()})
-        self.result.update({'epistemic_call_time_avg':0 if problem.epistemic_calls == 0 else problem.epistemic_call_time.total_seconds()/problem.epistemic_calls})
+        self.result.update({'epistemic_call_time_avg':0 if problem.epistemic_calls == 0 else problem.epistemic_call_time.total_seconds()*1000/problem.epistemic_calls})
+        self.result.update({'epistemic_call_time_max':problem.epistemic_call_time_max.total_seconds()*1000})
         self.result.update({'total_goal_size':len(ontic_goal_list)+len(epistemic_goal_list)})
         self.result.update({'ontic_goal_size':len(ontic_goal_list)})
         self.result.update({'epistemic_goal_size':len(epistemic_goal_list)})
         self.result.update({'ontic_goals:':ontic_goal_list})
         self.result.update({'epistemic_goals':epistemic_goal_list})
         self.result.update({'goals':ontic_goal_list+epistemic_goal_list})
-        
+        self.result.update({'functions':len(list(problem.functions.keys()))})
 
         max_depth = 0
 
@@ -386,12 +391,12 @@ class Search:
             max_filtered_branching_factors = max(self.filtered_branching_factors)
         self.logger.info(f'[number of averaged unfiltered branching factors]: {avg_branching_factors}')
         self.logger.info(f'[number of max unfiltered branching factors]: {max_branching_factors}')
-        self.logger.info(f'[number of average filtered branching factors]: {avg_filtered_branching_factors}')
-        self.logger.info(f'[number of max filtered branching factors]: {max_filtered_branching_factors}')
+        # self.logger.info(f'[number of average filtered branching factors]: {avg_filtered_branching_factors}')
+        # self.logger.info(f'[number of max filtered branching factors]: {max_filtered_branching_factors}')
         self.result.update({'avg_branching_factors': avg_branching_factors})
         self.result.update({'max_branching_factors': max_branching_factors})
-        self.result.update({'avg_filtered_branching_factors': avg_filtered_branching_factors})
-        self.result.update({'max_filtered_branching_factors': max_filtered_branching_factors})        
+        # self.result.update({'avg_filtered_branching_factors': avg_filtered_branching_factors})
+        # self.result.update({'max_filtered_branching_factors': max_filtered_branching_factors})        
 
 
 

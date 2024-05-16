@@ -23,19 +23,6 @@ from util import ActionSchema,Type,Function,FunctionSchema
 from util import VARIABLE_FILLER
 # Class of the problem
 class Problem:
-    # initial_state = dict()
-    # actions = dict() 
-    # entities = dict() # agent indicators, should be unique
-    # variables = dict() #variable
-    # domains = dict()
-    # initial_state = dict()
-    # goals = None
-    # external = None4
-    # epistemic_calls = 0
-    # epistemic_call_time = timedelta(0)
-    # epistemic_model = None
-    # logger = None
-
     def __init__(self, enetities,types: typing.Dict[str,Type],function_schemas: typing.Dict[str,FunctionSchema],action_schemas: typing.Dict[str,ActionSchema],rules,functions:typing.Dict[str,Function],initial_state,goals, external=None,handlers=None):
         
         self.logger = None
@@ -76,6 +63,7 @@ class Problem:
         self.external = external
         self.epistemic_calls = 0
         self.epistemic_call_time = timedelta(0)
+        self.epistemic_call_time_max = timedelta(0)
         
         self.epistemic_model = epistemic_model.EpistemicModel(self.logger,self.entities,self.functions,self.function_schemas,self.external)
 
@@ -125,15 +113,26 @@ class Problem:
                 # going to handle the constent update first
                 pass
         path = previous_path+[(new_state,action.name)]
-        result_dict,p_dict = self.epistemic_model.epistemicEffectHandler(jp_dictionary, path,p_dict)
-        for effect_name, value2 in result_dict.items():
-            variable_name = action.effects[effect_name].target_variable_name
-            function_schema_name = self.functions[variable_name].function_schema_name
-            value1 = extract_v_from_s(variable_name,new_state)
-            new_value =  updateEffect(self.logger,effect.effect_type,value1,value2,self.function_schemas[function_schema_name])
-            if new_value == None:
-                raise ValueError("New Value if out of range when updating",effect_name,state)
-            new_state[variable_name] = value2
+
+        # updating jp effect
+        if not jp_dictionary == {}:
+            self.epistemic_calls +=1
+            start_time = datetime.now()
+            result_dict,p_dict = self.epistemic_model.epistemicEffectHandler(jp_dictionary, path,p_dict)
+            end_time = datetime.now()
+            delta_time = end_time - start_time
+            if delta_time > self.epistemic_call_time_max:
+                self.epistemic_call_time_max = delta_time
+            self.epistemic_call_time += delta_time
+            for effect_name, value2 in result_dict.items():
+                variable_name = action.effects[effect_name].target_variable_name
+                function_schema_name = self.functions[variable_name].function_schema_name
+                value1 = extract_v_from_s(variable_name,new_state)
+                new_value =  updateEffect(self.logger,effect.effect_type,value1,value2,self.function_schemas[function_schema_name])
+                if new_value == None:
+                    raise ValueError("New Value if out of range when updating",effect_name,state)
+                new_state[variable_name] = value2
+
         return new_state
 
     def is_goal(self,path):
@@ -145,6 +144,8 @@ class Problem:
         return remaining_goal_number,condition_dict,p_dict
 
     def check_conditions(self,conditions:typing.Dict[str,Condition],path,p_dict):
+       
+        
         goal_dict = dict()
         current_state,current_action  = path[-1]
         
@@ -168,10 +169,19 @@ class Problem:
                 goal_dict.update({condition_key:result})
             else:
                 raise ValueError("condition type not found",condition_key)
-
-        result_dict,p_dict = self.epistemic_model.epistemicConditionsHandler(ep_conditions_dict,path,p_dict)
-
-        return result_dict,p_dict
+            
+        # checking ep condition
+        if not ep_conditions_dict == {}:
+            self.epistemic_calls +=1
+            start_time = datetime.now()
+            result_dict,p_dict = self.epistemic_model.epistemicConditionsHandler(ep_conditions_dict,path,p_dict)
+            end_time = datetime.now()
+            delta_time = end_time - start_time
+            if delta_time > self.epistemic_call_time_max:
+                self.epistemic_call_time_max = delta_time
+            self.epistemic_call_time += delta_time
+            goal_dict.update(result_dict)
+        return goal_dict,p_dict
 
 
     def get_all_legal_actions(self,state,path,p_dict):
