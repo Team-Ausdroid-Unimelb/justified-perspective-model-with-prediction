@@ -64,6 +64,8 @@ class Problem:
         self.epistemic_calls = 0
         self.epistemic_call_time = timedelta(0)
         self.epistemic_call_time_max = timedelta(0)
+        self.epistemic_call_length = 0
+        self.epistemic_call_length_max = 0
 
         self.domain_path = ""
         self.problem_path = ""
@@ -126,7 +128,10 @@ class Problem:
             delta_time = end_time - start_time
             if delta_time > self.epistemic_call_time_max:
                 self.epistemic_call_time_max = delta_time
+                self.epistemic_call_length_max = len(path)
             self.epistemic_call_time += delta_time
+            self.epistemic_call_length += len(path)
+
             for effect_name, value2 in result_dict.items():
                 variable_name = action.effects[effect_name].target_variable_name
                 function_schema_name = self.functions[variable_name].function_schema_name
@@ -182,7 +187,9 @@ class Problem:
             delta_time = end_time - start_time
             if delta_time > self.epistemic_call_time_max:
                 self.epistemic_call_time_max = delta_time
+                self.epistemic_call_length_max = len(path)
             self.epistemic_call_time += delta_time
+            self.epistemic_call_length += len(path)
             goal_dict.update(result_dict)
         return goal_dict,p_dict
 
