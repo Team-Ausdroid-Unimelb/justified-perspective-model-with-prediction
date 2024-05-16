@@ -189,10 +189,11 @@ if __name__ == '__main__':
         for temp_goal in temp_var_goal:
             if temp_goal not in var_goal_list:
                 var_goal_list.append(temp_goal)
-    
+    agent_num = len(problem_template.agent_index_list)
+    goal_size = len(var_goal_list[0])
     # print(var_goal_list)
     # print(len(var_goal_list))
-    write_all_problems(problem_template,var_goal_list,f"_a2_g1_",problem_path)
+    write_all_problems(problem_template,var_goal_list,f"_a{agent_num}_g{goal_size}_",problem_path)
     
     
     # ternary_goal_list = []

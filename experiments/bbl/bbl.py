@@ -13,6 +13,7 @@ import math
 common_constants = {
     'angle a': 90,
     'angle b': 90,
+    'angle c': 90,
 }
 
 dir_dict = {
