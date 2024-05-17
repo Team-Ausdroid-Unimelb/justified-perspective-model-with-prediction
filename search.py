@@ -6,7 +6,7 @@ import os
 from pddl_model import Problem
 
 from util import setup_logger, PriorityQueue, GLOBAL_PERSPECTIVE_INDEX,make_hashable
-from util import Entity,EntityType,Condition,ConditionType,EP_formula,Ternary,EPFType
+from util import Entity,EntityType,Condition,ConditionType,EP_formula,Ternary,EPFType,Action
 # import util
 
 
@@ -95,6 +95,9 @@ class Search:
                     return False
         return True
             
+
+    def action_filter(self,problem,all_legal_action_name):
+        return all_legal_action_name
 
     #BFS with duplicate check on the state + epistemic formula
     # for novelty checking purpose, we need to move the goal check process at where the node is generated
@@ -200,6 +203,8 @@ class Search:
                 return self.result
 
             all_legal_actions,sgp_p_dict = problem.get_all_legal_actions(state,path,sg_p_dict)
+            all_legal_action_name = list(all_legal_actions.keys())
+            filtered_action_name = self.action_filter(problem,all_legal_action_name)
             
             self.logger.debug("action generated: %s",all_legal_actions.keys())
             if self._duplication_check(state,sgp_p_dict):
@@ -209,8 +214,9 @@ class Search:
                 self.branch_factors.append(len(list(all_legal_actions.keys())))
                 temp_successor = 0
                 temp_actions = []
-                
-                for action_name,action in all_legal_actions.items():
+                for action_name in filtered_action_name:
+                    action :Action = all_legal_actions[action_name]
+                # for action_name,action in all_legal_actions.items():
                     self.logger.debug("action [%s] passed the precondition check", action_name)
                     # passed the precondition
                     succ_state = problem.generate_successor(state, action,path)
@@ -318,7 +324,7 @@ class Search:
         self.result.update({'goals':ontic_goal_list+epistemic_goal_list})
         self.result.update({'functions':len(list(problem.functions.keys()))})
         self.result.update({'domain_path':problem.domain_path})
-        self.result.update({'problem':problem.problem_path})
+        self.result.update({'problem_name':problem.problem_path})
 
         max_depth = 0
 
