@@ -57,9 +57,9 @@ class FigGenerator():
 
 
         my_client = pymongo.MongoClient("mongodb://localhost:27017",username="admin",password="90054")
-        my_db = my_client['result']
+        my_db = my_client['new_result']
 
-        my_collection = my_db['20240417']
+        my_collection = my_db['all_instance']
 
         filters = config_yaml.get('filters')
         filter_query = dict()
