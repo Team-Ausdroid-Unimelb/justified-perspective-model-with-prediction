@@ -32,7 +32,7 @@
         )
         :effect (
             ; increase sth by 1
-            (increase (dir ?i) 1)
+            (decrease (dir ?i) 1)
         )
     )
  
