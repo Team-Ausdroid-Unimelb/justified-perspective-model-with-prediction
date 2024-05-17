@@ -70,7 +70,7 @@ class Problem:
         self.domain_path = ""
         self.problem_path = ""
         
-        self.epistemic_model = epistemic_model.EpistemicModel(self.logger,self.entities,self.functions,self.function_schemas,self.external)
+        self.epistemic_model = epistemic_model.EpistemicModel(handlers,self.entities,self.functions,self.function_schemas,self.external)
 
     def generate_successor(self,state:typing.Dict[str,any],action: Action,previous_path):
         self.logger.debug("generate successor for action: %s",action.name)

@@ -206,7 +206,10 @@ class Search:
             all_legal_action_name = list(all_legal_actions.keys())
             filtered_action_name = self.action_filter(problem,all_legal_action_name)
             
+            self.logger.debug(sgp_p_dict.keys())
+            self.logger.debug(sgp_p_dict)
             self.logger.debug("action generated: %s",all_legal_actions.keys())
+            
             if self._duplication_check(state,sgp_p_dict):
                 # self.logger.debug("path [%s] get in visited",actions)
                 # self.logger.debug("ep_state_str is [%s]",ep_state_str)

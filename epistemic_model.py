@@ -6,7 +6,7 @@ import logging
 import copy
 
 
-LOGGER_NAME = "forward_epistemic_model"
+LOGGER_NAME = "epistemic_model"
 LOGGER_LEVEL = logging.INFO
 # LOGGER_LEVEL = logging.DEBUG
 from util import setup_logger
@@ -27,6 +27,8 @@ class EpistemicModel:
     
     def __init__(self, handlers, entities, functions, function_schemas, external):
         self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=LOGGER_LEVEL) 
+        self.logger.info("initialize epistemic model")
+        # self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=LOGGER_LEVEL) 
         self.entities = entities
         self.functions = functions
         self.function_schemas = function_schemas
@@ -48,7 +50,7 @@ class EpistemicModel:
         result_dict = dict()
         
         for key, condition in epistemic_condition_dict.items():
-            self.logger.debug(key,condition)
+            self.logger.debug("%s: %s",key,condition)
             ep_formula : EP_formula =  condition.condition_formula
             operator = condition.condition_operator
             target_value = condition.target_value
@@ -162,19 +164,31 @@ class EpistemicModel:
             return
         ps = []
         for i in range(len(os)):
-            temp_ps = self.generate_p(os[i:],parent_ps[i:])
+            temp_ps = self.generate_p(os[:i+1],parent_ps[:i+1])
             ps.append(temp_ps)
         input_ps[ps_key_str] = ps
         return ps,ps_key_str
         
     
     def generate_p(self,partial_os,partial_ps):
-        new_state = partial_os[-1]
+        new_state = partial_os[-1].copy()
         for key,value in new_state.items():
             if value == special_value.UNSEEN:
                 # new_state[key] = self.(agent_id,key,partial_os,partial_ps)
+                
                 ts = self.identify_last_seen_timestamp(key,partial_os)
                 new_state[key] = self.retrieval_function(partial_ps,ts,key)
+                if key == 'dir b':
+                    
+                    self.logger.debug("partial_os: %s",partial_os)
+                    self.logger.debug("partial_ps: %s",partial_ps)
+                    self.logger.debug("ts: %s",ts)
+                    # self.logger.debug("new_state: %s",new_state)
+                    self.logger.debug("key: %s",key)
+                    self.logger.debug("value: %s",new_state[key])
+                    # self.logger.debug(partial_ps)
+                    # self.logger.debug(ts)
+                    # self.logger.debug(new_state[key])
         return new_state
     
     def retrieval_function(self,partial_ps, ts, variable_name):
