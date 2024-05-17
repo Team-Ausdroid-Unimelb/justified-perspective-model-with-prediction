@@ -144,7 +144,7 @@ class Instance:
         logger.info(f'search time: {search_time }') 
             
         result.update({'domain_name':domain_name})
-        result.update({'problem':problem_name})
+        result.update({'problem_name':problem_name})
         result.update({'search':self.instance_name.split('_')[0]})
         result.update({'init_time':init_time.total_seconds()})
         result.update({'search_time':search_time.total_seconds()})

@@ -324,7 +324,7 @@ class Search:
         self.result.update({'goals':ontic_goal_list+epistemic_goal_list})
         self.result.update({'functions':len(list(problem.functions.keys()))})
         self.result.update({'domain_path':problem.domain_path})
-        self.result.update({'problem_name':problem.problem_path})
+        self.result.update({'problem_path':problem.problem_path})
 
         max_depth = 0
 
