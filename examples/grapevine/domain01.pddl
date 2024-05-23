@@ -39,7 +39,12 @@
         :parameters (?a - agent, ?s - agent)
         :precondition (and 
             (= (:epistemic b [?a] (= (secret ?s) 't')) 1)
+            ; (= (:epistemic b [?a] (= (secret ?s) (secretvalue ) )))
             ;(not (= ?a ?s))
+            (= (:ontic (= (sharing-a) 'f')) 1)
+            (= (:ontic (= (sharing-b) 'f')) 1)
+            (= (:ontic (= (sharing-c) 'f')) 1)
+            (= (:ontic (= (sharing-d) 'f')) 1)
             )
         :effect (and 
             (= (shared-a) 0)
@@ -59,7 +64,13 @@
 
     (:action sharing_false
         :parameters (?a - agent, ?s - agent)
-        :precondition (and (= (:epistemic b [?a] (= (secret ?s) 'f')) 1))
+        :precondition (and 
+            (= (:epistemic b [?a] (= (secret ?s) 'f')) 1)
+            (= (:ontic (= (sharing-a) 'f')) 1)
+            (= (:ontic (= (sharing-b) 'f')) 1)
+            (= (:ontic (= (sharing-c) 'f')) 1)
+            (= (:ontic (= (sharing-d) 'f')) 1)
+            )
         :effect (and 
             (= (shared-a) 0)
             (= (shared-b) 0)
@@ -134,6 +145,10 @@
         :effect (and 
             (= (sharing ?a) 'f')
             (= (shared ?a) 0)
+            (= (secret-a) 'f')
+            (= (secret-b) 'f')
+            (= (secret-c) 'f')
+            (= (secret-d) 'f')
             
         )
     )

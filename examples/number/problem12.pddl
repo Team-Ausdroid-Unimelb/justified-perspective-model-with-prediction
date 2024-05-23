@@ -18,7 +18,7 @@
     (:init
         (= (peeking a) 'f')
         (= (peeking b) 'f')
-        (= (num c) 2)
+        (= (num c) 1)
 
         ;todo: put the initial state's facts and numeric values here
     )
@@ -28,9 +28,9 @@
         ;a know b learn the rule 
         ;both a and b did not see the number but know the value
         ; a dontknow bknow
-        (= (:epistemic b [a] (= (num c) 3)) 1)
-        (= (:epistemic b [b] (= (num c) 10)) 1)
-        (= (:epistemic b [a] b [b] (= (num c) 3)) 1)
+        (= (:epistemic b [a] (= (num c) 11)) 1)
+        (= (:epistemic b [b] (= (num c) 7)) 1)
+        (= (:epistemic b [a] b [b] (= (num c) 7)) 1)
         ;(= (:ontic (= (peeking a) 'f')) 1)
         
     ))

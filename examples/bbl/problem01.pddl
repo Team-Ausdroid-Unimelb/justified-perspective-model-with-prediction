@@ -17,8 +17,8 @@
     )
 
     (:init
-        (= (dir a) 'sw')
-        (= (dir b) 'n')
+        (= (dir a) 'n')
+        (= (dir b) 'ne')
         (= (x a) 3)
         (= (x b) 2)
         (= (x p) 1)

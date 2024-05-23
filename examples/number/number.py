@@ -133,7 +133,7 @@ class ExternalFunction:
 
     
     def updatelinear(self,x):
-        return x + 2
+        return 2*x + 1
     
     def update2Poly(self,x):
         return x**2 + 1

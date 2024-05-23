@@ -23,9 +23,9 @@
     (:init
         (= (agent_at a) 1)
         (= (agent_at b) 1)
-        ;(= (agent_at c) 1)
+        (= (agent_at c) 1)
         (= (agent_at d) 1)
-        (= (agent_at c) 2)
+        
 
         (= (shared a) 0)
         (= (shared b) 0)
@@ -40,10 +40,10 @@
         
 
         ; constant dummy value to represent knows one's secret_at
-        (= (secret a) 't')
-        (= (secret b) 't')  
-        (= (secret c) 't')  
-        (= (secret d) 't')  
+        (= (secret a) 'f')
+        (= (secret b) 'f')  
+        (= (secret c) 'f')  
+        (= (secret d) 'f')  
 
         (= (secretvalue a) 2) 
         (= (secretvalue b) 2) 
@@ -59,17 +59,16 @@
         ;(= (:epistemic b [c] (= (secret a) 'f')) 1)
         ;(= (:epistemic b [c] b [b] (= (secretvalue a) 3)) 1)
 
-        ;(= (:epistemic b [b] (= (secretvalue a) 3)) 1)
-        ;(= (:epistemic b [a] (= (secretvalue a) 7)) 1)
-        ;(= (:epistemic b [c] (= (secretvalue a) 7)) 1)
+        (= (:epistemic b [b] (= (secretvalue a) 3)) 1)
+        (= (:epistemic b [a] (= (secretvalue a) 7)) 1)
+        (= (:epistemic b [c] (= (secretvalue a) 7)) 1)
+        ;(= (:epistemic b [b] (= (secret a) 'f')) 1)
+        ;(= (:epistemic b [a] (= (secret a) 't')) 1)
+        ;(= (:epistemic b [c] (= (secret a) 't')) 1)
 
+        ;(= (:epistemic b [c] (= (secret a) 'f')) 1)
         ;(= (:epistemic b [b] (= (secret a) 'f')) 1)
         ;(= (:epistemic b [b] (= (secretvalue a) -3)) 1)
-
-        (= (:epistemic b [c] (= (secretvalue a) 4)) 1)
-        (= (:epistemic b [b] (= (secret a) 'f')) 1)
-        (= (:epistemic b [b] (= (secretvalue a) -7)) 1)
-        (= (:epistemic b [c] b [b] (= (secretvalue a) 4)) 1)
         
 
         ; (= (:epistemic b [d] (= (secret a) 't')) 0)

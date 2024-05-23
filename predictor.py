@@ -43,6 +43,9 @@ class Predictor:
         elif rule['rule_name'] == 'undetermined':
             result = self.get_predict_undetermined(i,rule,value)
             return result
+        elif rule['rule_name'] == 'turning':
+            result = self.get_predict_turning(i,rule,value)
+            return result
         else:
             result = self.external.domain_specific_predict(i,rule,value)
             if result == None:
@@ -86,6 +89,12 @@ class Predictor:
         result = "?"
         return result
     
+
+    def get_predict_turning(self, i,rule,value):
+        x = i % 8
+        result = ['ne','e', 'se', 's', 'sw', 'w', 'nw','n' ][x]
+        return result
+    
     def get_os_dict(self, new_os,p):
         os_dict = {}
         for state in p:
@@ -99,7 +108,7 @@ class Predictor:
                 else:
                     os_dict[v_name].append(None)
         #print("os",new_os)
-        #print("os",os_dict)
+        print("os",os_dict)
         return os_dict
 
     def getrs(self, new_os,p, domains):
@@ -119,6 +128,8 @@ class Predictor:
                 rs[v_name] = self.get_static(v_name,valuelist)
             elif v_rult_type =='undetermined':
                 rs[v_name] = self.get_undetermined(v_name,valuelist)
+            elif v_rult_type =='turning':
+                rs[v_name] = self.get_turning(v_name,valuelist)
             else:
                 rs[v_name] = self.get_static(v_name,valuelist)
 
@@ -161,6 +172,9 @@ class Predictor:
     def get_undetermined(self, v_name, valuelist):
         return {'name':v_name,'rule_name': 'undetermined','coefficients': {'a': None}} 
     
+    def get_turning(self, v_name, valuelist):
+        print(valuelist)
+        return {'name':v_name,'rule_name': 'turning','coefficients': {'a': None}}
     
     
     def get_rule_dict(self,domains):

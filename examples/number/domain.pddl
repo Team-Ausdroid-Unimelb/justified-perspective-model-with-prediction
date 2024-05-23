@@ -59,7 +59,7 @@
         :parameters (?i - object)
         :precondition (and )
         :effect (and 
-            (= (num ?i) (+1)))
+            (= (num ?i) (+1))
         )
     )
 
@@ -67,7 +67,7 @@
         :parameters (?i - object)
         :precondition (and )
         :effect (and 
-            (= (num ?i) (-1)))
+            (= (num ?i) (-1))
         )
     )
 )

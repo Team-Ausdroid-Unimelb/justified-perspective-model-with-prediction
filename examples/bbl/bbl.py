@@ -163,6 +163,9 @@ class ExternalFunction:
     def update2Poly(self,x):
         return x**2 + 1
     
+    def updateturning(self,x):
+        x = x % 8
+        return ['ne','e', 'se', 's', 'sw', 'w', 'nw','n' ][x]
 
     def update_state(self, succ_state, path, problem):
         domains = problem.domains
@@ -188,6 +191,11 @@ class ExternalFunction:
                 
             if succ_state is not None and keyword in succ_state and v_rult_type =='2nd_poly':
                 updated_value = self.update2Poly(x)    ##########change model here
+                updated_state[keyword] = updated_value
+                #print(x,updated_value)
+
+            if succ_state is not None and keyword in succ_state and v_rult_type =='turning':
+                updated_value = self.updateturning(x)    ##########change model here
                 updated_state[keyword] = updated_value
                 #print(x,updated_value)
 

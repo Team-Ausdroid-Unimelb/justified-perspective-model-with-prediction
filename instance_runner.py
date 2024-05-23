@@ -102,6 +102,7 @@ class Instance:
             logger.info(f"loading external function: {self.external_function}")
             external_path = self.external_function
             external_path = external_path.replace('.py','').replace('\\','.').replace('/','.').replace('..','')
+            
             try:
                 external_module = importlib.import_module(external_path)
                 self.external_function = external_module.ExternalFunction(logger_handlers)

@@ -13,7 +13,7 @@ timestamp = datetime.datetime.now().astimezone(TIMEZONE).strftime(DATE_FORMAT)
 
 LOGGER_NAME = "pddl_parser"
 LOGGER_LEVEL = logging.INFO
-# LOGGER_LEVEL = logging.DEBUG
+LOGGER_LEVEL = logging.DEBUG
 from util import setup_logger
 
 class PDDLParser:
@@ -495,6 +495,7 @@ class PDDLParser:
                         # if len(e_list) == 1:
                         #     e_list = e_list[0].split(" ")
                         effects.append((e_list[0].replace(" ?","?").replace(" ","-").replace("(","").replace(")",""),e_list[1].replace(" ","").replace("(","").replace(")","").replace('"','').replace("'",'')))
+                        #effects.append((e_list[0].replace(" ?","?").replace("(","").replace(")",""),e_list[1].replace(" ","").replace("(","").replace(")","").replace('"','').replace("'",'')))
                     self.logger.debug('effects: [%s]',effects)
                     ###################
                     actions.update({action_name: {"parameters":parameters,"precondition":preconditions,"effect":effects}})

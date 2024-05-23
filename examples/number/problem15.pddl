@@ -18,7 +18,7 @@
     (:init
         (= (peeking a) 'f')
         (= (peeking b) 'f')
-        (= (num c) 2)
+        (= (num 1) 2)
 
         ;todo: put the initial state's facts and numeric values here
     )

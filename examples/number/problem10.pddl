@@ -18,7 +18,7 @@
     (:init
         (= (peeking a) 'f')
         (= (peeking b) 'f')
-        (= (num c) 2)
+        (= (num c) 1)
  
         ;todo: put the initial state's facts and numeric values here
     )
@@ -29,17 +29,17 @@
         ;b think is 3
         ;b think a see 3
 
-        (= (:epistemic b [a] (= (num c) 7)) 1)
-        (= (:epistemic b [b] (= (num c) 3)) 1)
-        (= (:epistemic b [b] b [a] (= (num c) 3)) 1)
-        (= (:epistemic b [a] b [b] (= (num c) 3)) 1)
+        ;(= (:epistemic b [a] (= (num c) 7)) 1)
+        ;(= (:epistemic b [b] (= (num c) 7)) 1)
+        (= (:epistemic b [b] b [a] (= (num c) 15)) 1)
+        ;(= (:epistemic b [a] b [b] (= (num c) 3)) 1)
         ;(= (:ontic (= (peeking b) 'f')) 1)
         
     ))
 
     (:domains
         (peeking enumerate ['t','f'] static) ;
-        (num integer [0,8] linear)
+        (num integer [0,20] linear)
     ;static, linear, sin, 2nd_poly
 
     )
