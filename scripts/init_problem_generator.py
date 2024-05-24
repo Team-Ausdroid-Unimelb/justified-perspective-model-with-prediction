@@ -40,7 +40,7 @@ def write_one_problems(problem_template,pddl_goal_list,init_list,problem_name,do
     output_str = output_str + problem_template.init_pre_fix
     for init_items in init_list:
         if len(init_items) == 2:
-            output_str += f"          (assign {init_items[0]} {init_items[1]})\n"
+            output_str += f"        (assign {init_items[0]} {init_items[1]})\n"
         else:
             raise ValueError("init_items length is not 2")
     output_str += problem_template.init_surfix

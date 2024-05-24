@@ -81,22 +81,21 @@ class PDDL_Template:
     ternary_list = ['+','$','!']
     
     init_dict ={
-        '(dir a)': ['w','nw','n','ne','e','se','s','sw'],
-        '(dir b)': ['w','nw','n','ne','e','se','s','sw'],
+        '(dir a)': ["'w'","'nw'","'n'","'ne'","'e'","'se'","'s'","'sw'"],
+        '(dir b)': ["'w'","'nw'","'n'","'ne'","'e'","'se'","'s'","'sw'"],
     }
     
     init_pre_fix = '''
-        (:init
-        
-    '''
+    (:init
+'''
     
     init_surfix = '''
-            (assign (x a) 3)
-            (assign (x b) 2)
-            (assign (x p) 1)
-            (assign (y a) 3)
-            (assign (y b) 2)
-            (assign (y p) 1)
-            (assign (v p) 't')
-        )
-    '''
+        (assign (x a) 3)
+        (assign (x b) 2)
+        (assign (x p) 1)
+        (assign (y a) 3)
+        (assign (y b) 2)
+        (assign (y p) 1)
+        (assign (v p) 't')
+    )
+'''
