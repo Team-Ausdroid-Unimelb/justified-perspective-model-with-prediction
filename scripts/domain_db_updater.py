@@ -1,12 +1,17 @@
 import pymongo
 import os
-import json
+
 from optparse import OptionParser
 import sys
-import importlib
-
 
 import pymongo.errors
+
+irrelevant_field_list = [
+    '_id','search','init_time','search_time',
+    'expanded','goal_checked','generated',
+    'pruned','pruned_by_visited','pruned_by_unknown',
+    'epistemic_calls','epistemic_call_time','epistemic_call_time_avg','epistemic_call_time_max'
+]
 
 def loadParameter():
 
