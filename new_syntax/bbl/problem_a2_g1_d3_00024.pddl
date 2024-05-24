@@ -23,7 +23,9 @@
         )
     
         (:goal (and 
-          (= (@ep ("+ b [a] + b [b] + b [a] ") (= (v p) 't')) ep.true)
+        ;   (= (@ep ("+ b [a] + b [b] + b [a] ") (= (v p) 't')) ep.true)
+        (= (@ep ("+ b [a] + b [b] ! b [a] ! b [b] ") (= (v p) 't')) ep.true)
+        (= (@ep ("! b [b] ! b [a] ! b [b] $ b [a] ") (= (v p) 't')) ep.true)
      ))
 
         (:ranges

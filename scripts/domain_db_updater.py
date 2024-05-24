@@ -1,12 +1,17 @@
 import pymongo
 import os
-import json
+
 from optparse import OptionParser
 import sys
-import importlib
-
 
 import pymongo.errors
+
+irrelevant_field_list = [
+    '_id','search','init_time','search_time',
+    'expanded','goal_checked','generated',
+    'pruned','pruned_by_visited','pruned_by_unknown',
+    'epistemic_calls','epistemic_call_time','epistemic_call_time_avg','epistemic_call_time_max'
+]
 
 def loadParameter():
 
@@ -26,21 +31,11 @@ def loadParameter():
 
     return options
 
-def write_one_problems(problem_template,pddl_goal_list,prefix,domain_name):
-
-
-    output_str = problem_template.problem_prefix1
-    output_str = output_str + prefix.replace(domain_name,'')
-    output_str = output_str + problem_template.problem_prefix2
-    output_str = output_str + problem_template.problem_init
-    output_str = output_str + problem_template.problem_goal_prefix
-    for goal_str in pddl_goal_list:
-        output_str=output_str + "          (" + goal_str +")\n"
-    output_str=output_str + problem_template.problem_goal_surfix
-    output_str=output_str + problem_template.problem_surfix
-    with open(os.path.join(problem_template.problem_path,f"problem_{prefix}.pddl"),"w") as f:
-        f.write(output_str)
-
+def create_unique_index(collection):
+    collection.create_index(
+        [("problem_name", pymongo.ASCENDING)],
+        unique=True
+    )
 
 if __name__ == '__main__':
 
@@ -80,26 +75,16 @@ if __name__ == '__main__':
         for item in my_collection.find(query):
             domain_name = item['domain_name']
             domain_collection = collection_dict[domain_name]
-            problem = item['problem']
-            problem_query = {'problem':problem}
-            if domain_collection.find_one(problem_query) == None:
-                # it means the problem is not in the domain collection
-                print("Not found, adding: ",problem)
-                del item['_id']
-                del item['search']
-                del item['init_time']
-                del item['search_time']
-                del item['pruned']
-                del item['expanded']
-                del item['pruned_by_visited']
-                del item['pruned_by_unknown']
-                del item['goal_checked']
-                del item['generated']
-                del item['epistemic_calls']
-                del item['epistemic_call_time']
-                del item['epistemic_call_time_avg']
-                del item['epistemic_call_time_max']
-                domain_collection.insert_one(item)
+            create_unique_index(domain_collection)
+            new_problem_info = dict()
+            for key in item.keys():
+                if not key in irrelevant_field_list:
+                    new_problem_info[key] = item[key]
+            try:
+                domain_collection.insert_one(new_problem_info)
+            except pymongo.errors.DuplicateKeyError:
+                print("Duplicate document found. Insertion skipped.")
+                print(item['problem_name'])
     #     for key,collection in collection_dict.items():
     #         existing_problems = []
     #         for item in collection.find():
