@@ -48,6 +48,14 @@ def main():
             # print(agent_multiplier)
             # result['agent_multiplier'] = agent_multiplier
             # result['functions'] = 9
+            if "_init_" in result['problem_name']:
+                problem_name = result['problem_name'].split("_init_")[0]
+                init_name = result['problem_name'].split("_init_")[1]
+                result['problem_name'] = problem_name
+                result['init_name'] = "init_"+init_name
+            
+            
+            
             try:
                 my_collection.insert_one(result)
                 # print("Document inserted successfully")
