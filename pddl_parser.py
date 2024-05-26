@@ -530,7 +530,7 @@ class PDDLParser:
             parts = list()
             new_function_schema = None
             function_schema_str = function_schema_str[1:-1]
-            parts = re.split(r'\?[a-z]-', function_schema_str)
+            parts = re.split(r'\?\w+-', function_schema_str)
             function_schema_name = parts[0]
             new_function_schema = FunctionSchema(function_schema_name)
             parts = parts[1:]
@@ -561,13 +561,13 @@ class PDDLParser:
             # extract parameter
             pattern = r'\?\w*'
             match_variables = re.findall(pattern, parameter_str)
-            pattern = r'\?[a-z]-(\w+)'
+            pattern = r'\?\w+\-\w+'
             match_types = re.findall(pattern, parameter_str)
             if not len(match_variables) == len(match_types):
                 raise ValueError('missing variable or types in parameter [%s] for action [%s]',parameter_str,action_name)
             parameters = Parameters()
             for i in range(len(match_types)):
-                parameters[match_variables[i]] = match_types[i]
+                parameters[match_variables[i]] = match_types[i].replace(match_variables[i]+"-","")
             self.logger.debug(parameters)
             self.logger.debug(action_content_str)
             
