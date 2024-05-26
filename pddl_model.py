@@ -18,7 +18,7 @@ LOGGER_LEVEL = logging.INFO
 from util import setup_logger
 from util import Ternary
 from util import Condition,ConditionType,Effect,EffectType,EP_formula,EPFType,Action,UpdateType
-from util import extract_v_from_s,evaluation,multiple_parameter_replace,multiple_parameter_replace_with_ep,updateEffect
+from util import extract_v_from_s,evaluation,multiple_parameter_replace,multiple_parameter_replace_with_ep,updateEffect,global_state_evaluation
 from util import ActionSchema,Type,Function,FunctionSchema
 from util import VARIABLE_FILLER
 # Class of the problem
@@ -147,7 +147,7 @@ class Problem:
         p_dict = dict()
         condition_dict, p_dict = self.check_conditions(self.goals,path,p_dict)
         
-        remaining_goal_number = list(condition_dict.values()).count(Ternary.FALSE)
+        remaining_goal_number = list(condition_dict.values()).count(False)
         self.logger.debug("checking goal in pddl model")
         self.logger.debug(remaining_goal_number)
         self.logger.debug(condition_dict)
@@ -175,7 +175,7 @@ class Problem:
                     value2 = condition.target_value
                 else:
                     raise ValueError("One of the condition target variable or value should not be None",condition_key)
-                result = evaluation(self.logger,condition.condition_operator,value1,value2)
+                result = global_state_evaluation(self.logger,condition.condition_operator,value1,value2)
                 goal_dict.update({condition_key:result})
             else:
                 raise ValueError("condition type not found",condition_key)
@@ -365,7 +365,7 @@ class Problem:
                 else: # it means the target is a value
                     value2 = precondition_item.target_value
 
-                if evaluation(self.logger,operator,value1,value2) == Ternary.FALSE:
+                if global_state_evaluation(self.logger,operator,value1,value2) == False:
                     # self.logger.debug("return False")
                     return False
                     
