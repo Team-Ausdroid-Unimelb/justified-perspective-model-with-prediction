@@ -24,7 +24,7 @@
             (= (agent_loc ?a) 1)
             (= (sharing) 0)
         )
-        :effect (and 
+        :effect ( 
             (assign (agent_loc ?a) 2)
         )
     )
