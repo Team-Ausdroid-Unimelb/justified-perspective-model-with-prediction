@@ -286,14 +286,14 @@ class Problem:
                     elif precondition_item.condition_type == ConditionType.EP:
                         new_precondition.condition_type = ConditionType.EP
                         new_ep_formula = EP_formula()
-                        old_ep_formula = precondition_item.condition_formula
+                        old_ep_formula :EP_formula =  precondition_item.condition_formula
                         new_ep_formula.epf_type = old_ep_formula.epf_type
                         new_ep_formula.ep_query = multiple_parameter_replace(old_ep_formula.ep_query,parameter_replacement,"")
                         
                         if new_ep_formula.epf_type == EPFType.EP:
                             new_ep_formula.ep_formula_str = multiple_parameter_replace_with_ep(old_ep_formula.ep_formula_str,parameter_replacement,"")
                             new_varphi = Condition()
-                            old_varphi = old_ep_formula.varphi
+                            old_varphi = old_ep_formula.ep_varphi
                             new_varphi.condition_operator = old_varphi.condition_operator
                             new_varphi.condition_type = old_varphi.condition_type
                             new_varphi.condition_variable = multiple_parameter_replace(old_varphi.condition_variable,parameter_replacement,VARIABLE_FILLER)
@@ -303,7 +303,7 @@ class Problem:
                                 new_varphi.target_variable = multiple_parameter_replace(old_varphi.target_variable,parameter_replacement,VARIABLE_FILLER)
                             else:
                                 raise ValueError("One of the condition target variable or value should not be None",precondition_name)
-                            new_ep_formula.varphi = new_varphi
+                            new_ep_formula.ep_varphi = new_varphi
                         elif new_ep_formula.epf_type == EPFType.JP:
                             new_ep_formula.ep_variable = multiple_parameter_replace(old_ep_formula.ep_variable,parameter_replacement,VARIABLE_FILLER)
                         new_precondition.condition_formula = new_ep_formula
@@ -314,7 +314,8 @@ class Problem:
                     new_preconditions.update({new_precondition_name:new_precondition})
                 
                 new_effects : typing.Dict[str,Effect] = dict()
-                for effect_name,effect_item in action_schema.effects.items():
+                for effect_name,item in action_schema.effects.items():
+                    effect_item : Effect = item
                     new_effect = Effect()
                     new_effect_name = multiple_parameter_replace_with_ep(effect_name,parameter_replacement,VARIABLE_FILLER)
                     new_effect.effect_type = effect_item.effect_type
