@@ -792,7 +792,26 @@ bool2Ternary_dict = {
     False: Ternary.FALSE
 }
 
+def global_state_evaluation(logger,operator,value1,value2):
+    # logger.debug("operator: %s, value1: %s, value2: %s",operator,value1,value2)
+    if operator == ConditionOperatorType.EQUAL:
+        return value1 == value2
+    elif operator == ConditionOperatorType.GREATER:
+        return value1 > value2
+    elif operator == ConditionOperatorType.GREATER_EQUAL:
+        return value1 >= value2
+    elif operator == ConditionOperatorType.LESS:
+        return value1 < value2
+    elif operator == ConditionOperatorType.LESS_EQUAL:
+        return value1 <= value2
+    elif operator == ConditionOperatorType.NOT_EQUAL:
+        return value1 != value2
+    else:
+        raise ValueError("Operator not found", operator,value1,value2)
+
+
 def evaluation(logger,operator,value1,value2):
+    # logger.debug("operator: %s, value1: %s, value2: %s",operator,value1,value2)
     if value1 == special_value.UNSEEN or value2 == special_value.UNSEEN:
         return Ternary.UNKNOWN
     if value1 == special_value.HAVENT_SEEN or value2 == special_value.HAVENT_SEEN:
