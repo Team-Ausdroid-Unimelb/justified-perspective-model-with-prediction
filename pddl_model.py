@@ -147,8 +147,10 @@ class Problem:
         p_dict = dict()
         condition_dict, p_dict = self.check_conditions(self.goals,path,p_dict)
         
-        remaining_goal_number = list(condition_dict.values()).count(False)
-        self.logger.debug(remaining_goal_number,condition_dict)
+        remaining_goal_number = list(condition_dict.values()).count(Ternary.FALSE)
+        self.logger.debug("checking goal in pddl model")
+        self.logger.debug(remaining_goal_number)
+        self.logger.debug(condition_dict)
         return remaining_goal_number,condition_dict,p_dict
 
     def check_conditions(self,conditions:typing.Dict[str,Condition],path,p_dict):
@@ -173,7 +175,7 @@ class Problem:
                     value2 = condition.target_value
                 else:
                     raise ValueError("One of the condition target variable or value should not be None",condition_key)
-                result = evaluation(value1,value2,condition.condition_operator)
+                result = evaluation(self.logger,condition.condition_operator,value1,value2)
                 goal_dict.update({condition_key:result})
             else:
                 raise ValueError("condition type not found",condition_key)

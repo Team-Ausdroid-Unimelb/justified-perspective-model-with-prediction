@@ -431,7 +431,7 @@ class Search:
     # it is not admissible
     def goal_counting(self,node,goal_dict,problem):
 
-        remain_goal_number = list(goal_dict.values()).count(False)
+        remain_goal_number = list(goal_dict.values()).count(Ternary.FALSE)
 
 
 
