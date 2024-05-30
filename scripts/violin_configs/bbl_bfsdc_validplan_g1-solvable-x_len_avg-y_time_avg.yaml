@@ -26,9 +26,9 @@ filters:
 
 
 keys:
-  -
-    name: max_goal_depth
-    values: []
+  # -
+  #   name: total_goal_depth
+  #   values: []
   # -
   #   name: total_goal_depth
   #   values: []
