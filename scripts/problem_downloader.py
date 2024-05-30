@@ -21,19 +21,25 @@ def loadParameter():
 
     # parser.add_option('-p', '--problem_template', dest="problem_template_file", help='path to problem_template.py', default='experiments/coin/problem_template.py')
     parser.add_option('-s', '--search_name', dest="search_name", help='the search name', default='bfs')
-    parser.add_option('--solvable', dest="solvable", help='only return solvable domains', default=False,action='store_true')
+    parser.add_option('--solvable', dest="solvable", help='only return solvable domains', default=True,action='store_true')
     options, otherjunk = parser.parse_args(sys.argv[1:] )
     assert len(otherjunk) == 0, "Unrecognized options: " + str(otherjunk)
 
     return options
 
-def write_one_problems(problem_template,pddl_goal_list,problem_name,domain_name,problem_path):
+def write_one_problems(problem_template,pddl_goal_list,init_list,problem_name,domain_name,problem_path):
 
 
     output_str = problem_template.problem_prefix1
     output_str = output_str + problem_name.replace(domain_name,'')
     output_str = output_str + problem_template.problem_prefix2
-    output_str = output_str + problem_template.problem_init
+    output_str = output_str + problem_template.init_pre_fix
+    for init_items in init_list:
+        if len(init_items) == 2:
+            output_str += f"        (assign {init_items[0]} {init_items[1]})\n"
+        else:
+            raise ValueError("init_items length is not 2")
+    output_str += problem_template.init_surfix
     output_str = output_str + problem_template.problem_goal_prefix
     for goal_str in pddl_goal_list:
         output_str=output_str + "          " + goal_str +"\n"
@@ -78,6 +84,17 @@ if __name__ == '__main__':
         'grapevine':dict(),
         'sn':dict(),
     }
+    
+    init_file_dict = {
+        'bbl':dict(),
+        'coin':dict(),
+        'spcoin':dict(),
+        'corridor':dict(),
+        'grapevine':dict(),
+        'sn':dict(),
+    }
+    
+    
 
     if options.search_name == "":
         raise ValueError("search_name is empty")
@@ -85,23 +102,25 @@ if __name__ == '__main__':
         search_name = options.search_name 
         problem_query = {}
         if options.solvable:
-            problem_query = {'solvable':True}
+            problem_query = {'solvable':True,'total_goal_size':1}
         for key,collection in collection_dict.items():
             # existing_problems = []
             for item in collection.find(problem_query):
                 domain_path = item['domain_path']
                 problem_name = item['problem_name']
                 problem_path = item['problem_path']
+                init_name = item['init_name']
                 # print(problem)
                 # problem_file_name = 'problem_'+problem+".pddl"
                 # if existing_problems == []:
-                #     existing_problems = os.listdir(domain_path)
+                #     existing_problems = os.listdir(domain_path)'
                 if not os.path.exists(problem_path):
 
-                    query = {'search':search_name,'problem_name':problem_name}
+                    query = {'search':search_name,'problem_name':problem_name,'init_name':init_name,'problem_path':problem_path}
                     if my_collection.find_one(query) == None:
                         print("Not found, adding it: ", problem_name)
                         domain_name = item['domain_name']
+                        
                         
                         pddl_goals = item['goals']
                         num_of_agent = item['num_of_agents']
@@ -114,9 +133,19 @@ if __name__ == '__main__':
                             spec.loader.exec_module(problem_template_module)
                             temp_problem_template = getattr(problem_template_module,"PDDL_Template")
                             template_file_dict[template_path] = temp_problem_template
+                            
+                        if init_name not in init_file_dict[domain_name].keys():
+                            init_path = domain_path.replace("domain.pddl",f"problem_template{num_of_agent}.json")
+                            with open(init_path) as f:
+                                init_dict = json.load(f)
+                            init_file_dict[num_of_agent] = init_dict
                         problem_template = template_file_dict[template_path]
-                        write_one_problems(problem_template,pddl_goals,problem_name,domain_name,problem_path)
-
+                        init_list = init_file_dict[num_of_agent][init_name]
+                        
+                        # new_problem_path = problem_path.replace(".pddl", "_"+init_name+".pddl")
+                        new_problem_path = problem_path
+                        print(init_list)
+                        write_one_problems(problem_template,pddl_goals,init_list,problem_name,domain_name,new_problem_path)
 
 
         # # problem_template_py = os.path.join(options.domain_path,"problem_template.py")

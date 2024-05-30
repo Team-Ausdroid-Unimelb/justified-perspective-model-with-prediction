@@ -25,7 +25,7 @@ def loadParameter():
     parser = OptionParser(usageStr)
 
     # parser.add_option('-p', '--problem_template', dest="problem_template_file", help='path to problem_template.py', default='experiments/coin/problem_template.py')
-    parser.add_option('-s', '--search_name', dest="search_name", help='the search name', default='bfsdcu')
+    parser.add_option('-s', '--search_name', dest="search_name", help='the search name', default='bfsdc')
     options, otherjunk = parser.parse_args(sys.argv[1:] )
     assert len(otherjunk) == 0, "Unrecognized options: " + str(otherjunk)
 
@@ -35,6 +35,11 @@ def create_unique_index(collection):
     collection.create_index(
         [("domain_name", 1), ("problem_name", 1), ("init_name", 1)],
         unique=True
+    )
+    
+def delete_unique_index(collection):
+    collection.drop_index(
+        [("domain_name", 1), ("problem_name", 1), ("init_name", 1)]
     )
 
 if __name__ == '__main__':
@@ -65,8 +70,18 @@ if __name__ == '__main__':
     
     for key in collection_dict:
         create_unique_index(collection_dict[key])
+    #     index_list = collection_dict[key].index_information()
+    #     if 'problem_name_1' in index_list:
+    #         print("Dropping index: ",key)
+    #         collection_dict[key].drop_index('problem_name_1')
+    #     # collection_dict[key].drop_index('problem_name_1')
 
-
+    # index_list = bbl_domain_collection.index_information()
+    # for index_info in index_list:
+    #     print(index_info)
+    # # print(index_list)
+    
+    # exit()
     template_file_dict = dict()
 
     if options.search_name == "":
@@ -112,3 +127,6 @@ if __name__ == '__main__':
             except pymongo.errors.DuplicateKeyError:
                 print("Duplicate document found. Insertion skipped.")
                 print(domain_name,problem_name,item['init_name'])
+                
+    for key in collection_dict:
+        delete_unique_index(collection_dict[key])
