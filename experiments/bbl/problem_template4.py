@@ -90,3 +90,34 @@ class PDDL_Template:
     # the ternary list does not contain -1, which means false value does not make sense in BBL
     # because the the value of v is not changable
     ternary_list = ['+','$','!']
+
+    init_dict ={
+        '(dir a)': ["'w'","'nw'","'n'","'ne'","'e'","'se'","'s'","'sw'"],
+        '(dir b)': ["'w'","'nw'","'n'","'ne'","'e'","'se'","'s'","'sw'"],
+        '(dir c)': ["'w'","'nw'","'n'","'ne'","'e'","'se'","'s'","'sw'"],
+        '(dir d)': ["'w'","'nw'","'n'","'ne'","'e'","'se'","'s'","'sw'"],
+    }
+
+    init_pre_fix = '''
+    (:init
+'''
+    
+    init_surfix = '''
+        (assign (x a) 3)
+        (assign (y a) 3)
+
+        (assign (x b) 2)
+        (assign (y b) 2)
+
+        (assign (x c) 0)
+        (assign (y c) 0)
+
+        (assign (x d) 0)
+        (assign (y d) 1)
+
+        (assign (x p) 1)
+        (assign (y p) 1)
+
+        (assign (v p) 't')
+    )
+'''

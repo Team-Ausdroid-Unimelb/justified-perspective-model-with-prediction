@@ -18,8 +18,6 @@ class PDDL_Template:
     )
     '''
 
-
-
     problem_init = '''
     (:init
         (assign (dir a) 'sw')

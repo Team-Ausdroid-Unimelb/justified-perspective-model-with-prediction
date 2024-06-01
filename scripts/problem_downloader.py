@@ -101,51 +101,58 @@ if __name__ == '__main__':
     else:
         search_name = options.search_name 
         problem_query = {}
-        if options.solvable:
-            problem_query = {'solvable':True,'total_goal_size':1}
-        for key,collection in collection_dict.items():
-            # existing_problems = []
-            for item in collection.find(problem_query):
-                domain_path = item['domain_path']
-                problem_name = item['problem_name']
-                problem_path = item['problem_path']
-                init_name = item['init_name']
-                # print(problem)
-                # problem_file_name = 'problem_'+problem+".pddl"
-                # if existing_problems == []:
-                #     existing_problems = os.listdir(domain_path)'
-                if not os.path.exists(problem_path):
+        # if options.solvable:
+        #     problem_query = {'solvable':True,'total_goal_size':1}
 
-                    query = {'search':search_name,'problem_name':problem_name,'init_name':init_name,'problem_path':problem_path}
-                    if my_collection.find_one(query) == None:
-                        print("Not found, adding it: ", problem_name)
-                        domain_name = item['domain_name']
+
+        # for key,collection in collection_dict.items():
+        #     # existing_problems = []
+        #     print(problem_query)
+            
+        collection = my_db['all_instance']
+        problem_query = {'solvable':True,'total_goal_size':1,'max_goal_depth':2,'search':'bfs'}
+
+        for item in collection.find(problem_query):
+            domain_path = item['domain_path']
+            problem_name = item['problem_name']
+            problem_path = item['problem_path']
+            init_name = item['init_name']
+            # print(problem)
+            # problem_file_name = 'problem_'+problem+".pddl"
+            # if existing_problems == []:
+            #     existing_problems = os.listdir(domain_path)'
+            if not os.path.exists(problem_path):
+
+                # query = {'search':search_name,'problem_name':problem_name,'init_name':init_name,'problem_path':problem_path}
+                # if my_collection.find_one(query) == None:
+                    print("Not found, adding it: ", problem_name)
+                    domain_name = item['domain_name']
+                    
+                    
+                    pddl_goals = item['goals']
+                    num_of_agent = item['num_of_agents']
+                    # agent_multiplier= item['agent_multiplier']
+                    if num_of_agent not in template_file_dict[domain_name].keys():
+                        template_path = domain_path.replace("domain.pddl",f"problem_template{num_of_agent}.py")
+                        module_name = "PDDL_Template"
+                        spec = importlib.util.spec_from_file_location(module_name,template_path)
+                        problem_template_module = importlib.util.module_from_spec(spec)
+                        spec.loader.exec_module(problem_template_module)
+                        temp_problem_template = getattr(problem_template_module,"PDDL_Template")
+                        template_file_dict[template_path] = temp_problem_template
                         
-                        
-                        pddl_goals = item['goals']
-                        num_of_agent = item['num_of_agents']
-                        # agent_multiplier= item['agent_multiplier']
-                        if num_of_agent not in template_file_dict[domain_name].keys():
-                            template_path = domain_path.replace("domain.pddl",f"problem_template{num_of_agent}.py")
-                            module_name = "PDDL_Template"
-                            spec = importlib.util.spec_from_file_location(module_name,template_path)
-                            problem_template_module = importlib.util.module_from_spec(spec)
-                            spec.loader.exec_module(problem_template_module)
-                            temp_problem_template = getattr(problem_template_module,"PDDL_Template")
-                            template_file_dict[template_path] = temp_problem_template
-                            
-                        if init_name not in init_file_dict[domain_name].keys():
-                            init_path = domain_path.replace("domain.pddl",f"problem_template{num_of_agent}.json")
-                            with open(init_path) as f:
-                                init_dict = json.load(f)
-                            init_file_dict[num_of_agent] = init_dict
-                        problem_template = template_file_dict[template_path]
-                        init_list = init_file_dict[num_of_agent][init_name]
-                        
-                        # new_problem_path = problem_path.replace(".pddl", "_"+init_name+".pddl")
-                        new_problem_path = problem_path
-                        print(init_list)
-                        write_one_problems(problem_template,pddl_goals,init_list,problem_name,domain_name,new_problem_path)
+                    if init_name not in init_file_dict[domain_name].keys():
+                        init_path = domain_path.replace("domain.pddl",f"problem_template{num_of_agent}.json")
+                        with open(init_path) as f:
+                            init_dict = json.load(f)
+                        init_file_dict[num_of_agent] = init_dict
+                    problem_template = template_file_dict[template_path]
+                    init_list = init_file_dict[num_of_agent][init_name]
+                    
+                    # new_problem_path = problem_path.replace(".pddl", "_"+init_name+".pddl")
+                    new_problem_path = problem_path
+                    # print(init_list)
+                    write_one_problems(problem_template,pddl_goals,init_list,problem_name,domain_name,new_problem_path)
 
 
         # # problem_template_py = os.path.join(options.domain_path,"problem_template.py")

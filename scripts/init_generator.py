@@ -81,7 +81,8 @@ if __name__ == '__main__':
         tuple_base_dict[init_name] = tuple_base
         
         
-    json_path = problem_template_py.replace(".py",".json")
+    # json_path = problem_template_py.replace(".py",".json")
+    json_path = os.path.join(os.path.dirname(problem_template_py),f"a{num_of_agent}_init.json")
     
     with open(json_path,"w") as f:
         import json
