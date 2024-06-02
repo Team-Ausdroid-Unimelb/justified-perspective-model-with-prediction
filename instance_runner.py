@@ -48,7 +48,7 @@ class Instance:
         self.search_name = search_name
 
 
-    def solve(self,timeout=300,log_debug = False, output_path = '', time_debug =False, belief_mode = -1):
+    def solve(self,output_path,time_out, memory_out, time_debug=False,log_debug=False):
         
         start_time = datetime.datetime.now().astimezone(TIMEZONE)
         result = dict()
@@ -119,15 +119,14 @@ class Instance:
         
         if time_debug:
             search_class_ref = getattr( self.search_module, self.search_name)
-            search_algorithm = search_class_ref(logger_handlers,self.search_name,timeout)
-
-            temp_result = search_algorithm.searching(problem)
+            search_algorithm = search_class_ref(logger_handlers,self.search_name)
+            temp_result = search_algorithm.searching(problem,time_out,memory_out)
             # result = search_algorithm.searching(problem)
         else:
         
             search_class_ref = getattr( self.search_module, self.search_name)
-            search_algorithm = search_class_ref(logger_handlers,self.search_name,timeout)
-            temp_result = search_algorithm.searching(problem)
+            search_algorithm = search_class_ref(logger_handlers,self.search_name)
+            temp_result = search_algorithm.searching(problem,time_out,memory_out)
 
         end_search_time = datetime.datetime.now().astimezone(TIMEZONE)
         
@@ -154,7 +153,8 @@ class Instance:
         
 
         print(result)
-        with open(f"{output_path}/{self.instance_name}.json",'w') as f:
+        result_json_path = f"{output_path}/{self.instance_name}.json"
+        with open(result_json_path,'w') as f:
             json.dump(result,f) 
         
         if 'running' in result.keys() and result['running']=='MEMORYOUT':
@@ -167,7 +167,7 @@ class Instance:
             del search_algorithm
             gc.collect() 
 
-        return 
+        return result_json_path
 
 def loadParameter():
 
@@ -188,7 +188,8 @@ def loadParameter():
     parser.add_option('--log_debug', dest="log_debug", action='store_true', help='enable logging level to debug', default=False)
     parser.add_option('-b', '--belief_mode', dest="belief_mode", type='int', help='should between 0-3', default=1)
     parser.add_option('--time_debug', dest="time_debug", action='store_true', help='enable cProfile', default=False)
-    parser.add_option('-t', '--timeout', dest="timeout", help='timeout, default 300s', type='int', default=300)
+    parser.add_option('-t', '--time_out', dest="time_out", help='time_out, default 300s', type='int', default=300)
+    parser.add_option('-m', '--memory_out', dest="memory_out", help='memoryout, default 8GB', type='int', default=8)
     
     options, otherjunk = parser.parse_args(sys.argv[1:] )
     assert len(otherjunk) == 0, "Unrecognized options: " + str(otherjunk)
@@ -200,6 +201,10 @@ if __name__ == '__main__':
 
     start_time = datetime.datetime.now().astimezone(TIMEZONE)
     options = loadParameter()
+    
+    
+    time_out = options.time_out
+    memory_out = options.memory_out
     
     problem_path = options.problem_path
     domain_path = options.domain_path
@@ -262,7 +267,7 @@ if __name__ == '__main__':
         pr = cProfile.Profile()
         pr.enable()
         ins = Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search_module= search_module, search_name = search_name)
-        ins.solve(timeout=options.timeout,log_debug = options.log_debug, output_path = output_path, time_debug= options.time_debug,belief_mode=options.belief_mode)
+        ins.solve(output_path = output_path,time_out=time_out, memory_out = memory_out)
         
         
         pr.disable()
@@ -284,5 +289,5 @@ if __name__ == '__main__':
         
     else:
         ins = Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search_module=search_module,search_name=search_name)
-        ins.solve(timeout=options.timeout,log_debug = options.log_debug, output_path = output_path, time_debug= options.time_debug,belief_mode=options.belief_mode)
+        ins.solve(output_path = output_path,time_out=time_out, memory_out = memory_out)
 

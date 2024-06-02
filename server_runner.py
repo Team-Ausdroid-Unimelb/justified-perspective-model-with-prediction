@@ -173,11 +173,21 @@ if __name__ == '__main__':
                     search_module= search_module,
                     search_name=search_name
                     )
-    ins.solve(output_path = output_path,time_out=time_out, memory_out = memory_out)
+    result_json_path = ins.solve(output_path = output_path,time_out=time_out, memory_out = memory_out)
     end_time = datetime.datetime.now().astimezone(TIMEZONE)
     used_time = end_time - start_time
     logger.info(f"solving time: {used_time}")
     del ins
+    
+    with open(result_json_path, 'r') as f:
+        result_dict = json.load(f)
+    
+    result_dict["goal_index"] = goal_index
+    result_dict["goal_depth"] = goal_depth
+    
+    with open(result_json_path, 'w') as f:
+        json.dump(result_dict,f,indent=4)
+        
     
         # if options.latex_output:
         #     logger.info("Generating Latex for domain:")

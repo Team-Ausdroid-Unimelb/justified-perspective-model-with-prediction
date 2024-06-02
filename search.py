@@ -17,7 +17,7 @@ LOGGER_LEVEL = logging.INFO
 SPLIT_KEY_WORD = "@"
 
 class Search:
-    def __init__(self,handlers,search_name,timeout):
+    def __init__(self,handlers,search_name):
         self.search_name = search_name      
         self.logger = setup_logger(search_name,handlers,logger_level=LOGGER_LEVEL) 
         self.expanded = 0
@@ -36,8 +36,8 @@ class Search:
         self.h_weight = 1
         self.g_weight = 1
         self.max_goal_num = 0
-        self.timeout = datetime.timedelta(seconds=timeout)
-        self.memoryout = 10*1024
+        self.timeout = None
+        self.memoryout = None
         self.unknown_goal_name = []
     # Do i need to reset here?
 
@@ -101,7 +101,9 @@ class Search:
 
     #BFS with duplicate check on the state + epistemic formula
     # for novelty checking purpose, we need to move the goal check process at where the node is generated
-    def searching(self,problem:Problem):
+    def searching(self,problem:Problem,time_out:int,memory_out:int):
+        self.timeout = datetime.timedelta(seconds=time_out)
+        self.memoryout = memory_out*1024 
         self.logger.info("starting searching using [%s]",self.search_name)
         start_time = datetime.datetime.now()
 

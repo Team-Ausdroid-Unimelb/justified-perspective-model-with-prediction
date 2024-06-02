@@ -5,8 +5,8 @@ import re
 # the search name should be the same as python file name
 class solution_finder(Search):
 
-    def __init__(self, handlers, search_name,timeout):
-        super().__init__(handlers, search_name,timeout)
+    def __init__(self, handlers, search_name):
+        super().__init__(handlers, search_name)
         # bfs updating
         self.h_weight = 1
         self.g_weight = 1
