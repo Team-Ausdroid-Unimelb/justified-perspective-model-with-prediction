@@ -1,4 +1,4 @@
-from random_query_generoter import RandomQueryGenerator
+from utils.random_query_generoter import RandomQueryGenerator
 # import experiments.coin.problem_template as domain
 from optparse import OptionParser
 import sys

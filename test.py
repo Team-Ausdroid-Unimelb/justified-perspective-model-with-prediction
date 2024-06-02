@@ -1,4 +1,4 @@
-from random_query_generoter import RandomQueryGenerator
+from utils.random_query_generoter import RandomQueryGenerator
 
 rqg = RandomQueryGenerator(['a','b','c'],5)
 print(rqg.agent_num_list)
