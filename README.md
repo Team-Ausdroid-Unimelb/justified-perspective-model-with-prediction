@@ -14,6 +14,10 @@ python .\instance_runner.py -s .\forward_search\fbfsdc.py -e .\examples\group_nu
 ```
 
 
+```
+python server_runner.py -t 1200 -m 8 -o output -s search_algorithms/bfsdc.py -d experiments/bbl/domain.pddl --goal_size 1 --goal_depth 1 -a 2 -i init_a2_00000  --goal_index 0
+```
+
 
 
 
