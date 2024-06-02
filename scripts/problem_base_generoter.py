@@ -158,7 +158,7 @@ if __name__ == '__main__':
         if goal_depth not in goal_condition_dictionary.keys():
             goal_condition_dictionary[goal_depth] = dict()
         # problem_index = f"{prefix}d{max_depth}_{i+max_index+1:05d}"
-        goal_condition_dictionary[goal_depth][i] = goal_list
+        goal_condition_dictionary[goal_depth][i] = goal_list[0]
 
     with open(os.path.join(problem_path,f"a{num_of_agent}_problem_base.json"),"w") as f:
         json.dump(goal_condition_dictionary,f)
