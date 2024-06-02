@@ -124,10 +124,12 @@ if __name__ == '__main__':
             problem_base = json.load(f)
             
         current_goal_base_size_list = []
+        goal_base = dict()
         for i in range(1,goal_depth+1):
             current_goal_base_size_list.append(len(problem_base[str(i)]))
+            goal_base.update(problem_base[str(i)])
         goal_base_size = sum(current_goal_base_size_list)
-        goal_base = problem_base[str(goal_depth)]
+        
         with open(goal_index_info_path, 'r') as f:
             goal_index_info = json.load(f)
             max_index = goal_index_info[str(goal_size)][str(goal_depth)]
