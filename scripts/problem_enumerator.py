@@ -67,7 +67,7 @@ def loadParameter():
 
 def max_rank(n, k):
     """Calculate the maximum rank for combinations of k items from n items."""
-    return comb(n, k) - 1
+    return comb(n, k)
 
 def rank_to_combination(rank, k, n):
     """Convert a lexicographic rank to its combination."""
