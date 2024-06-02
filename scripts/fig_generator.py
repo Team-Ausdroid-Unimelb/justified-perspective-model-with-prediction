@@ -35,7 +35,7 @@ def loadParameter():
     
     # logger.info("Parsing Options")
     parser = OptionParser(usageStr)
-    parser.add_option('-c','--config', dest="config_path", help='path to the config yaml file to display the results',default='scripts/configs/bbl/bbl-unsolvable_search-ga_time.yaml')
+    parser.add_option('-c','--config', dest="config_path", help='path to the config yaml file to display the results',default='scripts/configs/bbl/bbl-a1-g1-solvable_search_node.yaml')
     options, otherjunk = parser.parse_args(sys.argv[1:] )
     assert len(otherjunk) == 0, "Unrecognized options: " + str(otherjunk)
 
@@ -59,7 +59,7 @@ class FigGenerator():
         my_client = pymongo.MongoClient("mongodb://localhost:27017",username="admin",password="90054")
         my_db = my_client['new_result']
 
-        my_collection = my_db['all_instance']
+        my_collection = my_db['bfs_ratio']
 
         filters = config_yaml.get('filters')
         filter_query = dict()
@@ -112,7 +112,7 @@ class FigGenerator():
         df = pd.DataFrame(data_list)
         print(df)
         # print(pd_query_list)
-        display_column_mapping = config_yaml.get('display_column_mapping')
+        display_column_mapping = config_yaml.get('keys')
         for one_mapping in display_column_mapping:
             mapping_name = one_mapping.get('name')
             mapping_values = one_mapping.get('values')
@@ -122,7 +122,7 @@ class FigGenerator():
                 mapping_values = df[mapping_name].unique()
             print(mapping_values)
         display_column_names = config_yaml.get('display_column_names')
-        exit()
+        # exit()
 
 
         # output_df = df.query("search == 'bfsdcu'")
@@ -169,5 +169,5 @@ if __name__ == '__main__':
 
     options = loadParameter()
     config_path = options.config_path
-    fg = FigGenerator(config_path)
+    fg = FigGenerator()
     fg.run(config_path=config_path,shareY=True)
