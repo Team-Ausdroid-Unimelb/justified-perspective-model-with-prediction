@@ -1,5 +1,6 @@
 from math import comb
 import os
+import yaml
 
 def rank_to_combination(rank, k, n):
     """Convert a lexicographic rank to its combination."""
@@ -38,3 +39,27 @@ def write_one_problems(problem_template,pddl_goal_list,init_list,problem_name,do
     output_str=output_str + problem_template.problem_surfix
     with open(os.path.join(problem_path),"w") as f:
         f.write(output_str)
+        
+        
+    import yaml
+
+def load_yaml_file(file_path):
+    """
+    Load a YAML file from the given path.
+
+    Args:
+        file_path (str): Path to the YAML file.
+
+    Returns:
+        dict: Contents of the YAML file as a dictionary.
+    """
+    try:
+        with open(file_path, 'r') as file:
+            data = yaml.safe_load(file)
+            return data
+    except FileNotFoundError:
+        print(f"Error: File not found at {file_path}")
+    except yaml.YAMLError as e:
+        print(f"Error parsing YAML file: {e}")
+    except Exception as e:
+        print(f"Unexpected error: {e}")
