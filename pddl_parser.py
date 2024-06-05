@@ -9,81 +9,81 @@ import typing
 TIMEZONE = pytz.timezone('Australia/Melbourne')
 DATE_FORMAT = '%d-%m-%Y_%H-%M-%S'
 timestamp = datetime.datetime.now().astimezone(TIMEZONE).strftime(DATE_FORMAT)
-# logging.basicConfig(filename=f'logs/{timestamp}.log', level=logging.DEBUG)
+# logging.basicConfig(filename =f'logs/{timestamp}.log', level =logging.DEBUG)
 
-LINE_BREAK = "&"
-PDDL_PREFIX = "(define"
-PDDL_SURFIX = ")"
+LINE_BREAK = r"&"
+PDDL_PREFIX = r"(define"
+PDDL_SURFIX = r")"
 
 # domain file constants
-DOMAIN_NAME_REG_PREFIX = "\(domain "
-DOMAIN_NAME_REG ="[0-9a-z_]*"
-DOMAIN_NAME_REG_SURFIX= "\)"
+DOMAIN_NAME_REG_PREFIX = r"\(domain "
+DOMAIN_NAME_REG = r"[0-9a-z_]*"
+DOMAIN_NAME_REG_SURFIX = r"\)"
 
-TYPING_REG_PREFIX = "\(:types"
-TYPING_REG = "[&0-9a-z_\- ]*"
-TYPING_REG_SURFIX= "\)"
+TYPING_REG_PREFIX = r"\(:types"
+TYPING_REG = r"[&0-9a-z_\- ]*"
+TYPING_REG_SURFIX = r"\)"
 
-FUNC_REG_PREFIX = "\(:functions"
-FUNC_REG = "(\([\w \-\?]*\))*"
-FUNC_REG_SURFIX= "\)"
+FUNC_REG_PREFIX = r"\(:functions"
+FUNC_REG = r"(\([\w \-\?]*\))*"
+FUNC_REG_SURFIX = r"\)"
 
-ACTION_REG_PREFIX = "\(:action "
-ACTION_REG = ".*"
-ACTION_REG_SURFIX= "\)"
+ACTION_REG_PREFIX = r"\(:action "
+ACTION_REG = r".*"
+ACTION_REG_SURFIX = r"\)"
 
-PARAMETERS_REG_PREFIX = ":parameters\("
-PARAMETERS_REG = "(.*?)"
-PARAMETERS_REG_SURFIX= "\)"
+PARAMETERS_REG_PREFIX = r":parameters\("
+PARAMETERS_REG = r"(.*?)"
+PARAMETERS_REG_SURFIX = r"\)"
 
-EFFECT_REG_PREFIX = ":effect\("
-EFFECT_REG = ".*"
-EFFECT_REG_SURFIX= "\)"
+EFFECT_REG_PREFIX = r":effect\("
+EFFECT_REG = r".*"
+EFFECT_REG_SURFIX = r"\)"
 
-PRECONDITION_REG_PREFIX = ":precondition\("
-PRECONDITION_REG = ".*"
-PRECONDITION_REG_SURFIX= "\)"
+PRECONDITION_REG_PREFIX = r":precondition\("
+PRECONDITION_REG = r".*"
+PRECONDITION_REG_SURFIX = r"\)"
 
 # EFFECT_CONDITION_REG_PREFIX = r"\("
 # EFFECT_CONDITION_REG = r"(assign|increase|decrease) \(\w*\??\w*\) \(\@jp \(\"[\w \[\]]*\"\) \(\w*\??\w*\)\)"
 # EFFECT_CONDITION_REG_SURFIX = r"\)"
-JP_PREFIX  = "@jp"
+JP_PREFIX = r"@jp"
 
 # problem file constants
-PROBLEM_NAME_REG_PREFIX = "\(problem "
-PROBLEM_NAME_REG ="\w*"
-PROBLEM_NAME_REG_SURFIX= "\)"
+PROBLEM_NAME_REG_PREFIX = r"\(problem "
+PROBLEM_NAME_REG = r"\w*"
+PROBLEM_NAME_REG_SURFIX = r"\)"
 
-PROBLEM_DOMAIN_NAME_REG_PREFIX = "\(:domain "
-PROBLEM_DOMAIN_NAME_REG ="[0-9a-z_]*"
-PROBLEM_DOMAIN_NAME_REG_SURFIX= "\)"
+PROBLEM_DOMAIN_NAME_REG_PREFIX = r"\(:domain "
+PROBLEM_DOMAIN_NAME_REG = r"[0-9a-z_]*"
+PROBLEM_DOMAIN_NAME_REG_SURFIX = r"\)"
 
 
-AGENT_REG_PREFIX = "\(:agents"
-AGENT_REG = "[\w \&\-]*"
-AGENT_REG_SURFIX= "\)"
+AGENT_REG_PREFIX = r"\(:agents"
+AGENT_REG = r"[\w \&\-]*"
+AGENT_REG_SURFIX = r"\)"
 
-OBJECT_REG_PREFIX = "\(:objects"
-OBJECT_REG = "[\w \&\-]*"
-OBJECT_REG_SURFIX= "\)"
+OBJECT_REG_PREFIX = r"\(:objects"
+OBJECT_REG = r"[\w \&\-]*"
+OBJECT_REG_SURFIX = r"\)"
 
-INIT_REG_PREFIX = "\(:init"
-INIT_REG = "(\(assign [\w \'\"\(\)]*\))*"
-INIT_REG_SURFIX= "\)"
+INIT_REG_PREFIX = r"\(:init"
+INIT_REG = r"(\(assign [\w \'\"\(\)]*\))*"
+INIT_REG_SURFIX = r"\)"
 
-RANGE_REG_PREFIX = "\(:ranges"
-RANGE_REG = "(\([\w \[\]\'\,]*\))*"
-RANGE_REG_SURFIX= "\)"
+RANGE_REG_PREFIX = r"\(:ranges"
+RANGE_REG = r"(\([\w \[\]\'\,]*\))*"
+RANGE_REG_SURFIX = r"\)"
 
-RULE_REG_PREFIX = "\(:rules"
-RULE_REG = "(\(\w* \([\w ]*\) \[[\w,]*\]\))*"
-RULE_REG_SURFIX= "\)"
+RULE_REG_PREFIX = r"\(:rules"
+RULE_REG = r"(\(\w* \([\w ]*\) \[[\w,]*\]\))*"
+RULE_REG_SURFIX = r"\)"
 
-GOAL_REG_PREFIX = "\(:goal\(and"
-GOAL_REG = ".*"
-GOAL_REG_SURFIX= "\)\)"
+GOAL_REG_PREFIX = r"\(:goal\(and"
+GOAL_REG = r".*"
+GOAL_REG_SURFIX = r"\)\)"
 
-LOGGER_NAME = "pddl_parser"
+LOGGER_NAME = r"pddl_parser"
 LOGGER_LEVEL = logging.INFO
 # LOGGER_LEVEL = logging.DEBUG
 from util import setup_logger,find_each_section
@@ -96,16 +96,10 @@ EFFECT_TYPE_DICT = {
     "assign":EffectType.ASSIGN
 }
 
-ONTIC_RE_PREFIX = "\(:ontic"
-ONTIC_STR_PREFIX = "(:ontic"
-EPISTEMIC_RE_PREFIX = "\(:epistemic"
-EPISTEMIC_STR_PREFIX = "(:epistemic"
-BOTH_RE_PREFIX = "\(:(?:epistemic|ontic)"
-PREDICATE_RE = " ((?:\$|\+|\-) [a-z]* \[[a-z0-9,]*\] )*\((?:>|<|=|>=|<=|\-=)+ \([\? 0-9a-z_\-]*\) (?:[0-9a-z_\'\"\-]+|\([0-9a-z_ ]+\))\)\)"
 
 class PDDLParser:
     def __init__(self,handlers):
-        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=LOGGER_LEVEL) 
+        self.logger = setup_logger(LOGGER_NAME,handlers,logger_level =LOGGER_LEVEL) 
         self.logger.debug("PDDL PARSER initialized")
 
     def run(self,domain_path,problem_path):
@@ -113,7 +107,7 @@ class PDDLParser:
 
         self.logger.info("Reading domain file")
         self.logger.info(domain_path)
-        domain_file = ""
+        domain_file = str()
         with open(domain_path,"r") as f:
             domain_file = f.read()
 
@@ -126,7 +120,7 @@ class PDDLParser:
         
         self.logger.info("Reading problem file")
         self.logger.info(problem_path)
-        problem_file = ""
+        problem_file = str()
         with open(problem_path,"r") as f:
             problem_file = f.read()
             
@@ -178,7 +172,7 @@ class PDDLParser:
             for agent_index in agent_list_str.split(" "):
                 types[type_str].entity_index_list.add(agent_index)
                 parent_type = types[type_str].parent_type_name
-                if not parent_type == "":
+                if not parent_type == str():
                     types[parent_type].entity_index_list.add(agent_index)
                 agent_set.add(agent_index)
         for agent_index in agent_set:
@@ -204,7 +198,7 @@ class PDDLParser:
                 self.logger.debug(type_str)
                 types[type_str].entity_index_list.add(object_index)
                 parent_type = types[type_str].parent_type_name
-                if not parent_type == "":
+                if not parent_type == str():
                     types[parent_type].entity_index_list.add(object_index)
                 object_set.add(object_index)
         for object_index in object_set:
@@ -257,8 +251,8 @@ class PDDLParser:
             value_range_str = range_content_list[2]
             
             if value_type == VALUE_TYPE.ENUMERATE:
-                self.logger.debug(value_range_str[1:-1:].replace("'","").split(","))
-                function_schemas[function_schema_name].value_range = value_range_str[1:-1:].replace("'","").split(",")
+                self.logger.debug(value_range_str[1:-1:].replace("'",str()).split(","))
+                function_schemas[function_schema_name].value_range = value_range_str[1:-1:].replace("'",str()).split(",")
             elif value_type == VALUE_TYPE.INTEGER:
                 bounds = value_range_str[1:-1:].split(",")
                 if len(bounds) == 2:
@@ -454,9 +448,9 @@ class PDDLParser:
 
     def keyWordParser(self,keyword,reg_prefix,reg_str,reg_surfix,input_str):
         self.logger.debug("extract %s",keyword)
-        inner_str = ""
+        inner_str = str()
         try:
-            pattern = f'{reg_prefix}{reg_str}{reg_surfix}'
+            pattern = reg_prefix+reg_str+reg_surfix
             found = re.search(pattern,input_str).group(0)
             lp = len(re.sub(r'\\([.*+()])', r'\1', reg_prefix))
             ls = len(re.sub(r'\\([.*+()])', r'\1', reg_surfix))
@@ -495,15 +489,15 @@ class PDDLParser:
         # types: typing.List[Type] = []
         types: typing.Dict[str,Type] = {}
         for type_str in typing_str.split(LINE_BREAK):
-            if type_str == "":
+            if type_str == str():
                 continue
             elif '-' in type_str:
                 # it has parent types:
-                type_str_list= type_str.split("-")
+                type_str_list = type_str.split("-")
                 type_str = type_str_list[0]
                 parent_type_name = type_str_list[1]
             else:
-                parent_type_name = ""
+                parent_type_name = str()
 
             for type_name in type_str.split(" "):
                 new_type = Type(type_name)
@@ -514,7 +508,7 @@ class PDDLParser:
         type_names = types.keys()
         for k,item in types.items():
             p_name = item.parent_type_name
-            if not p_name == "":
+            if not p_name == str():
                 if not p_name in type_names:
                     raise ValueError("checking type %s: parent type name not found in types: %s",k,p_name)
                 else:
@@ -567,7 +561,7 @@ class PDDLParser:
                 raise ValueError('missing variable or types in parameter [%s] for action [%s]',parameter_str,action_name)
             parameters = Parameters()
             for i in range(len(match_types)):
-                parameters[match_variables[i]] = match_types[i].replace(match_variables[i]+"-","")
+                parameters[match_variables[i]] = match_types[i].replace(match_variables[i]+"-",str())
             self.logger.debug(parameters)
             self.logger.debug(action_content_str)
             
@@ -601,7 +595,7 @@ class PDDLParser:
             preconditions: typing.Dict[str,Condition] = {}
             # find precondition string
             preconditions_str, remaining_str = self.keyWordParser("precondition",PRECONDITION_REG_PREFIX,PRECONDITION_REG,PRECONDITION_REG_SURFIX,action_content_str)
-            if not remaining_str == "":
+            if not remaining_str == str():
                 raise ValueError("The remaining string [%s] after action parsing is not empty",remaining_str)
 
             precondition_str_list = find_each_section(preconditions_str)
@@ -730,7 +724,7 @@ class PDDLParser:
             
             # this is a effect that contain jp
             effect_str = effect_str[len(effect_type_str)+1::]
-            effect_content_list  = find_each_section(effect_str)
+            effect_content_list = find_each_section(effect_str)
             if not len(effect_content_list) == 2:
                 raise ValueError("Error when parsing effect [%s] for action [%s]: an effect should have 2 components",effect_content_list,action_name)
             target_variable_name = effect_content_list[0][1:-1]
@@ -775,8 +769,8 @@ class PDDLParser:
     #     self.logger.debug("extract epistemic formulea")
     #     self.logger.debug("input epistemic str: [%s]",ep_str)
     #                     # preconditions["epistemic_p"] = list()
-    #     p,q = re.search('\(= \(:epistemic [\?+\- 0-9a-z_\[\],]*\((?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)\) [0-9a-z-]*\)',ep_str).span()
-    #     epistemic_prefix = "(= (:epistemic "
+    #     p,q = re.search('\( = \(:epistemic [\?+\- 0-9a-z_\[\],]*\((?:>|<| =|> =|< =)+ \([ 0-9a-z_\? ]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)\) [0-9a-z-]*\)',ep_str).span()
+    #     epistemic_prefix = "( = (:epistemic "
     #     epistemic_surfix = ")"
         
     #     ep_str = ep_str[p+len(epistemic_prefix):q+len(epistemic_surfix)]
@@ -807,7 +801,7 @@ class PDDLParser:
                 self.logger.debug(pred_str)
                 self.logger.debug(pred_str)
                 pre_comp_list = pred_str.split(" ")
-                symbol  = pre_comp_list[0]
+                symbol = pre_comp_list[0]
                 # value = goal_str_list[-1]
                 pred_str = pred_str[(len(symbol)+2):]
                 self.logger.debug(pred_str)
@@ -818,15 +812,15 @@ class PDDLParser:
                 variable = old_variable.replace(' ?','?').replace(' ','-')
                 key = key.replace(old_variable,variable)
                 self.logger.debug(temp_list)
-                if len(temp_list)==2:
+                if len(temp_list) ==2:
                     value = temp_list[1][1:]
                     if "'" in value:
-                        value = value.replace("'","")
+                        value = value.replace("'",str())
                     elif '"' in value:
-                        value = value.replace('"',"")
+                        value = value.replace('"',str())
                     else:
                         value =int(value)      
-                elif len(temp_list)==3:
+                elif len(temp_list) ==3:
                     # it means the second argument is also a variable
                     value = temp_list[1][2:].replace(' ?','?').replace(' ','-')
                 else:
@@ -851,7 +845,7 @@ class PDDLParser:
                 self.logger.debug("query suffix [%s]" % (query_suffix_str))                
                 # pre_comp_list = pred_str.split("(")
                 
-                symbol  = query_suffix_str[1:].split(" ")[0]
+                symbol = query_suffix_str[1:].split(" ")[0]
                 # pre_comp_list[0]
                 # value = goal_str_list[-1]
                 query_suffix_str = query_suffix_str[(len(symbol)+3):]
@@ -863,15 +857,15 @@ class PDDLParser:
                 variable = old_variable.replace(' ?','?').replace(' ','-')
                 key = key.replace(old_variable,variable)
                 query_str = query_str.replace(old_variable,variable)
-                if len(temp_list)==2:
+                if len(temp_list) ==2:
                     value = temp_list[1][1:]
                     if "'" in value:
-                        value = value.replace("'","")
+                        value = value.replace("'",str())
                     elif '"' in value:
-                        value = value.replace('"',"")
+                        value = value.replace('"',str())
                     else:
                         value =int(value)      
-                elif len(temp_list)==3:
+                elif len(temp_list) ==3:
                     # it means the second argument is also a variable
                     value = temp_list[1][2:].replace(' ?','?').replace(' ','-')
                 else:
@@ -879,7 +873,7 @@ class PDDLParser:
                 self.logger.debug("epistemic:(%s,%s,%s,%s,%s,%s)" % (key,query_str,query_prefix,symbol,variable,value))
 
                 result["epistemic"].append((key,query_str,query_prefix,symbol,variable,value))
-            elif pred_str == "":
+            elif pred_str == str():
                 pass
             else:
                 raise ValueError("[predicate type not found] error in decoding [%s]",key)
@@ -898,37 +892,37 @@ class PDDLParser:
             # . match anything but the endline
             # * match 0 or more preceding RE
             # $ matchs end line
-        input_str = re.sub(';.*$',"",input_str,flags=re.MULTILINE).lower()
+        input_str = re.sub(';.*$',str(),input_str,flags =re.MULTILINE).lower()
         self.logger.debug(repr(input_str))
         
         # removing useless space
         # ^ match any start of the newline in multiline mode
-        input_str = re.sub('^ *| *$|^\n',"",input_str,flags=re.MULTILINE)
-        input_str = re.sub(' *, *',",",input_str,flags=re.MULTILINE)
-        input_str = re.sub(' *- *',"-",input_str,flags=re.MULTILINE)
-        input_str = re.sub('\[ *',"[",input_str,flags=re.MULTILINE)
-        input_str = re.sub(' *\]',"]",input_str,flags=re.MULTILINE)
-        input_str = re.sub(':goal *',":goal",input_str,flags=re.MULTILINE)
-        input_str = re.sub(':action *',":action ",input_str,flags=re.MULTILINE)
-        input_str = re.sub(':parameters *',":parameters",input_str,flags=re.MULTILINE)
-        input_str = re.sub(':precondition *',":precondition",input_str,flags=re.MULTILINE)
-        input_str = re.sub(':effect *',":effect",input_str,flags=re.MULTILINE)
-        input_str = re.sub(' \?',"?",input_str,flags=re.MULTILINE)
+        input_str = re.sub('^ *| *$|^\n',str(),input_str,flags =re.MULTILINE)
+        input_str = re.sub(' *, *',",",input_str,flags =re.MULTILINE)
+        input_str = re.sub(' *- *',"-",input_str,flags =re.MULTILINE)
+        input_str = re.sub('\[ *',"[",input_str,flags =re.MULTILINE)
+        input_str = re.sub(' *\]',"]",input_str,flags =re.MULTILINE)
+        input_str = re.sub(':goal *',":goal",input_str,flags =re.MULTILINE)
+        input_str = re.sub(':action *',":action ",input_str,flags =re.MULTILINE)
+        input_str = re.sub(':parameters *',":parameters",input_str,flags =re.MULTILINE)
+        input_str = re.sub(':precondition *',":precondition",input_str,flags =re.MULTILINE)
+        input_str = re.sub(':effect *',":effect",input_str,flags =re.MULTILINE)
+        input_str = re.sub(' \?',"?",input_str,flags =re.MULTILINE)
         self.logger.debug(repr(input_str))
         
         # removing useless \n
-        input_str = re.sub('\( *|(\n)*\((\n)*',"(",input_str,flags=re.MULTILINE)
-        input_str = re.sub(' *\)|(\n)*\)(\n)*',")",input_str,flags=re.MULTILINE)
-        input_str = re.sub('\)\n',")",input_str,flags=re.MULTILINE)
+        input_str = re.sub('\( *|(\n)*\((\n)*',"(",input_str,flags =re.MULTILINE)
+        input_str = re.sub(' *\)|(\n)*\)(\n)*',")",input_str,flags =re.MULTILINE)
+        input_str = re.sub('\)\n',")",input_str,flags =re.MULTILINE)
         self.logger.debug(repr(input_str))
         
-        input_str = re.sub('\n',LINE_BREAK,input_str,flags=re.MULTILINE)
+        input_str = re.sub('\n',LINE_BREAK,input_str,flags =re.MULTILINE)
         self.logger.debug(repr(input_str)) 
         return input_str      
     
     def str2value(self,value_type,value_str):
         if value_type == VALUE_TYPE.ENUMERATE:
-            value = value_str.replace("'","")
+            value = value_str.replace("'",str())
         elif value_type == VALUE_TYPE.INTEGER:
             value = int(value_str)
         else:
@@ -955,7 +949,7 @@ class PDDLParser:
     #                         pre_str = pre_str[len(epistemic_prefix):-len(epistemic_surfix):]
     #                         self.logger.debug(pre_str)
     #                         pre_str_list = pre_str.split(" ")
-    #                         # symbol  = goal_str_list[0]
+    #                         # symbol = goal_str_list[0]
     #                         value = pre_str_list[-1]
     #                         pre_str = pre_str[:-(len(value)+2):]
     #                         value = int(value)
@@ -965,7 +959,7 @@ class PDDLParser:
     #                         # i,j = re.search('\)\) .*',goal_str).span()
     #                         # value1 = int(goal_str[i+3:j:])
                             
-    #                         p,q = re.search('(?:>|<|=|>=|<=)+ \([ 0-9a-z_\? ]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)',pre_str).span()
+    #                         p,q = re.search('(?:>|<| =|> =|< =)+ \([ 0-9a-z_\? ]*\) (?:[0-9a-z_\'\"-]+|\([0-9a-z_ ]+\))\)',pre_str).span()
     #                         # query = pre_str[:p-1]
     #                         pre_str = pre_str[p:q-1]
                             
@@ -984,9 +978,9 @@ class PDDLParser:
     #                         key = key.replace(old_variable,variable)
     #                         v_value = pre_str_list[1]
     #                         if "'" in v_value:
-    #                             v_value = v_value.replace("'","")
+    #                             v_value = v_value.replace("'",str())
     #                         elif '"' in v_value:
-    #                             v_value = v_value.replace('"',"")
+    #                             v_value = v_value.replace('"',str())
     #                         elif '?' in v_value:
     #                             v_value = v_value.replace(' ?',"?").replace(')','').replace('(','')
     #                         elif "(" in v_value and ")" in v_value:
