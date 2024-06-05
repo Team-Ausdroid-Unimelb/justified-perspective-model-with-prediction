@@ -115,7 +115,7 @@ if __name__ == '__main__':
     
     problem_name = f"{domain_name}_a{num_of_agent}_g{goal_size}_d{goal_depth}_{goal_index}"
     
-    problem_path = os.path.join(domain_dir,"problem_"+problem_name+".pddl")
+    problem_path = os.path.join(domain_dir,"problem_"+problem_name+"_"+init_name+".pddl")
     try:
         with open(init_dict_path, 'r') as f:
             init_dict = json.load(f)
@@ -185,7 +185,8 @@ if __name__ == '__main__':
         result_dict = json.load(f)
     
     result_dict["goal_index"] = goal_index
-    result_dict["goal_depth"] = goal_depth
+    result_dict["designed_goal_depth"] = goal_depth
+    result_dict["init_name"] = init_name
     
     with open(result_json_path, 'w') as f:
         json.dump(result_dict,f,indent=4)
