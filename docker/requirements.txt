@@ -9,3 +9,4 @@ psutil==5.9.8
 pymongo==4.7.1
 pytz==2024.1
 seaborn==0.13.2
+PyYAML==5.3.1
