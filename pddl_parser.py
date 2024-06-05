@@ -288,9 +288,10 @@ class PDDLParser:
                     functions.update({function_name:Function(function_name,function_schema.name,entity)})
         self.logger.debug(functions)
 
+
+        # update the action_schema
         for action_schema in action_schemas.values():
-            
-            
+            self.logger.debug(action_schema.name)
             for pre_str,precondition in action_schema.preconditions.items():
                 if not precondition.target_value == None:
                     if precondition.condition_type == ConditionType.ONTIC:
