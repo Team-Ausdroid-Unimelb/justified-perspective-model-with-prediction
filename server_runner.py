@@ -138,8 +138,8 @@ if __name__ == '__main__':
         
         goal_index_combination = rank_to_combination(goal_index,goal_size,goal_base_size)
         goal_str_list = []
-        for goal_index in goal_index_combination:
-            goal_str = goal_base[str(goal_index)] + f";; a{num_of_agent}_{goal_depth}_{goal_index:020d}"
+        for local_goal_index in goal_index_combination:
+            goal_str = goal_base[str(local_goal_index)] + f";; a{num_of_agent}_{goal_depth}_{local_goal_index:020d}"
             goal_str_list.append(goal_str)
         
         problem_template_module = importlib.import_module(problem_template_path.replace(os.sep,'.').replace('.py',''))
