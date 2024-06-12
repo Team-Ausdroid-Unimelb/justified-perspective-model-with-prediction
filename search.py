@@ -116,8 +116,14 @@ class Search:
                 if ep_formula.epf_type == EPFType.EP:
                     if goal_condition.target_value == Ternary.UNKNOWN:
                         self.unknown_goal_name.append(key)
-                    elif "$" in ep_formula.ep_query:
-                        self.unknown_goal_name.append(key)
+                    # if there is a ! infront of unknown, then the unknown should not be counted
+                    else:
+                        negation_flag = True
+                        for temp_str in ep_formula.ep_query.split(' '):
+                            if temp_str == '!':
+                                negation_flag = not negation_flag
+                            elif temp_str == '$' and negation_flag:
+                                self.unknown_goal_name.append(key)
         self.logger.debug(f'unknown goal name: {self.unknown_goal_name}')
                 
         
