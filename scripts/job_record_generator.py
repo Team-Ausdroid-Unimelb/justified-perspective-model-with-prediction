@@ -22,7 +22,7 @@ def loadParameter():
 
     """
     parser = OptionParser(usageStr)
-    parser.add_option('-t', '--time_out', dest="time_out", help='timeout, default 300s', type='int', default=600)
+    parser.add_option('-t', '--time_out', dest="time_out", help='timeout, default 600s', type='int', default=600)
     parser.add_option('-m', '--memory_out', dest="memory_out", help='memoryout, default 8GB', type='int', default=8)
     # parser.add_option('-p', '--problem_template', dest="problem_template_file", help='path to problem_template.py', default='experiments/coin/problem_template.py')
     parser.add_option('-s', '--search_name', dest="search_name", help='the search name', default='bfs')
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     #     goal_depth_info = json.load(f)
     
     # let's find all job for now.
-    query = {}
+    query = {'num_of_agent':num_of_agent,'domain_name':domain_name,'goal_size':{'$in':goal_size_list},'goal_depth':{'$in':goal_depth_list}}
     
     for item in job_index_collection.find(query):
         
