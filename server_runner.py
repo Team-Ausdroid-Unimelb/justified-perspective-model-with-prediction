@@ -132,11 +132,13 @@ if __name__ == '__main__':
         
         with open(goal_index_info_path, 'r') as f:
             goal_index_info = json.load(f)
-            max_index = goal_index_info[str(goal_size)][str(goal_depth)]
+            max_index = goal_index_info[str(goal_depth)][str(goal_size)]
             if goal_index > max_index:
                 raise ValueError(f"goal_index {goal_index} is larger than the max_index {max_index}")
         
-        goal_index_combination = rank_to_combination(goal_index,goal_size,goal_base_size)
+        # print(f"goal base size: {goal_base_size}")
+        # print(f"goal size: {goal_size}")
+        goal_index_combination = rank_to_combination(goal_index-1,goal_size,goal_base_size)
         goal_str_list = []
         for local_goal_index in goal_index_combination:
             goal_str = goal_base[str(local_goal_index)] + f";; a{num_of_agent}_{goal_depth}_{local_goal_index:020d}"
