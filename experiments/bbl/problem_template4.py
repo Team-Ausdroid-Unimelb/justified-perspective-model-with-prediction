@@ -70,7 +70,7 @@ class PDDL_Template:
         (static (y c) [])
         (static (dir d) [])
         (static (x d) [])
-        (static (y d) []
+        (static (y d) [])
     )
 )
     '''
