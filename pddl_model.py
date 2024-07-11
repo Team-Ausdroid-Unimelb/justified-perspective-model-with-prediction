@@ -12,7 +12,7 @@ import traceback
 
 LOGGER_NAME = "pddl_model"
 LOGGER_LEVEL = logging.INFO
-# LOGGER_LEVEL = logging.DEBUG
+LOGGER_LEVEL = logging.DEBUG
 
 
 from util import setup_logger
@@ -23,7 +23,7 @@ from util import ActionSchema,Type,Function,FunctionSchema
 from util import VARIABLE_FILLER
 # Class of the problem
 class Problem:
-    def __init__(self, enetities,types: typing.Dict[str,Type],function_schemas: typing.Dict[str,FunctionSchema],action_schemas: typing.Dict[str,ActionSchema],rules,functions:typing.Dict[str,Function],initial_state,goals, external=None,handlers=None):
+    def __init__(self, enetities,types: typing.Dict[str,Type],function_schemas: typing.Dict[str,FunctionSchema],action_schemas: typing.Dict[str,ActionSchema],rules,functions:typing.Dict[str,Function],initial_state,goals, external=None,handlers=None,no_prediction = False):
         
         self.logger = None
         self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=LOGGER_LEVEL)
@@ -70,7 +70,7 @@ class Problem:
         self.domain_path = ""
         self.problem_path = ""
         
-        self.epistemic_model = epistemic_model.EpistemicModel(handlers,self.entities,self.functions,self.function_schemas,self.external)
+        self.epistemic_model = epistemic_model.EpistemicModel(handlers,self.entities,self.functions,self.function_schemas,self.external,self.rules,no_prediction)
 
     def generate_successor(self,state:typing.Dict[str,any],action: Action,previous_path):
         self.logger.debug("generate successor for action: %s",action.name)
@@ -81,7 +81,7 @@ class Problem:
 
 
 
-        for effect_name,item in action.effects.items():
+        for effect_name,item in action.effects.items(): #constant
             effect : Effect = item
             variable_name = effect.target_variable_name
             function_schema_name = self.functions[variable_name].function_schema_name
@@ -100,7 +100,11 @@ class Problem:
                 # going to handle the constent update first
             elif effect.update_type == UpdateType.ONTIC:
                 ontic_name_list.append(effect_name)
-                
+
+        ################################################################################
+        path = previous_path+[(new_state,action.name)]
+        new_state = self.external.update_state(new_state, path, self)  #.rules###############
+
         for ontic_effect_name in ontic_name_list:
             
             effect : Effect = action.effects[ontic_effect_name]
@@ -117,6 +121,7 @@ class Problem:
             else:
                 # going to handle the constent update first
                 pass
+       
         path = previous_path+[(new_state,action.name)]
 
         # updating jp effect
@@ -140,7 +145,7 @@ class Problem:
                 if new_value == None:
                     raise ValueError("New Value if out of range when updating",effect_name,state)
                 new_state[variable_name] = value2
-
+        
         return new_state
 
     def is_goal(self,path):

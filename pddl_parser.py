@@ -76,7 +76,7 @@ RANGE_REG = r"(\([\w \[\]\'\,]*\))*"
 RANGE_REG_SURFIX = r"\)"
 
 RULE_REG_PREFIX = r"\(:rules"
-RULE_REG = r"(\(\w* \([\w ]*\) \[[\w,]*\]\))*"
+RULE_REG = r"(\(\w* \([\w ]*\) \[[\w,]*\] \[[\w,]*\]\))*"
 RULE_REG_SURFIX = r"\)"
 
 GOAL_REG_PREFIX = r"\(:goal\(and"
@@ -88,7 +88,7 @@ LOGGER_LEVEL = logging.INFO
 # LOGGER_LEVEL = logging.DEBUG
 from util import setup_logger,find_each_section
 from util import Type,FunctionSchema,Parameters,EffectType,Effect,UpdateType,ActionSchema,EntityType,Entity
-from util import VALUE_TYPE,value_type_dict,RULE_TYPE,rule_type_dict,Function,Rule,EP_formula,EPFType,Condition,ConditionType,Ternary,condition_operator_dict
+from util import VALUE_TYPE,value_type_dict,RULE_TYPE,rule_type_dict,Function,Rule,EP_formula,EPFType,Condition,ConditionType,Ternary,condition_operator_dict,special_value
 
 EFFECT_TYPE_DICT = {
     "increase": EffectType.INCREASE,
@@ -211,7 +211,7 @@ class PDDLParser:
         problem_str = problem_str[:len(len_holder)]
         self.logger.debug(rules_str)
         self.logger.debug(problem_str)
-        pattern = r"\(\w* \([\w ]*\) \[[\w,]*\]\)"
+        pattern = r"\(\w* \([\w ]*\) \[[\w,]*\] \[[\w,]*\]\)"
         single_rule_str_list = re.findall(pattern, rules_str)
         self.logger.debug(single_rule_str_list)
         for single_rule_str in single_rule_str_list:
@@ -222,8 +222,11 @@ class PDDLParser:
             rule_type = rule_type_dict[rule_type_str]
             rule_str = rule_str[len(rule_type_str)+2:]
             function_name = rule_str.split(") ")[0]
+            #print(rule_str.split(") ")[1].split(" ")[0])
             rule_content = rule_str.split(") ")[1][1:-1].split(",")
-            new_rule = Rule(function_name,rule_type,rule_content)
+            rule_content = rule_str.split(") ")[1].split(" ")[0]###############################
+            rule_known_coef = rule_str.split(") ")[1].split(" ")[1]
+            new_rule = Rule(function_name,rule_type,rule_content,rule_known_coef)
             rules.update({function_name:new_rule})
         self.logger.debug(rules)
 
@@ -925,7 +928,10 @@ class PDDLParser:
         if value_type == VALUE_TYPE.ENUMERATE:
             value = value_str.replace("'",str())
         elif value_type == VALUE_TYPE.INTEGER:
-            value = int(value_str)
+            if value_str == 'jp.none':##################################
+                value = special_value.HAVENT_SEEN################
+            else:
+                value = int(value_str)
         else:
             raise ValueError("value type %s does not exist %s",value_type,value_str)
         

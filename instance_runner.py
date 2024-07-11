@@ -34,7 +34,7 @@ class Instance:
     external_function = None
     search = None
     
-    def __init__(self,instance_name="",problem_path="",domain_path="",external_function= "",search_module= None,search_name = "", debug=False):
+    def __init__(self,instance_name="",problem_path="",domain_path="",external_function= "",search_module= None,search_name = "", debug=False,no_prediction =False):
         self.problem_path = ""
         self.domain_path = ""
         self.instance_name = ""
@@ -46,6 +46,7 @@ class Instance:
         self.domain_path = domain_path
         self.external_function = external_function
         self.search_name = search_name
+        self.no_prediction = no_prediction
 
 
     def solve(self,output_path,time_out, memory_out, time_debug=False,log_debug=False):
@@ -109,7 +110,7 @@ class Instance:
             
             
         logger.info(f'Initialize problem')
-        problem = pddl_model.Problem(enetities,types,function_schemas,action_schemas,rules,functions,initial_state,goals,self.external_function,handlers=logger_handlers)
+        problem = pddl_model.Problem(enetities,types,function_schemas,action_schemas,rules,functions,initial_state,goals,self.external_function,handlers=logger_handlers,no_prediction = self.no_prediction)
         problem.domain_path = self.domain_path
         problem.problem_path = self.problem_path
         problem.logger.handlers = logger.handlers
@@ -190,6 +191,7 @@ def loadParameter():
     parser.add_option('--time_debug', dest="time_debug", action='store_true', help='enable cProfile', default=False)
     parser.add_option('-t', '--time_out', dest="time_out", help='time_out, default 300s', type='int', default=300)
     parser.add_option('-m', '--memory_out', dest="memory_out", help='memoryout, default 8GB', type='int', default=8)
+    parser.add_option('--noprediction', dest="no_prediction", action='store_true', help='disable prediction', default=False)
     
     options, otherjunk = parser.parse_args(sys.argv[1:] )
     assert len(otherjunk) == 0, "Unrecognized options: " + str(otherjunk)
@@ -212,6 +214,7 @@ if __name__ == '__main__':
     external_function = options.external_path
     search_path = options.search_path
     output_path = ''
+    no_prediction = options.no_prediction
 
     
     
@@ -266,7 +269,7 @@ if __name__ == '__main__':
         print("starting profiling")
         pr = cProfile.Profile()
         pr.enable()
-        ins = Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search_module= search_module, search_name = search_name)
+        ins = Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search_module= search_module, search_name = search_name,no_prediction = no_prediction)
         ins.solve(output_path = output_path,time_out=time_out, memory_out = memory_out)
         
         
@@ -288,6 +291,6 @@ if __name__ == '__main__':
 
         
     else:
-        ins = Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search_module=search_module,search_name=search_name)
+        ins = Instance(instance_name=instance_name,problem_path=problem_path,domain_path=domain_path,external_function= external_function,search_module=search_module,search_name=search_name,no_prediction = no_prediction)
         ins.solve(output_path = output_path,time_out=time_out, memory_out = memory_out)
 

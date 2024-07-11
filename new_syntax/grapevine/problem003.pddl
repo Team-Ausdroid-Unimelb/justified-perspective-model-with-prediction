@@ -8,6 +8,7 @@
             
         (:objects
             as bs cs ds - secret
+            
         )
 
         (:init
@@ -43,27 +44,29 @@
 
             (assign (sharing) 0)
 
-            (assign (secret_value as) 't')
-            (assign (secret_value bs) 't')
-            (assign (secret_value cs) 't')
-            (assign (secret_value ds) 't')
+            (assign (secret_value as) 2)
+            (assign (secret_value bs) 2)
+            (assign (secret_value cs) 2)
+            (assign (secret_value ds) 2)
 
-            (assign (secret_lyging_value as) 'f')
-            (assign (secret_lyging_value bs) 'f')
-            (assign (secret_lyging_value cs) 'f')
-            (assign (secret_lyging_value ds) 'f')
+            (assign (secret_lyging_value as) 1)
+            (assign (secret_lyging_value bs) 1)
+            (assign (secret_lyging_value cs) 1)
+            (assign (secret_lyging_value ds) 1)
 
-            (assign (shared_value as) 't')
-            (assign (shared_value bs) 't')
-            (assign (shared_value cs) 't')
-            (assign (shared_value ds) 't')
+            (assign (shared_value as) 1)
+            (assign (shared_value bs) 1)
+            (assign (shared_value cs) 1)
+            (assign (shared_value ds) 1)
         )
 
     
         (:goal (and 
-                ; (= (@ep ("+ b [b] $ b [c]") (= (secret_value as) 't')) ep.true)
-                (= (@jp ("b [b] b [a]") (secret_value as)) 't')
-                (= (@ep ("+ s [b] $ s [c]") (= (secret_value as) 't')) ep.true)
+                (= (@ep ("+ b [a]") (= (secret_value as) 8)) ep.true)
+                (= (@ep ("+ b [b] + b [a]") (= (secret_value as) 3)) ep.true)
+                (= (@ep ("+ b [c] + b [a]") (= (secret_value as) 8)) ep.true)
+                ;(= (@jp ("b [b] b [a]") (secret_value as)) 1)
+                ;(= (@ep ("+ s [b] $ s [c]") (= (secret_value as) 1)) ep.true)
             )
         )
 
@@ -72,9 +75,9 @@
             (shared_loc integer [0,2])
             (own integer [0,1])
             (sharing integer [0,1])
-            (secret_value enumerate ['t','f'])
-            (secret_lyging_value enumerate ['t','f'])
-            (shared_value enumerate ['t','f'])
+            (secret_value integer [0,9])
+            (secret_lyging_value integer [0,9])
+            (shared_value integer [0,9]);??????
         )
 
         (:rules
@@ -103,18 +106,19 @@
             (static (own d cs) [])
             (static (own d ds) [])
             (static (sharing) [])
-            (static (secret_value as) [])
-            (static (secret_value bs) [])
-            (static (secret_value cs) [])
-            (static (secret_value ds) [])
+            (linear (secret_value as) [1,2])
+            (linear (secret_value bs) [1,2])
+            (linear (secret_value cs) [1,2])
+            (linear (secret_value ds) [1,2])
             (static (secret_lyging_value as) [])
             (static (secret_lyging_value bs) [])
             (static (secret_lyging_value cs) [])
-            (static (secret_lyging_value ds) []);8
+            (static (secret_lyging_value ds) [])
             (static (shared_value as) [])
             (static (shared_value bs) [])
             (static (shared_value cs) [])
             (static (shared_value ds) [])
+            
         )
     )
     

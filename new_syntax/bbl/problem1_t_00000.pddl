@@ -20,6 +20,8 @@
             (assign (y b) 2)
             (assign (y p) 1)
             (assign (v p) 't')
+            ;(assign (actable a) 1)
+            ;(assign (actable b) 0)
         )
 
         ; the @ represent this is an epistemic evaluation
@@ -37,6 +39,7 @@
             (x integer [0,4])
             (y integer [0,4])
             (v enumerate ['t','f'])
+            ;(actable integer [0,1])
         )
 
         (:rules
@@ -50,5 +53,6 @@
             (static (y b) [])
             (static (y p) [])
             (static (v p) [])
+            ;(actable)
         )
     )

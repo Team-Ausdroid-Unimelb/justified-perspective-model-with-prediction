@@ -90,8 +90,16 @@ class PriorityQueue:
             self.push(item, priority)
             
 
-
-
+##########################################################################
+# PDDL_TERNARY 
+# ternary true value
+class PDDL_TERNARY(Enum):
+    TRUE = 1
+    UNKNOWN = 0
+    FALSE = -1
+    def __lt__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value < other.value
 
 
 
@@ -249,8 +257,8 @@ class PriorityQueue:
 #         # match = re.search("\([0-9a-z_, -]*\)",eval_str)
         
     
-# def convertBooltoPDDL_TERNARY(bool):
-#     return PDDL_TERNARY.TRUE if bool else PDDL_TERNARY.FALSE
+def convertBooltoPDDL_TERNARY(bool):
+    return PDDL_TERNARY.TRUE if bool else PDDL_TERNARY.FALSE
    
         
 # class Domain():
@@ -338,31 +346,31 @@ class PriorityQueue:
 #     def __repr__(self): # show when in a dictionary
 #         return f" symbol is {self.symbol};\n variable_name is {self.variable_name};\n value is {self.value}; \n query is {self.query};\n query_prefix is {self.query_prefix}.\n\n"
 
-# # the following classes are for epistemic model
-# class Q_TYPE(Enum):
-#     MUTUAL = 0
-#     DISTRIBUTION = -1
-#     COMMON = 1
+# the following classes are for epistemic model
+class Q_TYPE(Enum):
+    MUTUAL = 0
+    DISTRIBUTION = -1
+    COMMON = 1
     
 # class EQ_TYPE(Enum):
 #     KNOWLEDGE = 1
 #     SEEING = 0
 #     BELIEF = 2
     
-# class EpistemicQuery:
-#     q_type = None
-#     q_content = None
-#     eq_type = None
-#     ep_value = None
-#     value_type = None
-#     header_str = ""
-#     agents_str = ""
-#     q_group = []
-#     value_type_mapping = {
-#         '+': PDDL_TERNARY.TRUE,
-#         '-': PDDL_TERNARY.FALSE,
-#         '$': PDDL_TERNARY.UNKNOWN
-#     }
+class EpistemicQuery:
+    q_type = None
+    q_content = None
+    eq_type = None
+    ep_value = None
+    value_type = None
+    header_str = ""
+    agents_str = ""
+    q_group = []
+    value_type_mapping = {
+        '+': PDDL_TERNARY.TRUE,
+        '-': PDDL_TERNARY.FALSE,
+        '$': PDDL_TERNARY.UNKNOWN
+    }
     
 #     mapping = {
 #         'k': (Q_TYPE.MUTUAL, EQ_TYPE.KNOWLEDGE),
@@ -472,9 +480,9 @@ def valid_variable(v_name,problem):
         raise ValueError("%s is not in variables %s. Probably you spelled it wrong."%(v_name,str(problem.variables.keys())))
     
     
-# class E_TYPE(Enum):
-#     AGENT = 1
-#     OBJECT = 2
+class E_TYPE(Enum):
+    AGENT = 1
+    OBJECT = 2
 
 # def eTypeConvert(logger,str):
 #     logger.debug(f"converting E_TYPE for {str}")
@@ -548,10 +556,11 @@ class Function:
         return self.__repr__()    
 
 class Rule:
-    def __init__(self,function_name,rule_type,rule_content) -> None:
+    def __init__(self,function_name,rule_type,rule_content,rule_known_coef) -> None:
         self.function_name = function_name
         self.rule_type = rule_type
         self.rule_content = rule_content
+        self.rule_known_coef = rule_known_coef
         pass
 
 VALUE_TYPE = Enum("VALUE_TYPE", "ENUMERATE INTEGER")
@@ -562,14 +571,15 @@ value_type_dict = {
 }
 
 
-RULE_TYPE = Enum("RULE_TYPE", "STATIC LINEAR SIN POLY_2ND POLY_3RD")
+RULE_TYPE = Enum("RULE_TYPE", "STATIC LINEAR SIN POLY_2ND POLY_3RD,MOD_1ST")
 
 rule_type_dict = {
     "static": RULE_TYPE.STATIC,
-    "linear": RULE_TYPE.LINEAR,
+    "linear": RULE_TYPE.LINEAR, ##POLY_1ST
     "sin": RULE_TYPE.SIN,
     "2nd_poly": RULE_TYPE.POLY_2ND,
     "3rd_poly": RULE_TYPE.POLY_3RD,
+    "mod_1st": RULE_TYPE.MOD_1ST,   ###MOD_1ST ##Deg1Modf degree1 modular function f(x)=ax+b mod n  ###{f[x] | x = 1, 2, 3, … n }##{f[x]=ax+b mod n | x = 1, 2,3 ,… m}
 }
 
 class Parameters(dict):

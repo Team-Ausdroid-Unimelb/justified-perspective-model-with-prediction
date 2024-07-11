@@ -4,11 +4,11 @@ import typing
 import re
 import logging
 import copy
-
+from predictor import Predictor
 
 LOGGER_NAME = "epistemic_model"
 LOGGER_LEVEL = logging.INFO
-# LOGGER_LEVEL = logging.DEBUG
+LOGGER_LEVEL = logging.DEBUG
 from util import setup_logger
 # from util import ActionList2DictKey,GLOBAL_PERSPECTIVE_INDEX, ROOT_NODE_ACTION
 # from util import raiseNotDefined,eval_var_from_str,Queue
@@ -25,7 +25,7 @@ class EpistemicModel:
 
     
     
-    def __init__(self, handlers, entities, functions, function_schemas, external):
+    def __init__(self, handlers, entities, functions, function_schemas, external,rules,no_prediction):  #???????
         self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=LOGGER_LEVEL) 
         self.logger.info("initialize epistemic model")
         # self.logger = setup_logger(LOGGER_NAME,handlers,logger_level=LOGGER_LEVEL) 
@@ -37,6 +37,9 @@ class EpistemicModel:
         self.pre_p_keys = None
         self.all_p_keys = list()
         self.common_iteration_list = list()
+        self.predictor = Predictor(external)######################
+        self.rules = rules
+        self.no_prediction = no_prediction
 
     def epistemicConditionsHandler(self, epistemic_condition_dict: typing.Dict[str,Condition], path,p_dict):
         self.logger.debug('epistemicConditionHandler')
@@ -167,6 +170,13 @@ class EpistemicModel:
             temp_ps = self.generate_p(os[:i+1],parent_ps[:i+1])
             ps.append(temp_ps)
         input_ps[ps_key_str] = ps
+
+
+        if not self.no_prediction:
+            new_rs = self.predictor.getrs(os,parent_ps,self.rules)###############################
+            #print("EM rs", new_rs)
+            ps = self.predictor.getps(os,new_rs, parent_ps)
+            #print("EM ps", ps)
         return ps,ps_key_str
         
     

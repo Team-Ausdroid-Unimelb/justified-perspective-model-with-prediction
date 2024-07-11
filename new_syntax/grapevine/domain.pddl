@@ -47,9 +47,9 @@
             (!= (shared_loc ?s) 0)
         )
         :effect (
-            (assign (sharing) 0)
+            (assign (sharing) 0);constant
             (assign (shared_loc ?s) 0)
-            (assign (shared_value ?s) (secret_value ?s))
+            (assign (shared_value ?s) (secret_value ?s));ontic variable
         )
     )
     
@@ -89,7 +89,7 @@
         )
         :effect (
             (assign (shared_loc ?s) (agent_loc ?a))
-            (assign (shared_value ?s) (@jp ("b [?a]") (secret_value ?s)))
+            (assign (shared_value ?s) (@jp ("b [?a]") (secret_value ?s))) ;jp
             (assign (sharing) 1)
         )
     )
