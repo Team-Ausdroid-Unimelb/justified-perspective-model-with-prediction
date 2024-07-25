@@ -211,7 +211,9 @@ class Search:
                 return self.result
 
             all_legal_actions,sgp_p_dict = problem.get_all_legal_actions(state,path,sg_p_dict)
+
             all_legal_action_name = list(all_legal_actions.keys())
+            all_legal_action_name.sort()
             filtered_action_name = self.action_filter(problem,all_legal_action_name)
             
             self.logger.debug(sgp_p_dict.keys())

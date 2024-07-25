@@ -31,6 +31,6 @@
         (:rules
             (static (peeking a) [] [])
             (static (peeking b) [] [])
-            (linear (num c) [2,1] [])
+            (1st_poly (num c) [2,1] [,]);;,
         )
 )

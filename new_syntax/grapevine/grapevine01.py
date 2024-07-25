@@ -42,6 +42,8 @@ class ExternalFunction:
         elif 'shared_loc'  == function_schemas_name:
             # it means this is a location variable
             # agent will know the secret is been shared if they are in the same room where the secret shared
+            if state[var_name] == 0:
+                return True
             return state[var_name] == state[f'agent_loc {agent_index}']
         elif 'own'  == function_schemas_name:
             # all agents sees ownship of secrets
@@ -58,9 +60,11 @@ class ExternalFunction:
                 if state[f'own {agent_index} {target_list[0]}'] == 1:
                     # if this secret is own by the agent
                     return True
-                shared_loc = state[f'shared_loc {target_list[0]}']
-                agent_loc = state[f'agent_loc {agent_index}']
-                return shared_loc == agent_loc
+                # shared_loc = state[f'shared_loc {target_list[0]}']
+                # agent_loc = state[f'agent_loc {agent_index}']
+                # return shared_loc == agent_loc
+                else:
+                    return False
             except KeyError as e:
                 self.logger.debug(e)
                 self.logger.debug("state: %s",state)
@@ -95,7 +99,7 @@ class ExternalFunction:
         else:
             raise ValueError(f"function_schemas_name [{function_schemas_name}] not found")
 
-    def updatelinear(self,x,paramiters):
+    def update1Poly(self,x,paramiters):
         
         a = int(paramiters[0])
         b = int(paramiters[1])
@@ -126,9 +130,9 @@ class ExternalFunction:
         for v_name in succ_state:
             v_rule_type = problem.rules[v_name].rule_type
             paramiters = problem.rules[v_name].rule_content.strip('[]').split(',')
-            if succ_state is not None and v_name in succ_state and v_rule_type == RULE_TYPE.LINEAR:
+            if succ_state is not None and v_name in succ_state and v_rule_type == RULE_TYPE.POLY_1ST:
 
-                updated_value = self.updatelinear(x,paramiters)    ##########change model here
+                updated_value = self.update1Poly(x,paramiters)    ##########change model here
                 if self.is_value_in_domain(v_name,updated_value,problem):
                     updated_state[v_name] = updated_value
                 else:

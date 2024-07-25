@@ -12,30 +12,30 @@ class Predictor:
         
         for state in p:
             for v_name in state.keys():
-                ps_dict[v_name] = [None] * len(p)
+                ps_dict[v_name] = [special_value.HAVENT_SEEN] * len(p)
        
         for v_name, value in os_dict.items():
             #print(os_dict)
             for i in range(len(value)):
-                if value[i] == special_value.UNSEEN or value[i] == special_value.HAVENT_SEEN:
+                if value[i] == special_value.UNSEEN or value[i] == special_value.HAVENT_SEEN or value[i] == None:
                     #print("here",value)
                     ps_dict[v_name][i] = self.predict(i,new_rs[v_name],value)
                 else:
                     ps_dict[v_name][i] = os_dict[v_name][i]
 
-        #print(ps_dict)
+        #print("ps",ps_dict)
         new_ps = []
         for i in range(len(p)):
             new_state = {}  
             for v_name, value in ps_dict.items():
                 new_state[v_name] = value[i]  
             new_ps.append(new_state)
-        #print("ps here",new_ps)
+        print("ps here",new_ps)
         return new_ps
 
     def predict(self, i,rule,value):
-        if rule['rule_name'] == 'linear':
-           result = self.get_predict_linear(i,rule,value)
+        if rule['rule_name'] == '1st_poly':
+           result = self.get_predict_1poly(i,rule,value)
            return result
         elif rule['rule_name'] == '2nd_poly':
             result = self.get_predict_2poly(i,rule,value)
@@ -49,6 +49,9 @@ class Predictor:
         elif rule['rule_name'] == 'mod_1st':
             result = self.get_predict_mod1st(i,rule,value)
             return result
+        elif rule['rule_name'] == 'power':
+            result = self.get_predict_power(i, rule, value)
+            return result
         else:
             result = self.external.domain_specific_predict(i,rule,value)
             if result == None:
@@ -56,7 +59,7 @@ class Predictor:
             return result
         return None
     
-    def get_predict_linear(self, i,rule,value):
+    def get_predict_1poly(self, i,rule,value):
         #print("hererer",i,rule,value)
         a = rule['coefficients'].get('a')
         b = rule['coefficients'].get('b')
@@ -77,7 +80,7 @@ class Predictor:
         return result
     
     def get_predict_static(self, i,rule,value):
-        result = None
+        result = special_value.HAVENT_SEEN
         for j in range(i - 1, -1, -1):
             if value[j] is not None and value[j] != special_value.UNSEEN and value[j] != special_value.HAVENT_SEEN:
                 result = value[j] 
@@ -100,6 +103,15 @@ class Predictor:
             first_value_index = directions.index(a)
             x = (first_value_index+i) % 8
             result = directions[x]
+        return result
+    
+
+    def get_predict_power(self, i, rule, value):
+        a = rule['coefficients'].get('a')
+        if a is None:
+            result = self.get_predict_static(i, rule, value)
+        else:
+            result = round(a ** i)
         return result
     
     def get_os_dict(self, new_os,p):
@@ -128,21 +140,34 @@ class Predictor:
             v_rult_type = rules[v_name].rule_type
             if v_rult_type ==RULE_TYPE.POLY_2ND:
                 rs[v_name] = self.get_coef_2poly(v_name,valuelist,rules)
-            elif v_rult_type ==RULE_TYPE.LINEAR:
-                rs[v_name] = self.get_coef_linear(v_name,valuelist,rules)
+            elif v_rult_type ==RULE_TYPE.POLY_1ST:
+                rs[v_name] = self.get_coef_1poly(v_name,valuelist,rules)
             elif v_rult_type ==RULE_TYPE.STATIC:
                 rs[v_name] = self.get_static(v_name,valuelist,rules)
             elif v_rult_type ==RULE_TYPE.MOD_1ST:
                 rs[v_name] = self.get_mod1st(v_name,valuelist,rules)
+            elif v_rult_type == RULE_TYPE.POWER:
+                rs[v_name] = self.get_coef_power(v_name, valuelist, rules)
             else:
                 rs[v_name] = self.get_static(v_name,valuelist,rules)
 
         return rs
 
     def get_coef_2poly(self, v_name,valuelist,rules):####[coeff]
+        coefficients_known_list = rules[v_name].rule_known_coef.strip('[]').split(',')
+        known_coefficients={}
+        for idx, coeff in enumerate(coefficients_known_list[::-1]):
+            if coeff != '':
+                coeff = float(coeff)
+                known_coefficients[idx] = coeff
+            else:
+                known_coefficients[idx] = None
+
         os_value_list = []
         for index, value in enumerate(valuelist):
-            if value is not None:
+            if value == special_value.UNSEEN or value == special_value.HAVENT_SEEN or value == None:
+                pass
+            else:
                 os_value_list.append([index, value])
         if len( os_value_list) >=3:
             x_values = [item[0] for item in os_value_list][-3:]
@@ -153,15 +178,17 @@ class Predictor:
             c = coefficients[2]
             return {'name':v_name, 'rule_name': '2nd_poly','coefficients': {'a': a,'b': b,'c': c}}
         else:
-            return {'name':v_name, 'rule_name': '2nd_poly','coefficients': {'a': None,'b': None,'c': None}}
+            return {'name':v_name, 'rule_name': '2nd_poly','coefficients': {'a': None,'b': None,'c': None}} #####
 
-    def get_coef_linear(self, v_name, valuelist,rules):
+    def get_coef_1poly(self, v_name, valuelist,rules):
         coefficients_known_list = rules[v_name].rule_known_coef.strip('[]').split(',')
         known_coefficients={}
         for idx, coeff in enumerate(coefficients_known_list[::-1]):
-            if coeff is not '':
+            if coeff != '':
                 coeff = float(coeff)
                 known_coefficients[idx] = coeff
+            else:
+                known_coefficients[idx] = None
 
         os_value_list = []
         for index, value in enumerate(valuelist):
@@ -172,7 +199,7 @@ class Predictor:
         x_values = [item[0] for item in os_value_list][-2:]
         y_values = [item[1] for item in os_value_list][-2:]
 
-        if known_coefficients:
+        if len(rules[v_name].rule_known_coef)>3 and len(os_value_list) >=1:
             A = np.vander(x_values, 2, increasing=True) #degree + 1
             B = np.array(y_values, dtype=float)
             for idx, coeff in known_coefficients.items():
@@ -194,16 +221,45 @@ class Predictor:
 
             # Return the coefficients in the correct order
             coefficients = [known_coefficients[i] for i in range(2)]#degree + 1
-            return {'name':v_name,'rule_name': 'linear','coefficients': {'a': coefficients[1],'b':coefficients[0]}}   
+            return {'name':v_name,'rule_name': '1st_poly','coefficients': {'a': coefficients[1],'b':coefficients[0]}}   
         elif len(os_value_list) >=2:
             coefficients = np.polyfit(x_values, y_values, 1)  # Fit a quadratic polynomial, if linear,a will be 0
             a = coefficients[0]
             b = coefficients[1]
             
-            return {'name':v_name,'rule_name': 'linear','coefficients': {'a': a,'b': b}}
+            return {'name':v_name,'rule_name': '1st_poly','coefficients': {'a': a,'b': b}}
         else:
-            return {'name':v_name, 'rule_name': 'linear','coefficients': {'a': None,'b': None}}
+            return {'name':v_name, 'rule_name': '1st_poly','coefficients': {'a': known_coefficients[1],'b': known_coefficients[0]}}
 
+    def get_coef_power(self, v_name, valuelist, rules):
+        coefficients_known_list = rules[v_name].rule_known_coef.strip('[]').split(',')
+        known_coefficients = {}
+        for idx, coeff in enumerate(coefficients_known_list):
+            if coeff:
+                coeff = float(coeff)
+                known_coefficients[idx] = coeff
+            else:
+                known_coefficients[idx] = None
+
+        if known_coefficients.get(0) is not None:
+            a = known_coefficients[0]
+        else:
+            os_value_list = []
+            for index, value in enumerate(valuelist):
+                if value == special_value.UNSEEN or value == special_value.HAVENT_SEEN or value == None:
+                    pass
+                else:
+                    os_value_list.append([index, value])
+            if len(os_value_list) >= 1:
+                x_values = [item[0] for item in os_value_list][-1:]
+                y_values = [item[1] for item in os_value_list][-1:]
+                x_values = np.array(x_values)
+                y_values = np.array(y_values)
+                a = int(y_values ** (1/x_values))
+            else:
+                a = None
+        return {'name': v_name, 'rule_name': 'power', 'coefficients': {'a': a}}
+    
     def get_static(self, v_name, valuelist,rules):
         return {'name':v_name,'rule_name': 'static','coefficients': {'a': None}}
     

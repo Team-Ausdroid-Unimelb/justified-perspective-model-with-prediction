@@ -72,11 +72,11 @@ INIT_REG = r"(\(assign [\w \'\"\(\)]*\))*"
 INIT_REG_SURFIX = r"\)"
 
 RANGE_REG_PREFIX = r"\(:ranges"
-RANGE_REG = r"(\([\w \[\]\'\,]*\))*"
+RANGE_REG = r"(\([\w \- \[\]\'\,]*\))*"
 RANGE_REG_SURFIX = r"\)"
 
 RULE_REG_PREFIX = r"\(:rules"
-RULE_REG = r"(\(\w* \([\w ]*\) \[[\w,]*\] \[[\w,]*\]\))*"
+RULE_REG = r"(\(\w* \([\w ]*\) \[[\w \-,]*\] \[[\w \-,]*\]\))*"
 RULE_REG_SURFIX = r"\)"
 
 GOAL_REG_PREFIX = r"\(:goal\(and"
@@ -85,7 +85,7 @@ GOAL_REG_SURFIX = r"\)\)"
 
 LOGGER_NAME = r"pddl_parser"
 LOGGER_LEVEL = logging.INFO
-# LOGGER_LEVEL = logging.DEBUG
+#LOGGER_LEVEL = logging.DEBUG
 from util import setup_logger,find_each_section
 from util import Type,FunctionSchema,Parameters,EffectType,Effect,UpdateType,ActionSchema,EntityType,Entity
 from util import VALUE_TYPE,value_type_dict,RULE_TYPE,rule_type_dict,Function,Rule,EP_formula,EPFType,Condition,ConditionType,Ternary,condition_operator_dict,special_value
@@ -211,7 +211,7 @@ class PDDLParser:
         problem_str = problem_str[:len(len_holder)]
         self.logger.debug(rules_str)
         self.logger.debug(problem_str)
-        pattern = r"\(\w* \([\w ]*\) \[[\w,]*\] \[[\w,]*\]\)"
+        pattern = r"\(\w* \([\w ]*\) \[[\w \-,]*\] \[[\w \-,]*\]\)"
         single_rule_str_list = re.findall(pattern, rules_str)
         self.logger.debug(single_rule_str_list)
         for single_rule_str in single_rule_str_list:
@@ -236,7 +236,7 @@ class PDDLParser:
         problem_str = problem_str[:len(len_holder)]
         self.logger.debug(ranges_str)
         self.logger.debug(problem_str)
-        pattern = r"\([\w \[\]\'\,]*\)"
+        pattern = r"\([\w \- \[\]\'\,]*\)"
         single_range_str_list = re.findall(pattern, ranges_str)
         self.logger.debug(single_range_str_list)
         for single_range_str in single_range_str_list:

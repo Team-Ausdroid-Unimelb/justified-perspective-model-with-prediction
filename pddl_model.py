@@ -12,7 +12,7 @@ import traceback
 
 LOGGER_NAME = "pddl_model"
 LOGGER_LEVEL = logging.INFO
-LOGGER_LEVEL = logging.DEBUG
+#LOGGER_LEVEL = logging.DEBUG
 
 
 from util import setup_logger
@@ -104,6 +104,8 @@ class Problem:
         ################################################################################
         path = previous_path+[(new_state,action.name)]
         new_state = self.external.update_state(new_state, path, self)  #.rules###############
+        if new_state == None:
+            return None
 
         for ontic_effect_name in ontic_name_list:
             

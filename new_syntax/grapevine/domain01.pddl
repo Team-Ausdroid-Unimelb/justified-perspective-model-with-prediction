@@ -89,7 +89,7 @@
         )
         :effect (
             (assign (shared_loc ?s) (agent_loc ?a))
-            (assign (shared_value ?s) (@jp ("b [?a]") (secret_value ?s))) ;jp
+            (assign (shared_value ?s) (@jp ("b [?a]") (secret_value ?s))) ;(shared_value ?s) (@jp ("b [?a]") (shared_value ?s))) ;jp
             (assign (sharing) 1)
         )
     )

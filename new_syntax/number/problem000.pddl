@@ -19,7 +19,7 @@
 
         (:goal 
             (and 
-            (= (@ep ("+ b [a]") (= (num c) 9)) ep.true) ;7 have 9 no we both
+            (= (@ep ("+ b [a]") (= (num c) 5)) ep.true) ;7 have 9 no we both
             )
         )
 
@@ -31,6 +31,6 @@
         (:rules
             (static (peeking a) [] [])
             (static (peeking b) [] [])
-            (linear (num c) [2,1] [,1])
+            (1st_poly (num c) [2,1] [2,])
         )
 )

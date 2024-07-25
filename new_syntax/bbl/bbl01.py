@@ -15,6 +15,7 @@ common_constants = {
     'angle b': 90,
     'angle c': 90,
     'angle d': 90,
+    'angle e': 90,
 }
 
 dir_dict = {
@@ -101,7 +102,7 @@ class ExternalFunction:
             return False
         
 
-    def updatelinear(self,x,paramiters):
+    def update1Poly(self,x,paramiters):
         a = int(paramiters[0])
         b = int(paramiters[1])
         return a*x + b
@@ -131,9 +132,9 @@ class ExternalFunction:
         for v_name in succ_state:
             v_rule_type = problem.rules[v_name].rule_type
             paramiters = problem.rules[v_name].rule_content
-            if succ_state is not None and v_name in succ_state and v_rule_type == RULE_TYPE.LINEAR:
+            if succ_state is not None and v_name in succ_state and v_rule_type == RULE_TYPE.POLY_1ST:
 
-                updated_value = self.updatelinear(x,paramiters)    ##########change model here
+                updated_value = self.update1Poly(x,paramiters)    ##########change model here
                 if self.is_value_in_domain(v_name,updated_value,problem):
                     updated_state[v_name] = updated_value
                 else:

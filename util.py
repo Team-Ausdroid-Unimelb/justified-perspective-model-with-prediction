@@ -571,15 +571,16 @@ value_type_dict = {
 }
 
 
-RULE_TYPE = Enum("RULE_TYPE", "STATIC LINEAR SIN POLY_2ND POLY_3RD,MOD_1ST")
+RULE_TYPE = Enum("RULE_TYPE", "STATIC POLY_1ST SIN POLY_2ND POLY_3RD,MOD_1ST,POWER")
 
 rule_type_dict = {
     "static": RULE_TYPE.STATIC,
-    "linear": RULE_TYPE.LINEAR, ##POLY_1ST
+    "1st_poly": RULE_TYPE.POLY_1ST, ##1st_poly POLY_1ST
     "sin": RULE_TYPE.SIN,
     "2nd_poly": RULE_TYPE.POLY_2ND,
     "3rd_poly": RULE_TYPE.POLY_3RD,
-    "mod_1st": RULE_TYPE.MOD_1ST,   ###MOD_1ST ##Deg1Modf degree1 modular function f(x)=ax+b mod n  ###{f[x] | x = 1, 2, 3, … n }##{f[x]=ax+b mod n | x = 1, 2,3 ,… m}
+    "mod_1st": RULE_TYPE.MOD_1ST,  
+    "power": RULE_TYPE.POWER,
 }
 
 class Parameters(dict):
@@ -618,7 +619,11 @@ def updateEffect(logger,effect_type:EffectType,value1,value2,function_schema: Fu
     if effect_type == EffectType.ASSIGN:
         if function_schema.value_type == VALUE_TYPE.INTEGER:
             if not type(value2) == int:
+           
                 raise ValueError("Effect Error: the second value in Assign should be an integer")
+                #special_value.HAVENT_SEEN
+                
+            
             else:
                 if value2 < function_schema.value_range[0] or value2 > function_schema.value_range[1]:
                     logger.error("value out of range: when assign %s in function_schema: %s",value2,function_schema.name)
@@ -822,6 +827,8 @@ def global_state_evaluation(logger,operator,value1,value2):
 
 def evaluation(logger,operator,value1,value2):
     # logger.debug("operator: %s, value1: %s, value2: %s",operator,value1,value2)
+    if operator == ConditionOperatorType.NOT_EQUAL:
+        return bool2Ternary_dict[value1 != value2]
     if value1 == special_value.UNSEEN or value2 == special_value.UNSEEN:
         return Ternary.UNKNOWN
     if value1 == special_value.HAVENT_SEEN or value2 == special_value.HAVENT_SEEN:

@@ -143,7 +143,7 @@ class ExternalFunction:
         return action_dict.keys()
 
     
-    def updatelinear(self,x,paramiters):
+    def update1Poly(self,x,paramiters):
         a = int(paramiters[0])
         b = int(paramiters[1])
         return a*x + b
@@ -154,19 +154,11 @@ class ExternalFunction:
         c = int(paramiters[2])
         return a*x**2 + b*x + c
     
+    def updatepower(self, x, paramiters):
+        a = int(paramiters[0])
+        return a ** x
 
-    def update_state(self, succ_state, path, problem):
-        #ranges = problem.value_ranges
-        #print(ranges)
-        # rule_dict = {}
-        # for v_name in domains:
-        #     print(domains[v_name].rule_type)
-        #     variable_dict  = domains[v_name]
-        #     dict_list = str(variable_dict).split(';')
-        #     v_rule_type = dict_list[-1].split(':')
-        #     type_name = str(v_rule_type[1])[:-2].strip()
-        #     rule_dict[v_name] = type_name
-            
+    def update_state(self, succ_state, path, problem):           
         x = len(path)-1
         
         updated_state = succ_state
@@ -175,24 +167,20 @@ class ExternalFunction:
             paramiters = problem.rules[v_name].rule_content
             paramiters = paramiters.strip('[]').split(',')
             
-            if succ_state is not None and v_name in succ_state and v_rule_type == RULE_TYPE.LINEAR:
+            if succ_state is not None and v_name in succ_state:
+                if v_rule_type == RULE_TYPE.POLY_1ST:
+                    updated_value = self.update1Poly(x, paramiters)
+                elif v_rule_type == RULE_TYPE.POLY_2ND:
+                    updated_value = self.update2Poly(x, paramiters)
+                elif v_rule_type == RULE_TYPE.POWER:
+                    updated_value = self.updatepower(x, paramiters)
+                else:
+                    continue
 
-                updated_value = self.updatelinear(x,paramiters)    ##########change model here
-                if self.is_value_in_domain(v_name,updated_value,problem):
+                if self.is_value_in_domain(v_name, updated_value, problem):
                     updated_state[v_name] = updated_value
                 else:
                     return None
-                #updated_state[v_name] = updated_value
-                
-                
-            if succ_state is not None and v_name in succ_state and v_rule_type ==RULE_TYPE.POLY_2ND:
-                updated_value = self.update2Poly(x,paramiters)    ##########change model here
-                #updated_state[v_name] = updated_value
-                if self.is_value_in_domain(v_name,updated_value,problem):
-                    updated_state[v_name] = updated_value
-                else:
-                    return None
-                #print(x,updated_value)
         
         return updated_state
         # if self.is_value_in_domain(v_name,updated_value,problem):

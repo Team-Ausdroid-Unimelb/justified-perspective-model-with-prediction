@@ -54,20 +54,17 @@
             (assign (secret_lyging_value cs) 1)
             (assign (secret_lyging_value ds) 1)
 
-            (assign (shared_value as) 2)
-            (assign (shared_value bs) 2)
-            (assign (shared_value cs) 2)
-            (assign (shared_value ds) 2)
+            (assign (shared_value as) 1)
+            (assign (shared_value bs) 1)
+            (assign (shared_value cs) 1)
+            (assign (shared_value ds) 1)
         )
 
     
         (:goal (and 
-                ;(= (@ep ("+ b [a]") (= (secret_value as) 8)) ep.true)
-                ;(= (@ep ("+ b [a] + b [b]") (= (secret_value as) 3)) ep.true)
-                (= (@ep ("+ b [c]") (= (shared_value as) 9)) ep.true)
-                (= (@ep ("+ b [a] + b [c]") (= (shared_value as) 9)) ep.false)
-                ;(= (@ep ("+ b [a] + b [c]") (= (secret_value as) 4)) ep.true)
-                ;(= (shared_loc as) 0)
+                ;(= (@ep ("+ b [c] + b [b]") (= (secret_value as) 3)) ep.true)
+                (= (@ep ("+ b [d] + b [b]") (= (secret_value as) 6)) ep.true)
+                
                 ;(= (@jp ("b [b] b [a]") (secret_value as)) 1)
                 ;(= (@ep ("+ s [b] $ s [c]") (= (secret_value as) 1)) ep.true)
             )
@@ -78,9 +75,9 @@
             (shared_loc integer [0,2])
             (own integer [0,1])
             (sharing integer [0,1])
-            (secret_value integer [0,10])
-            (secret_lyging_value integer [0,10])
-            (shared_value integer [0,10]);??????
+            (secret_value integer [0,9])
+            (secret_lyging_value integer [0,9])
+            (shared_value integer [0,9]);??????
         )
 
         (:rules

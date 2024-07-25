@@ -1,5 +1,5 @@
 (define 
-        (problem number_006) 
+        (problem number_009) 
         (:domain number01)
 
         (:agents
@@ -19,18 +19,18 @@
 
         (:goal 
             (and 
-            (= (@ep ("+ b [b] + b [a] + b [b]") (= (num c) 7)) ep.true)
+            (= (@ep ("+ b [a]") (= (num c) 37)) ep.true) ;7 have 9 no we both
             )
         )
 
         (:ranges
             (peeking enumerate ['t','f'])
-            (num integer [0,20])
+            (num integer [0,40])
         )
 
         (:rules
             (static (peeking a) [] [])
             (static (peeking b) [] [])
-            (1st_poly (num c) [2,1] [,])
+            (2nd_poly (num c) [1,0,1] [,,])
         )
 )
