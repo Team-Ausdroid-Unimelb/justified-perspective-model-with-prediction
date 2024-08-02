@@ -155,8 +155,8 @@ class Search:
             actions = [ a  for s,a in path]
             actions = actions[1:]
 
-            # if len(path) > 3:
-            #     exit()
+            # if len(path) > 8:
+            #     raise ValueError("exceed length")
             self.logger.debug("path: %s",actions)
 
             goal_checking = (0 == current_node.remaining_goal)
@@ -259,7 +259,7 @@ class Search:
                             self.pruned_by_unknown +=1
                             
                     else:
-                        self.logger.debug("successor node been pruned due to exceeds the function range",action_name)
+                        self.logger.debug("successor node been pruned due to exceeds the function range: %s",action_name)
                 self.logger.debug('successor: [%s] with actions [%s]',temp_successor,temp_actions)
             else:
                 self.pruned_by_visited += 1

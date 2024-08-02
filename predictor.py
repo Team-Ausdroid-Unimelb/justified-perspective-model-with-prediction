@@ -9,7 +9,8 @@ class Predictor:
     def getps(self, new_os,new_rs,p):
         os_dict = self.get_os_dict(new_os,p)
         ps_dict = {}
-        
+        #print("os",os_dict)
+        #print('os',os_dict['shared_value as'])
         for state in p:
             for v_name in state.keys():
                 ps_dict[v_name] = [special_value.HAVENT_SEEN] * len(p)
@@ -22,15 +23,15 @@ class Predictor:
                     ps_dict[v_name][i] = self.predict(i,new_rs[v_name],value)
                 else:
                     ps_dict[v_name][i] = os_dict[v_name][i]
-
         #print("ps",ps_dict)
+        # print('ps',ps_dict['shared_value as'])
         new_ps = []
         for i in range(len(p)):
             new_state = {}  
             for v_name, value in ps_dict.items():
                 new_state[v_name] = value[i]  
             new_ps.append(new_state)
-        print("ps here",new_ps)
+        # print("ps here",new_ps)
         return new_ps
 
     def predict(self, i,rule,value):
@@ -59,15 +60,41 @@ class Predictor:
             return result
         return None
     
-    def get_predict_1poly(self, i,rule,value):
-        #print("hererer",i,rule,value)
-        a = rule['coefficients'].get('a')
-        b = rule['coefficients'].get('b')
+    # def get_predict_1poly(self, i,rule,value):
+    #     #print("hererer",i,rule,value)
+    #     a = rule['coefficients'].get('a')
+    #     b = rule['coefficients'].get('b')
+    #     if a is None or b is None:
+    #         result = self.get_predict_static(i,rule,value)
+    #     else:
+    #         result = round(a * i + b)
+    #     return result
+    def get_predict_1poly(self, i, rule, value):
+        coefficients = rule['coefficients']
+        x_values = list(coefficients.keys())
+        a, b = None, None
+        if len(coefficients.items()) == 0:  # If x_values is empty
+            return self.get_predict_static(i, rule, value)
+        if i <= x_values[0][0]:  # If i is less than the first pair's x value
+            a = coefficients.get(x_values[0], {}).get('a')
+            b = coefficients.get(x_values[0], {}).get('b')
+        elif i >= x_values[-1][1]:  # If i is greater than the last pair's x value
+            a = coefficients.get(x_values[-1], {}).get('a')
+            b = coefficients.get(x_values[-1], {}).get('b')
+        else:  
+            for j in range(len(x_values) - 1):
+                if x_values[j][0] <= i <= x_values[j][1]:
+                    a = coefficients.get(x_values[j], {}).get('a')
+                    b = coefficients.get(x_values[j], {}).get('b')
+                    break
+
         if a is None or b is None:
-            result = self.get_predict_static(i,rule,value)
+            result = self.get_predict_static(i, rule, value)
         else:
             result = round(a * i + b)
+        
         return result
+
     
     def get_predict_2poly(self, i,rule,value):
         a = rule['coefficients'].get('a')
@@ -108,9 +135,16 @@ class Predictor:
 
     def get_predict_power(self, i, rule, value):
         a = rule['coefficients'].get('a')
-        if a is None:
+        if a[0] is None:
             result = self.get_predict_static(i, rule, value)
+        elif len(a) == 2:
+            if i % 2 == 0:
+                a = int(a[0])
+                result = round(a ** (1/i))
+            else:
+                result = special_value.HAVENT_SEEN
         else:
+            a = int(a[0])
             result = round(a ** i)
         return result
     
@@ -183,6 +217,7 @@ class Predictor:
     def get_coef_1poly(self, v_name, valuelist,rules):
         coefficients_known_list = rules[v_name].rule_known_coef.strip('[]').split(',')
         known_coefficients={}
+
         for idx, coeff in enumerate(coefficients_known_list[::-1]):
             if coeff != '':
                 coeff = float(coeff)
@@ -196,41 +231,49 @@ class Predictor:
                 pass
             else:
                 os_value_list.append([index, value])
-        x_values = [item[0] for item in os_value_list][-2:]
-        y_values = [item[1] for item in os_value_list][-2:]
+        # x_values = [item[0] for item in os_value_list][-2:]
+        # y_values = [item[1] for item in os_value_list][-2:]
 
-        if len(rules[v_name].rule_known_coef)>3 and len(os_value_list) >=1:
-            A = np.vander(x_values, 2, increasing=True) #degree + 1
-            B = np.array(y_values, dtype=float)
-            for idx, coeff in known_coefficients.items():
-                if coeff != None:
-                    B -= coeff * A[:, idx]
-                    A[:, idx] = 0
-            
-            unknown_indices = [i for i in range(2) if i not in known_coefficients or known_coefficients[i] is None]#degree + 1
-            if unknown_indices:# Solve for the unknown coefficients
-                A_reduced = A[:, unknown_indices]
-                solutions, _, _, _ = np.linalg.lstsq(A_reduced, B, rcond=None)
-                for idx, sol in zip(unknown_indices, solutions):
-                    known_coefficients[idx] = sol
-            
-            # Ensure all coefficients are in the dictionary
-            for i in range(2):#degree + 1
-                if i not in known_coefficients:
-                    known_coefficients[i] = 0.0
+        coefficients_dict = {} 
+        for i in range(len(os_value_list) - 1):
+            x_values = [os_value_list[i][0], os_value_list[i + 1][0]]
+            y_values = [os_value_list[i][1], os_value_list[i + 1][1]]
 
-            # Return the coefficients in the correct order
-            coefficients = [known_coefficients[i] for i in range(2)]#degree + 1
-            return {'name':v_name,'rule_name': '1st_poly','coefficients': {'a': coefficients[1],'b':coefficients[0]}}   
-        elif len(os_value_list) >=2:
-            coefficients = np.polyfit(x_values, y_values, 1)  # Fit a quadratic polynomial, if linear,a will be 0
-            a = coefficients[0]
-            b = coefficients[1]
-            
-            return {'name':v_name,'rule_name': '1st_poly','coefficients': {'a': a,'b': b}}
-        else:
-            return {'name':v_name, 'rule_name': '1st_poly','coefficients': {'a': known_coefficients[1],'b': known_coefficients[0]}}
+            if len(rules[v_name].rule_known_coef)>3 and len(os_value_list) >=1:
+                A = np.vander(x_values, 2, increasing=True) #degree + 1
+                B = np.array(y_values, dtype=float)
+                for idx, coeff in known_coefficients.items():
+                    if coeff != None:
+                        B -= coeff * A[:, idx]
+                        A[:, idx] = 0
+                
+                unknown_indices = [i for i in range(2) if i not in known_coefficients or known_coefficients[i] is None]#degree + 1
+                if unknown_indices:# Solve for the unknown coefficients
+                    A_reduced = A[:, unknown_indices]
+                    solutions, _, _, _ = np.linalg.lstsq(A_reduced, B, rcond=None)
+                    for idx, sol in zip(unknown_indices, solutions):
+                        known_coefficients[idx] = sol
+                
+                # Ensure all coefficients are in the dictionary
+                for i in range(2):#degree + 1
+                    if i not in known_coefficients:
+                        known_coefficients[i] = None #0.0
 
+                # Return the coefficients in the correct order
+                coefficients = [known_coefficients[i] for i in range(2)]#degree + 1
+
+                coefficients_dict[(x_values[0], x_values[1])] = {'a': coefficients[1], 'b': coefficients[0]}
+        
+                # rule = {'name':v_name,'rule_name': '1st_poly','coefficients': coefficients_dict}   
+            elif len(os_value_list) >=2:
+                coefficients = np.polyfit(x_values, y_values, 1)  # Fit a quadratic polynomial, if linear,a will be 0
+                a = coefficients[0]
+                b = coefficients[1]
+                coefficients_dict[(x_values[0], x_values[1])] = {'a': a, 'b': b}
+                # rule =  {'name':v_name,'rule_name': '1st_poly','coefficients': coefficients_dict}
+           
+        return  {'name':v_name,'rule_name': '1st_poly','coefficients': coefficients_dict}
+        
     def get_coef_power(self, v_name, valuelist, rules):
         coefficients_known_list = rules[v_name].rule_known_coef.strip('[]').split(',')
         known_coefficients = {}
@@ -255,9 +298,12 @@ class Predictor:
                 y_values = [item[1] for item in os_value_list][-1:]
                 x_values = np.array(x_values)
                 y_values = np.array(y_values)
-                a = int(y_values ** (1/x_values))
+                if x_values % 2 == 0:
+                    a = [int(y_values ** (1/x_values)), -int(y_values ** (1/x_values))]
+                else:
+                    a = [int(y_values ** (1/x_values))]
             else:
-                a = None
+                a = [None]
         return {'name': v_name, 'rule_name': 'power', 'coefficients': {'a': a}}
     
     def get_static(self, v_name, valuelist,rules):

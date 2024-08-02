@@ -58,19 +58,19 @@
 
     
         (:goal (and 
-                ;(= (@ep ("+ b [a]") (= (secret_value as) 8)) ep.true)
+                ;(= (@ep ("+ b [a]") (= (shared_value as) 8)) ep.true)
                 ;(= (@ep ("+ b [a] + b [b]") (= (shared_value as) 3)) ep.true)
-                ;(= (@ep ("+ b [b]") (= (shared_value as) 1)) ep.true)
-                (= (shared_value as) 3)
-                (= (agent_loc a) 1)
-                (= (agent_loc c) 1)
-                ;(= (agent_loc b) 2)
-                (= (shared_loc as) 2)
-                ;(= (@ep ("+ b [a] + b [c]") (= (shared_value as) 9)) ep.false)
-                ;(= (@ep ("+ b [a] + b [c]") (= (secret_value as) 4)) ep.true)
+                ; (= (@ep ("+ b [b]") (= (shared_value as) 9)) ep.true)
+                ; (= (shared_value as) 3)
+                ; (= (agent_loc a) 1)
+                ; (= (agent_loc c) 2)
+                ; (= (agent_loc b) 2)
+                ; (= (shared_loc as) 2)
+                (= (@ep ("+ b [a] + b [c]") (= (shared_value as) 9)) ep.false)
+                (= (@ep ("+ b [c]") (= (shared_value as) 9)) ep.true)
                 
-                ;(= (@jp ("b [b] b [a]") (secret_value as)) 1)
-                ;(= (@ep ("+ s [b] $ s [c]") (= (secret_value as) 1)) ep.true)
+                ;(= (@jp ("b [b] b [a]") (shared_value as)) 1)
+                ;(= (@ep ("+ s [b] $ s [c]") (= (shared_value as) 1)) ep.true)
             )
         )
 
@@ -115,9 +115,9 @@
             (static (secret_lyging_value bs) [] [])
             (static (secret_lyging_value cs) [] [])
             
-            (static (shared_value as) [] [])
-            (static (shared_value bs) [] [])
-            (static (shared_value cs) [] [])
+            (1st_poly (shared_value as) [1,2] [,])
+            (1st_poly (shared_value bs) [1,2] [,])
+            (1st_poly (shared_value cs) [1,2] [,])
         
             
         )

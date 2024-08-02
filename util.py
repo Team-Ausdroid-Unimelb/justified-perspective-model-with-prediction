@@ -618,6 +618,7 @@ def updateEffect(logger,effect_type:EffectType,value1,value2,function_schema: Fu
     # print(value1,type(value1),value2,type(value2),function_schema.value_type,function_schema.value_range)
     if effect_type == EffectType.ASSIGN:
         if function_schema.value_type == VALUE_TYPE.INTEGER:
+            #print(value1,value2)
             if not type(value2) == int:
            
                 raise ValueError("Effect Error: the second value in Assign should be an integer")
@@ -829,9 +830,10 @@ def evaluation(logger,operator,value1,value2):
     # logger.debug("operator: %s, value1: %s, value2: %s",operator,value1,value2)
     if operator == ConditionOperatorType.NOT_EQUAL:
         return bool2Ternary_dict[value1 != value2]
-    if value1 == special_value.UNSEEN or value2 == special_value.UNSEEN:
+    
+    if value1 == special_value.UNSEEN and value2 != special_value.UNSEEN:
         return Ternary.UNKNOWN
-    if value1 == special_value.HAVENT_SEEN or value2 == special_value.HAVENT_SEEN:
+    if value1 == special_value.HAVENT_SEEN and value2 != special_value.HAVENT_SEEN:
         return Ternary.UNKNOWN
     if operator == ConditionOperatorType.EQUAL:
         return bool2Ternary_dict[value1 == value2]

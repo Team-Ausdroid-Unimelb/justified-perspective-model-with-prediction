@@ -11,7 +11,7 @@
         )
 
         (:init
-            (assign (dir a) 'e')
+            (assign (dir a) 'ne')
             (assign (dir b) 'ne')
             (assign (dir c) 'n')
             (assign (dir d) 'e')

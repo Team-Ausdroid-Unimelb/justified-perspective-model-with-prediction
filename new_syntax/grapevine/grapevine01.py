@@ -57,12 +57,14 @@ class ExternalFunction:
             if not len(target_list) == 1:
                 raise ValueError(f"secret_value function should have only one entity index")
             try:
+                # shared_loc = state[f'shared_loc {target_list[0]}']
+                # agent_loc = state[f'agent_loc {agent_index}']
                 if state[f'own {agent_index} {target_list[0]}'] == 1:
                     # if this secret is own by the agent
                     return True
-                # shared_loc = state[f'shared_loc {target_list[0]}']
-                # agent_loc = state[f'agent_loc {agent_index}']
-                # return shared_loc == agent_loc
+                # elif shared_loc == agent_loc:
+                #     return True
+
                 else:
                     return False
             except KeyError as e:

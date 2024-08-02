@@ -29,16 +29,16 @@
         )
     )
     
-    (:action move_left
-        :parameters (?a - agent)
-        :precondition (
-             (= (agent_loc ?a) 2)
-             (= (sharing) 0)
-        )
-        :effect (
-            (assign (agent_loc ?a) 1)
-        )
-    )
+    ; (:action move_left
+    ;     :parameters (?a - agent)
+    ;     :precondition (
+    ;          (= (agent_loc ?a) 2)
+    ;          (= (sharing) 0)
+    ;     )
+    ;     :effect (
+    ;         (assign (agent_loc ?a) 1)
+    ;     )
+    ; )
 
     (:action quiet
         :parameters (?s - secret)
@@ -64,6 +64,7 @@
             (assign (shared_loc ?s) (agent_loc ?a))
             (assign (shared_value ?s) (secret_value ?s))
             (assign (sharing) 1)
+            
         )
     )
 
@@ -85,11 +86,11 @@
         :precondition (
             (= (own ?a ?s) 0)
             (= (sharing) 0)
-            (!= (@jp ("b [?a]") (secret_value ?s)) jp.none)
+            (!= (@jp ("b [?a]") (shared_value ?s)) jp.none)
         )
         :effect (
             (assign (shared_loc ?s) (agent_loc ?a))
-            (assign (shared_value ?s) (@jp ("b [?a]") (secret_value ?s))) ;(shared_value ?s) (@jp ("b [?a]") (shared_value ?s))) ;jp
+            (assign (shared_value ?s) (@jp ("b [?a]") (shared_value ?s))) 
             (assign (sharing) 1)
         )
     )

@@ -8,7 +8,7 @@ from predictor import Predictor
 
 LOGGER_NAME = "epistemic_model"
 LOGGER_LEVEL = logging.INFO
-#LOGGER_LEVEL = logging.DEBUG
+# LOGGER_LEVEL = logging.DEBUG
 from util import setup_logger
 # from util import ActionList2DictKey,GLOBAL_PERSPECTIVE_INDEX, ROOT_NODE_ACTION
 # from util import raiseNotDefined,eval_var_from_str,Queue
@@ -61,6 +61,8 @@ class EpistemicModel:
                 eq_str = ep_formula.ep_query
                 condition = ep_formula.ep_varphi
                 output = self.eval_eq(eq_str,condition, GLOBAL_PERSPECTIVE_INDEX, state_sequence, p_dict)
+                # self.logger.debug("p_dict after ep")
+                # self.logger.debug(p_dict)
                 if operator == ConditionOperatorType.EQUAL:
                     result = output == target_value
                 elif operator == ConditionOperatorType.NOT_EQUAL:
@@ -78,6 +80,7 @@ class EpistemicModel:
                 variable_name = ep_formula.ep_variable
                 p_key = format_JPstr2PerspectiveKey(jp_str)
                 if p_key in p_dict.keys():
+
                     local_perspective = p_dict[p_key]
                     local_state = local_perspective[-1]
 
@@ -88,13 +91,17 @@ class EpistemicModel:
                         raise ValueError("p_key is not generated correctly",p_key,condition,p_dict.keys())
                     local_perspective = p_dict[p_key]
                     local_state = local_perspective[-1]
+                    # self.logger.debug(local_perspective)
                     # p = self.generate_os(state_sequence,GLOBAL_PERSPECTIVE_INDEX)
                     # p_dict[p_key] = p
                 if not variable_name in local_state.keys():
                     raise ValueError("variable_name is not in the local state",variable_name,local_state)
                 else:
                     value2 = local_state[variable_name]
+                    # self.logger.debug(local_state)
                     result_dict[key] = evaluation(self.logger,operator,value2,target_value) == Ternary.TRUE
+                    self.logger.debug("variable_name: [%s], value2: [%s], target value: [%s]",variable_name,value2,target_value)
+                    self.logger.debug("jp evaluated as: %s",result_dict[key])
         # self.logger.debug(result_dict)
         # self.logger.debug(p_dict)
         return result_dict,p_dict
@@ -109,6 +116,8 @@ class EpistemicModel:
             jp_str = jp_item.ep_query
             variable_name = jp_item.ep_variable
             p_key = format_JPstr2PerspectiveKey(jp_str)
+            self.logger.debug(p_key)
+            self.logger.debug(p_dict)
             if p_key in p_dict.keys():
                 local_perspective = p_dict[p_key]
                 local_state = local_perspective[-1]                
@@ -125,6 +134,8 @@ class EpistemicModel:
             else:
                 value2 = local_state[variable_name]
                 result_dict[jp_name] = value2
+        self.logger.debug("jp effect before update")
+        self.logger.debug(result_dict)
         return result_dict,p_dict
 
     def generate_ps_from_jp_query(self, jp_str, parent_prefix, state_sequence, input_ps):
@@ -169,14 +180,17 @@ class EpistemicModel:
         for i in range(len(os)):
             temp_ps = self.generate_p(os[:i+1],parent_ps[:i+1])
             ps.append(temp_ps)
-        input_ps[ps_key_str] = ps
+        # input_ps[ps_key_str] = ps
 
 
         if not self.no_prediction:
             new_rs = self.predictor.getrs(os,parent_ps,self.rules)###############################
-            #print("EM rs", new_rs)
+            self.logger.debug("EM rs")
+            self.logger.debug(new_rs)
             ps = self.predictor.getps(os,new_rs, parent_ps)
-            #print("EM ps", ps)
+            self.logger.debug("EM ps")
+            self.logger.debug(ps)
+        # input_ps[ps_key_str] = ps
         return ps,ps_key_str
         
     
@@ -267,6 +281,7 @@ class EpistemicModel:
                 
         elif jp_type == EpistemicType.Belief:
             ps,ps_key_str = self.generate_ps(os_key_str, os,state_sequence, input_ps)
+            input_ps[ps_key_str]=ps
             if rest_eq_str == "":
                 return
             else:
@@ -297,6 +312,7 @@ class EpistemicModel:
         agent_id_str = eq_query_content_list[2]
         rest_eq_str = eq_query_str[len(eq_ternary_type_str)+len(ep_prefix_str)+len(agent_id_str)+3:]
         if ep_group_type == EpistemicGroupType.Individual:
+            # print(agent_id_str)
             if not agent_id_str.startswith("[") or not agent_id_str.endswith("]"):
                 raise ValueError("agent_id is not in the correct format (should cover with [])",eq_query_str)
             agent_id_str = agent_id_str[1:-1]
@@ -326,7 +342,7 @@ class EpistemicModel:
         #     os = self.generate_os(state_sequence,agent_index)
         #     input_ps[os_key_str] = os
         os,os_key_str = self.generate_os(agent_index,parent_prefix,state_sequence,input_ps)
-           
+        #print(agent_index)   
         if ep_type == EpistemicType.Knowledge:
             if rest_eq_str == '':
                 # this is the last level, we need to evaluate the condition
@@ -357,6 +373,7 @@ class EpistemicModel:
                 
         elif ep_type == EpistemicType.Belief:
             ps,ps_key_str = self.generate_ps(os_key_str, os,state_sequence, input_ps)
+            input_ps[ps_key_str] = ps
             if rest_eq_str == '':
                 # this is the last level, we need to evaluate the condition
                 operator = condition.condition_operator

@@ -18,7 +18,7 @@ LOGGER_LEVEL = logging.INFO
 from util import setup_logger
 from util import Ternary
 from util import Condition,ConditionType,Effect,EffectType,EP_formula,EPFType,Action,UpdateType
-from util import extract_v_from_s,evaluation,multiple_parameter_replace,multiple_parameter_replace_with_ep,updateEffect,global_state_evaluation
+from util import extract_v_from_s,evaluation,multiple_parameter_replace,multiple_parameter_replace_with_ep,updateEffect,global_state_evaluation,special_value
 from util import ActionSchema,Type,Function,FunctionSchema
 from util import VARIABLE_FILLER
 # Class of the problem
@@ -124,10 +124,19 @@ class Problem:
                 # going to handle the constent update first
                 pass
        
-        path = previous_path+[(new_state,action.name)]
+        # path = previous_path+[(new_state,action.name)]
+
 
         # updating jp effect
         if not jp_dictionary == {}:
+            #print("hererererere")
+            for effect_name, item in jp_dictionary.items():
+                variable_name = action.effects[effect_name].target_variable_name
+                new_state[variable_name] = special_value.UNSEEN
+            path = previous_path+[(new_state,action.name)]
+
+
+
             self.epistemic_calls +=1
             start_time = datetime.now()
             result_dict,p_dict = self.epistemic_model.epistemicEffectHandler(jp_dictionary, path,p_dict)
@@ -145,8 +154,13 @@ class Problem:
                 value1 = extract_v_from_s(variable_name,new_state)
                 new_value =  updateEffect(self.logger,effect.effect_type,value1,value2,self.function_schemas[function_schema_name])
                 if new_value == None:
+                    self.logger.error("New value out of range")
+                    self.logger.error(effect_name)
+                    self.logger.error(state)
+                    return None
                     raise ValueError("New Value if out of range when updating",effect_name,state)
                 new_state[variable_name] = value2
+            # print("v2v2v2v2v2v2",variable_name,function_schema_name,value1,value2)
         
         return new_state
 
@@ -227,7 +241,7 @@ class Problem:
                         break
             if precondition_flag:
                 legal_actions.update({action_name:action_item})
-        
+        # print(legal_actions)
         return legal_actions,p_dict
         
         # for action_name,action in self.action_schemas.items():

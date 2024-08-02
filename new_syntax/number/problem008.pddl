@@ -20,8 +20,9 @@
         (:goal 
             (and 
             (= (@ep ("+ b [a]") (= (num c) 11)) ep.true)
-            (= (@ep ("+ b [b]") (= (num c) 7)) ep.true)
-            (= (@ep ("+ b [b] + b [a]") (= (num c) 7)) ep.true)
+            (= (@ep ("+ b [b]") (= (num c) 3)) ep.true)
+            (= (@ep ("+ b [b] + b [a]") (= (num c) 3)) ep.true)
+            (= (@ep ("+ b [a] + b [b]") (= (num c) 3)) ep.true)
             )
         )
 
