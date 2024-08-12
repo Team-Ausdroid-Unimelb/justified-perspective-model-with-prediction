@@ -75,7 +75,7 @@
             (sharing integer [0,1])
             (secret_value integer [0,9])
             (secret_lyging_value integer [0,9])
-            (shared_value integer [0,9]);??????
+            (shared_value integer [0,9])
         )
 
         (:rules
