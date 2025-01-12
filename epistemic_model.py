@@ -5,6 +5,7 @@ import re
 import logging
 import copy
 from predictor import Predictor
+import time
 
 LOGGER_NAME = "epistemic_model"
 LOGGER_LEVEL = logging.INFO
@@ -40,6 +41,8 @@ class EpistemicModel:
         self.predictor = Predictor(external)######################
         self.rules = rules
         self.no_prediction = no_prediction
+        self.total_prediction_time = 0.0
+        self.max_segment_count = 0.0
 
     def epistemicConditionsHandler(self, epistemic_condition_dict: typing.Dict[str,Condition], path,p_dict):
         self.logger.debug('epistemicConditionHandler')
@@ -104,6 +107,7 @@ class EpistemicModel:
                     self.logger.debug("jp evaluated as: %s",result_dict[key])
         # self.logger.debug(result_dict)
         # self.logger.debug(p_dict)
+        
         return result_dict,p_dict
 
     def epistemicEffectHandler(self, epistemic_effect_dict: typing.Dict[str,EP_formula], path,p_dict):
@@ -184,12 +188,22 @@ class EpistemicModel:
 
 
         if not self.no_prediction:
+            #算max次数
+            start_segment_count = int(self.predictor.get_segment_count())
+            start_time = time.time()
             new_rs = self.predictor.getrs(os,parent_ps,self.rules)###############################
             self.logger.debug("EM rs")
             self.logger.debug(new_rs)
             ps = self.predictor.getps(os,new_rs, parent_ps)
             self.logger.debug("EM ps")
             self.logger.debug(ps)
+            predict_time = time.time() - start_time
+            self.total_prediction_time += predict_time
+            end_segment_count = int(self.predictor.get_segment_count())
+            segment_count = end_segment_count - start_segment_count
+            if self.max_segment_count<segment_count:
+                self.max_segment_count = segment_count
+            # print(start_segment_count,end_segment_count,segment_count,self.max_segment_count,new_rs)
         # input_ps[ps_key_str] = ps
         return ps,ps_key_str
         

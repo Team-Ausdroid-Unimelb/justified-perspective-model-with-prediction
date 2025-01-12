@@ -52,7 +52,7 @@ class ExternalFunction:
             # this function is to make sure the sharing secret only last one state
             # does not matter
             return True
-        elif 'secret_value'  == function_schemas_name:
+        elif 'secret_value'  == function_schemas_name or 'secret_truth_value'  == function_schemas_name:
             # it depends on whether agent sees that secret been shared
             if not len(target_list) == 1:
                 raise ValueError(f"secret_value function should have only one entity index")
@@ -71,7 +71,7 @@ class ExternalFunction:
                 self.logger.debug(e)
                 self.logger.debug("state: %s",state)
                 return False
-        elif 'secret_lyging_value'  == function_schemas_name:
+        elif 'secret_lyging_value'  == function_schemas_name or 'agent_lyging_value'  == function_schemas_name:
             # it depends on whether agent sees that secret been shared
             if not len(target_list) == 1:
                 raise ValueError(f"secret_lyging_value function should have only one entity index")

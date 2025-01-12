@@ -9,7 +9,8 @@ import re
 
 from util import PDDL_TERNARY,convertBooltoPDDL_TERNARY
 from util import EpistemicQuery,E_TYPE, RULE_TYPE
-
+from util import RULE_TYPE, special_value
+from sklearn.linear_model import LinearRegression
 
 AGENT_ID_PREFIX = "peeking_"
 
@@ -37,7 +38,7 @@ class ExternalFunction:
         # expected output would be a list of (var_name,value)
         if type(eq.q_content) == str:
             # default is a single pair of var_name and value
-            if not re.search("\([0-9a-z _\-\'\"]*,[0-9a-z _\'\"]*\)",eq.q_content) == None:
+            if not re.search(r"\([0-9a-z _\-\'\"]*,[0-9a-z _\'\"]*\)",eq.q_content) == None:
                 var_name = eq.q_content.split(",")[0][1:]
                 value = eq.q_content.split(",")[1][:-1]
                 var_name = var_name.replace("'","").replace('"','')
@@ -54,7 +55,7 @@ class ExternalFunction:
         #default evaluation for variables
         if world == {}:
             return 2
-        if not re.search("\([0-9a-z _\-\'\"]*,[0-9a-z _\'\"]*\)",statement) == None:
+        if not re.search(r"\([0-9a-z _\-\'\"]*,[0-9a-z _\'\"]*\)",statement) == None:
             var_name = statement.split(",")[0][1:]
             value = statement.split(",")[1][:-1]
             var_name = var_name.replace("'","").replace('"','')
@@ -154,6 +155,12 @@ class ExternalFunction:
         c = int(paramiters[2])
         return a*x**2 + b*x + c
     
+    def updatesin(self,x,paramiters):
+        a = int(paramiters[0])
+        b = int(paramiters[1])
+        c = int(paramiters[2])
+        return a * np.sin(b*0.5*np.pi * x + c)
+    
     def updatepower(self, x, paramiters):
         a = int(paramiters[0])
         return a ** x
@@ -174,6 +181,8 @@ class ExternalFunction:
                     updated_value = self.update2Poly(x, paramiters)
                 elif v_rule_type == RULE_TYPE.POWER:
                     updated_value = self.updatepower(x, paramiters)
+                elif v_rule_type == RULE_TYPE.SIN:
+                    updated_value = self.updatesin(x, paramiters)
                 else:
                     continue
 
@@ -203,6 +212,71 @@ class ExternalFunction:
                 return False
         return True
 
+
+    def get_coef_poly_1st(self, v_name, valuelist,rules):
+        coefficients_known_list = rules[v_name].rule_known_coef.strip('[]').split(',')
+        known_coefficients={}
+        
+
+        for idx, coeff in enumerate(coefficients_known_list[::-1]):
+            if coeff != '':
+                coeff = float(coeff)
+                known_coefficients[idx] = coeff
+            else:
+                known_coefficients[idx] = None
+
+        os_value_list = []
+        for index, value in enumerate(valuelist):
+            if value == special_value.UNSEEN or value == special_value.HAVENT_SEEN or value == None:
+                pass
+            else:
+                os_value_list.append([index, value])
+        # x_values = [item[0] for item in os_value_list]
+        # y_values = [item[1] for item in os_value_list]
+        x_values = np.array([item[0] for item in os_value_list]).reshape(-1, 1)  
+        y_values = np.array([item[1] for item in os_value_list]) 
+        
+
+        if len(os_value_list) >= 2:  # Ensure we have enough points for fitting
+            # Create and fit the logistic regression model
+            # x_values = np.array([item[0] for item in os_value_list]).reshape(-1, 1)  
+            # y_values = np.array([item[1] for item in os_value_list]) 
+            model = LinearRegression()
+            model.fit(x_values, y_values)
+
+            # Get coefficients (slope and intercept)
+            a = model.coef_[0]  # Slope
+            b = model.intercept_  # Intercept
+            coefficients_dict = {
+                'a': round(a),
+                'b': round(b)
+            }
+        else:
+            return {'name': v_name, 'rule_name': '1st_poly', 'coefficients': {'a': None,'b': None}}
+        return  {'name':v_name,'rule_name': '1st_poly','coefficients': coefficients_dict}
+    
+    def get_predict_1st_poly(self, i,rule,value):  ##find dominant coefficients method
+        # print("hererer",i,rule,value)
+        a = rule['coefficients'].get('a')
+        b = rule['coefficients'].get('b')
+        if a is None or b is None:
+            result = self.get_predict_static(i,rule,value)
+        else:
+            result = round(a * i + b)
+        return result
+    
+    def get_predict_static(self, i,rule,value):
+        result = special_value.HAVENT_SEEN
+        for j in range(i - 1, -1, -1):
+            if value[j] is not None and value[j] != special_value.UNSEEN and value[j] != special_value.HAVENT_SEEN:
+                result = value[j] 
+                return value[j] 
+            
+        for j in range(i + 1, len(value)):
+            if value[j] is not None and value[j] != special_value.UNSEEN and value[j] != special_value.HAVENT_SEEN:
+                result = value[j] 
+                return value[j]
+        return result
 
     #     for var_name, value in state.items():
     #         clean_var_name = var_name.split('-')[0]

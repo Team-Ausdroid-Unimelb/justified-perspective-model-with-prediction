@@ -39,12 +39,12 @@
 
             (assign (sharing) 0)
 
-            (assign (secret_value as) 2)
+            (assign (secret_value as) 2);true secret of a (true sa\tsa)
             (assign (secret_value bs) 2)
             (assign (secret_value cs) 2)
         
 
-            (assign (secret_lyging_value as) 1)
+            (assign (secret_lyging_value as) 1) ;lying
             (assign (secret_lyging_value bs) 1)
             (assign (secret_lyging_value cs) 1)
        

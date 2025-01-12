@@ -9,7 +9,7 @@
 
     (:functions
         (agent_loc ?a - agent)
-        (secret_value ?s - secret)
+        (secret_truth_value ?s - secret)
         (secret_lyging_value ?s - secret)
         (shared_value ?s - secret)
         (shared_loc ?s - secret)
@@ -29,16 +29,16 @@
         )
     )
     
-    ; (:action move_left
-    ;     :parameters (?a - agent)
-    ;     :precondition (
-    ;          (= (agent_loc ?a) 2)
-    ;          (= (sharing) 0)
-    ;     )
-    ;     :effect (
-    ;         (assign (agent_loc ?a) 1)
-    ;     )
-    ; )
+    (:action move_left
+        :parameters (?a - agent)
+        :precondition (
+             (= (agent_loc ?a) 2)
+             (= (sharing) 0)
+        )
+        :effect (
+            (assign (agent_loc ?a) 1)
+        )
+    )
 
     (:action quiet
         :parameters (?s - secret)
@@ -49,7 +49,7 @@
         :effect (
             (assign (sharing) 0);constant
             (assign (shared_loc ?s) 0)
-            (assign (shared_value ?s) (secret_value ?s));ontic variable
+            (assign (shared_value ?s) (secret_truth_value ?s));ontic variable
         )
     )
     
@@ -62,7 +62,7 @@
         )
         :effect (
             (assign (shared_loc ?s) (agent_loc ?a))
-            (assign (shared_value ?s) (secret_value ?s))
+            (assign (shared_value ?s) (secret_truth_value ?s))
             (assign (sharing) 1)
             
         )

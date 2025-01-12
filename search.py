@@ -210,11 +210,11 @@ class Search:
                 self._finalise_result(problem)
                 return self.result
 
-            all_legal_actions,sgp_p_dict = problem.get_all_legal_actions(state,path,sg_p_dict)
+            all_legal_actions,sgp_p_dict = problem.get_all_legal_actions(state,path,sg_p_dict)#########保留
 
             all_legal_action_name = list(all_legal_actions.keys())
             all_legal_action_name.sort()
-            filtered_action_name = self.action_filter(problem,all_legal_action_name)
+            filtered_action_name = self.action_filter(problem,all_legal_action_name)#根据path长度选action，名字一样保留
             
             self.logger.debug(sgp_p_dict.keys())
             self.logger.debug(sgp_p_dict)
@@ -267,7 +267,7 @@ class Search:
                 self.logger.debug("path [%s] already visited",actions)
             # self.logger.debug(open_list.count)
             
-        self.logger.info(f'Problem is not solvable')
+        self.logger.info(f'Problem is not solvable') #
         self.result.update({'plan':[]})
         self.result.update({'path_length':0})
         self.result.update({'solvable': False})
@@ -277,6 +277,210 @@ class Search:
         self.logger.debug(self.result)
         return self.result
 
+    def validating(self,plan,problem:Problem,time_out:int,memory_out:int):
+        self.timeout = datetime.timedelta(seconds=time_out)
+        self.memoryout = memory_out*1024 
+        self.logger.info("starting searching using [%s]",self.search_name)
+        start_time = datetime.datetime.now()
+
+        self.max_goal_num = len(list(problem.goals.keys()))
+        # intitalise unknown goal name
+        for key,item in problem.goals.items():
+            goal_condition: Condition = item
+            if goal_condition.condition_type == ConditionType.EP:
+                ep_formula: EP_formula = goal_condition.condition_formula
+                if ep_formula.epf_type == EPFType.EP:
+                    if goal_condition.target_value == Ternary.UNKNOWN:
+                        self.unknown_goal_name.append(key)
+                    # if there is a ! infront of unknown, then the unknown should not be counted
+                    else:
+                        negation_flag = True
+                        for temp_str in ep_formula.ep_query.split(' '):
+                            if temp_str == '!':
+                                negation_flag = not negation_flag
+                            elif temp_str == '$' and negation_flag:
+                                self.unknown_goal_name.append(key)
+        self.logger.debug(f'unknown goal name: {self.unknown_goal_name}')
+                
+        
+        # check whether the initial state is the goal state
+        init_state = problem.initial_state
+        init_path = [(init_state,'')]
+        remaining_goal_num,init_goal_dict,init_p_dict = problem.is_goal(init_path)
+        self.goal_checked +=1
+       
+        # init_epistemic_item_set = dict()
+        
+        init_node = Search.SearchNode(init_state,remaining_goal_num,init_p_dict,init_path)
+        # self.group_eg_dict = self.group_epistemic_goals(problem)
+        # self.landmarks_dict = problem.external.generate_constrain_dict(problem,self.group_eg_dict)
+
+        open_list = PriorityQueue()
+        h = self._h(init_node,init_goal_dict,problem)
+        g = self._gn(init_node)
+        fn = self._f(h,g)
+        open_list.push(item=init_node, priority=fn)
+        
+        
+        while not open_list.isEmpty():
+
+            _ , _, current_node = open_list.pop_full()
+            state = current_node.state
+            sg_p_dict = current_node.perspective_dict
+            path = current_node.path
+            actions = [ a  for s,a in path]
+            actions = actions[1:]
+
+            # if len(path) > 8:
+            #     raise ValueError("exceed length")
+            self.logger.debug("path: %s",actions)
+
+            goal_checking = (0 == current_node.remaining_goal)
+            if goal_checking:
+                #print("goal found")
+                # self.logger.info(path)
+                actions = [ a  for s,a in path]
+                actions = actions[1:]
+                self.logger.info(f'plan is: {actions}')
+                self.logger.info(f'Goal found')
+                self.result.update({'solvable': True})
+                self.result.update({'plan':actions})
+                self.result.update({'path_length':len(actions)})
+                self.result.update({'timeout':self.timeout.seconds})
+                self.result.update({'memoryout':self.memoryout})
+                self._finalise_result(problem)
+                if_valid = True
+                if if_valid:
+                    print("goal found")
+                else:
+                    print("The input plan not valid")
+                return self.result
+
+            current_time = datetime.datetime.now()
+            delta_time = current_time - start_time
+            process = psutil.Process(os.getpid())
+
+            # Get the memory usage (in bytes)
+            memory_info = process.memory_info()
+            current_memory_usage = memory_info.rss  # resident set size in bytes
+
+            # Convert bytes to MB for easier interpretation
+            usage = current_memory_usage / (1024 * 1024)
+
+            if delta_time > self.timeout:
+                actions = [ a  for s,a in path]
+                actions = actions[1:]
+                self.logger.info(f'Problem cannot be solved in the given time ({self.timeout.seconds}).')
+                self.result.update({'plan':[]})
+                self.result.update({'path_length':len(actions)})
+                self.result.update({'solvable': False})
+                self.result.update({'running': "TIMEOUT"})
+                self.result.update({'timeout':self.timeout.seconds})
+                self.result.update({'memoryout':self.memoryout})
+                self._finalise_result(problem)
+                if if_valid:
+                    print("goal found")
+                else:
+                    print("The input plan not valid")
+                return self.result
+            elif usage > self.memoryout:
+                actions = [ a  for s,a in path]
+                actions = actions[1:]
+                self.logger.info(f'Problem cannot be solved in the given memory ({self.memoryout}MB).')
+                self.result.update({'plan':[]})
+                self.result.update({'path_length':len(actions)})
+                self.result.update({'solvable': False})
+                self.result.update({'running': "MEMORYOUT"})
+                self.result.update({'timeout':self.timeout.seconds})
+                self.result.update({'memoryout':self.memoryout})
+                self._finalise_result(problem)
+                if if_valid:
+                    print("goal found")
+                else:
+                    print("The input plan not valid")
+                return self.result
+
+            all_legal_actions,sgp_p_dict = problem.get_all_legal_actions(state,path,sg_p_dict)#########保留
+
+            all_legal_action_name = list(all_legal_actions.keys())
+            all_legal_action_name.sort()
+            filtered_action_name = self.action_filter(problem,all_legal_action_name)#根据path长度选action，名字一样保留
+            if len(path) - 1 >= len(plan):
+                break
+            if plan[len(path)-1] in filtered_action_name:
+                filtered_action_name = [plan[len(path)-1]]
+            else:
+                if_valid = False
+                #print("The input plan not valid")
+
+            # print(filtered_action_name,plan[len(path)-1],len(path))
+            
+            self.logger.debug(sgp_p_dict.keys())
+            self.logger.debug(sgp_p_dict)
+            self.logger.debug("action generated: %s",all_legal_actions.keys())
+            
+            if self._duplication_check(state,sgp_p_dict):
+                # self.logger.debug("path [%s] get in visited",actions)
+                # self.logger.debug("ep_state_str is [%s]",ep_state_str)
+                self.expanded +=1
+                self.branch_factors.append(len(list(all_legal_actions.keys())))
+                temp_successor = 0
+                temp_actions = []
+                for action_name in filtered_action_name:
+                    action :Action = all_legal_actions[action_name]
+                # for action_name,action in all_legal_actions.items():
+                    self.logger.debug("action [%s] passed the precondition check", action_name)
+                    # passed the precondition
+                    succ_state = problem.generate_successor(state, action,path)
+                    if not succ_state == None:
+                        
+                        new_path = path + [(succ_state,action_name)]
+                        remaining_goal_num,goal_dict,g_p_dict = problem.is_goal(new_path)
+                        self.goal_checked+=1
+                        succ_node = self.SearchNode(succ_state,remaining_goal_num,g_p_dict,new_path)
+
+                        if self._unknown_check(succ_node,goal_dict):
+                            self.generated += 1
+                            h = self._h(succ_node,goal_dict,problem)
+                            g = self._gn(succ_node)
+                            fn = self._f(h,g)
+                            
+
+                            self.logger.debug("heuristic is: %d" % (h))
+                            g = self._gn(succ_node)
+                            self.logger.debug("gn is: %d" % (g))
+                            self.logger.debug("remaining is: %d" % (succ_node.remaining_goal))
+                            
+                            open_list.push(item=succ_node, priority=fn)
+                            temp_successor +=1
+                            temp_actions.append(action_name)
+                        else:
+                            self.pruned_by_unknown +=1
+                            
+                    else:
+                        self.logger.debug("successor node been pruned due to exceeds the function range: %s",action_name)
+                self.logger.debug('successor: [%s] with actions [%s]',temp_successor,temp_actions)
+            else:
+                self.pruned_by_visited += 1
+                # print(self.pruned_by_visited)
+                self.logger.debug("path [%s] already visited",actions)
+            # self.logger.debug(open_list.count)
+            
+        self.logger.info(f'Problem is not solvable') #
+        self.result.update({'plan':[]})
+        self.result.update({'path_length':0})
+        self.result.update({'solvable': False})
+        self.result.update({'timeout':self.timeout.seconds})
+        self.result.update({'memoryout':self.memoryout})
+        self._finalise_result(problem)
+        self.logger.debug(self.result)
+        if if_valid:
+            print("goal found")
+        else:
+            print("The input plan not valid")
+
+
+        return self.result
     
     
 
@@ -315,6 +519,8 @@ class Search:
         self.logger.info(f'[goals: {ontic_goal_list+epistemic_goal_list}]')
         self.logger.info(f'[epistemic_call_time_max: {problem.epistemic_call_time_max.total_seconds()*1000}]')
         self.logger.info(f'[functions: {len(list(problem.functions.keys()))}]')
+        self.logger.info(f'[prediction time: {problem.epistemic_model.total_prediction_time}]')
+        self.logger.info(f'[segment count: {problem.epistemic_model.predictor.segment_count}]')
         # file output
         self.result.update({'pruned':self.pruned})
         self.result.update({'pruned_by_unknown':self.pruned_by_unknown})
@@ -338,6 +544,14 @@ class Search:
         self.result.update({'functions':len(list(problem.functions.keys()))})
         self.result.update({'domain_path':problem.domain_path})
         self.result.update({'problem_path':problem.problem_path})
+        self.result.update({'prediction_time': problem.epistemic_model.total_prediction_time})
+        self.result.update({'segment count': problem.epistemic_model.predictor.segment_count})
+        self.result.update({'max segment count': problem.epistemic_model.max_segment_count})
+        self.result.update({
+            'avg prediction_time': problem.epistemic_model.total_prediction_time / problem.epistemic_model.predictor.segment_count
+            if problem.epistemic_model.predictor.segment_count != 0 else 0
+        })
+
 
         max_depth = 0
 

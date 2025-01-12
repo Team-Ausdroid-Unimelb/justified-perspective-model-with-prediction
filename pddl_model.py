@@ -80,7 +80,7 @@ class Problem:
         jp_dictionary = dict()
 
 
-
+        # update ontic variables based on PDDL action effects
         for effect_name,item in action.effects.items(): #constant
             effect : Effect = item
             variable_name = effect.target_variable_name
@@ -102,8 +102,14 @@ class Problem:
                 ontic_name_list.append(effect_name)
 
         ################################################################################
+        # update ontic variables based on variable update rules
         path = previous_path+[(new_state,action.name)]
         new_state = self.external.update_state(new_state, path, self)  #.rules###############
+        # return dict = {variable_name: new_value}
+        # generate a list of effect
+        # for this list to update state
+        # update type should be CONSTANT
+
         if new_state == None:
             return None
 
@@ -154,9 +160,9 @@ class Problem:
                 value1 = extract_v_from_s(variable_name,new_state)
                 new_value =  updateEffect(self.logger,effect.effect_type,value1,value2,self.function_schemas[function_schema_name])
                 if new_value == None:
-                    self.logger.error("New value out of range")
-                    self.logger.error(effect_name)
-                    self.logger.error(state)
+                    # self.logger.error("New value out of range")
+                    # self.logger.error(effect_name)
+                    # self.logger.error(state)
                     return None
                     raise ValueError("New Value if out of range when updating",effect_name,state)
                 new_state[variable_name] = value2

@@ -1,0 +1,44 @@
+2025-01-12 18:46:18,462 - instance_runner - INFO - parser domain and problem
+2025-01-12 18:46:18,462 - instance_runner - INFO - .\new_syntax\grapevine\domain01.pddl
+2025-01-12 18:46:18,462 - instance_runner - INFO - .\new_syntax\grapevine\problem202.pddl
+2025-01-12 18:46:18,462 - pddl_parser - INFO - Reading domain file
+2025-01-12 18:46:18,462 - pddl_parser - INFO - .\new_syntax\grapevine\domain01.pddl
+2025-01-12 18:46:18,462 - pddl_parser - INFO - Parsing domain file
+2025-01-12 18:46:18,462 - pddl_parser - INFO - Reading problem file
+2025-01-12 18:46:18,462 - pddl_parser - INFO - .\new_syntax\grapevine\problem202.pddl
+2025-01-12 18:46:18,462 - pddl_parser - INFO - Parsing problem file
+2025-01-12 18:46:18,462 - instance_runner - INFO - loading external function: .\new_syntax\grapevine\grapevine01.py
+2025-01-12 18:46:18,467 - instance_runner - INFO - finish loading external function
+2025-01-12 18:46:18,467 - instance_runner - INFO - Initialize problem
+2025-01-12 18:46:18,467 - epistemic_model - INFO - initialize epistemic model
+2025-01-12 18:46:18,467 - instance_runner - INFO - starting search
+2025-01-12 18:46:18,467 - bfs - INFO - starting searching using [bfs]
+2025-01-12 18:46:22,425 - bfs - INFO - plan is: ['sharing_own_secret a sa', 'quiet sa', 'sharing_own_secret a sa', 'quiet sa']
+2025-01-12 18:46:22,425 - bfs - INFO - Goal found
+2025-01-12 18:46:22,425 - bfs - INFO - [number of node pruned_by_unknown]: 0
+2025-01-12 18:46:22,425 - bfs - INFO - [number of node pruned_by_visited]: 0
+2025-01-12 18:46:22,425 - bfs - INFO - [number of node pruned]: 0
+2025-01-12 18:46:22,425 - bfs - INFO - [number of node goal_checked]: 3843
+2025-01-12 18:46:22,425 - bfs - INFO - [number of node expansion]: 840
+2025-01-12 18:46:22,425 - bfs - INFO - [number of node generated]: 3843
+2025-01-12 18:46:22,425 - bfs - INFO - [number of epistemic formulas evaluation: 4493]
+2025-01-12 18:46:22,425 - bfs - INFO - [time in epistemic formulas evaluation: 0:00:03.589857]
+2025-01-12 18:46:22,425 - bfs - INFO - [avg time in epistemic formulas evaluation: 0.7989888715780102]
+2025-01-12 18:46:22,425 - bfs - INFO - [total_goal_size: 3]
+2025-01-12 18:46:22,425 - bfs - INFO - [ontic_goal_size: 1]
+2025-01-12 18:46:22,425 - bfs - INFO - [epistemic_goal_size: 2]
+2025-01-12 18:46:22,425 - bfs - INFO - [ontic_goals: ['(= (shared_loc sa) 0)']]
+2025-01-12 18:46:22,425 - bfs - INFO - [epistemic_goals: ['(= (@ep ("+ b [a] + b [b]") (= (shared_value sa) 6)) ep.true)', '(= (@ep ("+ b [a]") (= (secret_truth_value sa) 6)) ep.true)']]
+2025-01-12 18:46:22,425 - bfs - INFO - [goals: ['(= (shared_loc sa) 0)', '(= (@ep ("+ b [a] + b [b]") (= (shared_value sa) 6)) ep.true)', '(= (@ep ("+ b [a]") (= (secret_truth_value sa) 6)) ep.true)']]
+2025-01-12 18:46:22,425 - bfs - INFO - [epistemic_call_time_max: 16.121]
+2025-01-12 18:46:22,425 - bfs - INFO - [functions: 25]
+2025-01-12 18:46:22,425 - bfs - INFO - [prediction time: 2.467407464981079]
+2025-01-12 18:46:22,425 - bfs - INFO - [segment count: 51214]
+2025-01-12 18:46:22,425 - bfs - INFO - [number of common perspective generated]: 0
+2025-01-12 18:46:22,425 - bfs - INFO - [number of all iterations used when generating common perspectives]: 0
+2025-01-12 18:46:22,425 - bfs - INFO - [number of max iterations used when generating common perspectives]: 0
+2025-01-12 18:46:22,425 - bfs - INFO - [number of average iterations used when generating common perspectives]: 0
+2025-01-12 18:46:22,425 - bfs - INFO - [number of averaged unfiltered branching factors]: 4.5738095238095235
+2025-01-12 18:46:22,425 - bfs - INFO - [number of max unfiltered branching factors]: 13
+2025-01-12 18:46:22,441 - instance_runner - INFO - initialization time: 0:00:00.005168
+2025-01-12 18:46:22,441 - instance_runner - INFO - search time: 0:00:03.973258

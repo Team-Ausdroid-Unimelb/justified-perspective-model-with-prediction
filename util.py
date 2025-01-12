@@ -571,7 +571,7 @@ value_type_dict = {
 }
 
 
-RULE_TYPE = Enum("RULE_TYPE", "STATIC POLY_1ST SIN POLY_2ND POLY_3RD,MOD_1ST,POWER")
+RULE_TYPE = Enum("RULE_TYPE", "STATIC POLY_1ST SIN POLY_2ND POLY_3RD MOD_1ST POWER")
 
 rule_type_dict = {
     "static": RULE_TYPE.STATIC,
@@ -627,7 +627,7 @@ def updateEffect(logger,effect_type:EffectType,value1,value2,function_schema: Fu
             
             else:
                 if value2 < function_schema.value_range[0] or value2 > function_schema.value_range[1]:
-                    logger.error("value out of range: when assign %s in function_schema: %s",value2,function_schema.name)
+                    #logger.error("value out of range: when assign %s in function_schema: %s",value2,function_schema.name)
                     return None
                 else:
                     return value2
@@ -642,7 +642,7 @@ def updateEffect(logger,effect_type:EffectType,value1,value2,function_schema: Fu
                 raise ValueError("Effect Error: the second value in Increase should be an integer")
             else:
                 if value1 + value2 < function_schema.value_range[0] or value1 + value2 > function_schema.value_range[1]:
-                    logger.error("value out of range: when increase %s + %s in function_schema: %s",value1,value2,function_schema.name)
+                    #logger.error("value out of range: when increase %s + %s in function_schema: %s",value1,value2,function_schema.name)
                     return None
                 else:
                     return value1 + value2
@@ -657,7 +657,7 @@ def updateEffect(logger,effect_type:EffectType,value1,value2,function_schema: Fu
                 raise ValueError("Effect Error: the second value in Decrease should be an integer")
             else:
                 if value1 - value2 < function_schema.value_range[0] or value1 - value2 > function_schema.value_range[1]:
-                    logger.error("value out of range: when decrease %s - %s in function_schema: %s",value1,value2,function_schema.name)
+                    #logger.error("value out of range: when decrease %s - %s in function_schema: %s",value1,value2,function_schema.name)
                     return None
                 else:
                     return value1 - value2

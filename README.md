@@ -19,8 +19,14 @@ python server_runner.py -t 1200 -m 8 -o output -s search_algorithms/bfsdc.py -d 
 ```
 
 
-
-
+# pjp
+The test plan_action is validated by the command:
+```bash
+python .\instance_runner.py -s .\search_algorithms\bfs.py -e .\new_syntax\grapevine\grapevine01.py -d .\new_syntax\grapevine\domain02.pddl -p .\new_syntax\grapevine\problem303.pddl --plan_actions "sharing_own_secret a sa, quiet sa,sharing_own_secret a sa, quiet sa, move_right a, sharing_own_secret a sa, quiet sa,sharing_own_secret a sa, quiet sa, move_right c, lying_others_secret c, quiet sa"
+```
+```
+python .\instance_runner.py -s .\search_algorithms\bfs.py -e .\new_syntax\grapevine\grapevine02.py -d .\new_syntax\grapevine\domain02.pddl -p .\new_syntax\grapevine\problem303.pddl --plan_actions "sharing_own_secret a sa, quiet sa,sharing_own_secret a sa, quiet sa, move_right a, sharing_own_secret a sa, quiet sa,sharing_own_secret a sa, quiet sa, move_right c, lying_others_secret c, quiet sa"
+```
 
 
 
