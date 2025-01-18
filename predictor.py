@@ -14,6 +14,7 @@ class Predictor:
     def getps(self, new_os,new_rs,p):
         os_dict = self.get_os_dict(new_os,p)
         ps_dict = {}
+        predict_number = 0
         #print("os",os_dict)
         #print('os',os_dict['shared_value as'])
         for state in p:
@@ -22,13 +23,21 @@ class Predictor:
        
         for v_name, value in os_dict.items():
             #print(os_dict)
+            # start_seg_count = self.segment_count
             for i in range(len(value)):
-                #ps_dict[v_name][i] = self.predict(i,new_rs[v_name],value)
                 if value[i] == special_value.UNSEEN or value[i] == special_value.HAVENT_SEEN or value[i] == None:
-                    #print("here",value)
                     ps_dict[v_name][i] = self.predict(i,new_rs[v_name],value)
+                    predict_number +=1
                 else:
                     ps_dict[v_name][i] = os_dict[v_name][i]
+            # end_seg_count = self.segment_count
+
+            # if end_seg_count-start_seg_count != 0 and predict_number!= 0 :
+                
+            #     diff_seg_count = (end_seg_count-start_seg_count)#/predict_number
+            #     print(predict_number,diff_seg_count)
+            #     self.segment_count = start_seg_count + diff_seg_count 
+
 
         #print("ps",ps_dict)
         # print('ps',ps_dict['shared_value as'])
@@ -38,7 +47,7 @@ class Predictor:
             for v_name, value in ps_dict.items():
                 new_state[v_name] = value[i]  
             new_ps.append(new_state)
-        # print("ps here",new_ps)
+        #print("ps here",new_ps)
         return new_ps
 
     # def predict(self, i,rule,value):
@@ -72,7 +81,7 @@ class Predictor:
         # from external
         if hasattr(self.external, method_name):
             external_method = getattr(self.external, method_name)
-            self.segment_count +=1
+            # self.segment_count +=1
             return external_method(i, rule, value)
         
         # from self
@@ -234,8 +243,10 @@ class Predictor:
 
             # from external
             if hasattr(self.external, method_name):
+                
                 external_method = getattr(self.external, method_name)
                 try:
+                    self.segment_count +=1
                     rs[v_name] = external_method(v_name, valuelist, rules)
                     continue  
                 except Exception as e:

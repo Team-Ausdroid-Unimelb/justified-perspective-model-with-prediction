@@ -1,0 +1,44 @@
+2025-01-12 18:44:05,519 - instance_runner - INFO - parser domain and problem
+2025-01-12 18:44:05,519 - instance_runner - INFO - .\new_syntax\number\domain01.pddl
+2025-01-12 18:44:05,519 - instance_runner - INFO - .\new_syntax\number\problem201.pddl
+2025-01-12 18:44:05,519 - pddl_parser - INFO - Reading domain file
+2025-01-12 18:44:05,519 - pddl_parser - INFO - .\new_syntax\number\domain01.pddl
+2025-01-12 18:44:05,519 - pddl_parser - INFO - Parsing domain file
+2025-01-12 18:44:05,519 - pddl_parser - INFO - Reading problem file
+2025-01-12 18:44:05,519 - pddl_parser - INFO - .\new_syntax\number\problem201.pddl
+2025-01-12 18:44:05,519 - pddl_parser - INFO - Parsing problem file
+2025-01-12 18:44:05,535 - instance_runner - INFO - loading external function: .\new_syntax\number\number01.py
+2025-01-12 18:44:05,831 - instance_runner - INFO - finish loading external function
+2025-01-12 18:44:05,847 - instance_runner - INFO - Initialize problem
+2025-01-12 18:44:05,847 - epistemic_model - INFO - initialize epistemic model
+2025-01-12 18:44:05,847 - instance_runner - INFO - starting search
+2025-01-12 18:44:05,847 - bfs - INFO - starting searching using [bfs]
+2025-01-12 18:44:05,863 - bfs - INFO - plan is: ['single_peek a', 'return a', 'single_peek a', 'return a', 'single_peek b']
+2025-01-12 18:44:05,863 - bfs - INFO - Goal found
+2025-01-12 18:44:05,863 - bfs - INFO - [number of node pruned_by_unknown]: 0
+2025-01-12 18:44:05,863 - bfs - INFO - [number of node pruned_by_visited]: 0
+2025-01-12 18:44:05,863 - bfs - INFO - [number of node pruned]: 0
+2025-01-12 18:44:05,863 - bfs - INFO - [number of node goal_checked]: 22
+2025-01-12 18:44:05,863 - bfs - INFO - [number of node expansion]: 14
+2025-01-12 18:44:05,863 - bfs - INFO - [number of node generated]: 22
+2025-01-12 18:44:05,863 - bfs - INFO - [number of epistemic formulas evaluation: 22]
+2025-01-12 18:44:05,863 - bfs - INFO - [time in epistemic formulas evaluation: 0:00:00.016065]
+2025-01-12 18:44:05,863 - bfs - INFO - [avg time in epistemic formulas evaluation: 0.7302272727272726]
+2025-01-12 18:44:05,863 - bfs - INFO - [total_goal_size: 2]
+2025-01-12 18:44:05,863 - bfs - INFO - [ontic_goal_size: 0]
+2025-01-12 18:44:05,863 - bfs - INFO - [epistemic_goal_size: 2]
+2025-01-12 18:44:05,863 - bfs - INFO - [ontic_goals: []]
+2025-01-12 18:44:05,863 - bfs - INFO - [epistemic_goals: ['(= (@ep ("+ b [a] + b [b]") (= (num c) 11)) ep.true)', '(= (@ep ("+ b [b] + b [a]") (= (num c) 11)) ep.true)']]
+2025-01-12 18:44:05,863 - bfs - INFO - [goals: ['(= (@ep ("+ b [a] + b [b]") (= (num c) 11)) ep.true)', '(= (@ep ("+ b [b] + b [a]") (= (num c) 11)) ep.true)']]
+2025-01-12 18:44:05,863 - bfs - INFO - [epistemic_call_time_max: 9.027000000000001]
+2025-01-12 18:44:05,863 - bfs - INFO - [functions: 3]
+2025-01-12 18:44:05,863 - bfs - INFO - [prediction time: 0.016064882278442383]
+2025-01-12 18:44:05,863 - bfs - INFO - [segment count: 335]
+2025-01-12 18:44:05,863 - bfs - INFO - [number of common perspective generated]: 0
+2025-01-12 18:44:05,863 - bfs - INFO - [number of all iterations used when generating common perspectives]: 0
+2025-01-12 18:44:05,863 - bfs - INFO - [number of max iterations used when generating common perspectives]: 0
+2025-01-12 18:44:05,863 - bfs - INFO - [number of average iterations used when generating common perspectives]: 0
+2025-01-12 18:44:05,863 - bfs - INFO - [number of averaged unfiltered branching factors]: 1.5
+2025-01-12 18:44:05,863 - bfs - INFO - [number of max unfiltered branching factors]: 2
+2025-01-12 18:44:05,863 - instance_runner - INFO - initialization time: 0:00:00.327642
+2025-01-12 18:44:05,863 - instance_runner - INFO - search time: 0:00:00.016065

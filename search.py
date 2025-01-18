@@ -406,20 +406,31 @@ class Search:
             all_legal_action_name.sort()
             filtered_action_name = self.action_filter(problem,all_legal_action_name)#根据path长度选action，名字一样保留
             if len(path) - 1 >= len(plan):
+                if_valid = False
                 break
+            
+            # print(len(path))
+            # print(plan)
+            # print(plan[len(path)-1])
+            # print(filtered_action_name)
+            pass_action_filter = True
             if plan[len(path)-1] in filtered_action_name:
                 filtered_action_name = [plan[len(path)-1]]
             else:
                 if_valid = False
+                pass_action_filter = False
+
                 #print("The input plan not valid")
 
+            # print(filtered_action_name)
+            # print("-------------")
             # print(filtered_action_name,plan[len(path)-1],len(path))
             
             self.logger.debug(sgp_p_dict.keys())
             self.logger.debug(sgp_p_dict)
             self.logger.debug("action generated: %s",all_legal_actions.keys())
             
-            if self._duplication_check(state,sgp_p_dict):
+            if pass_action_filter and self._duplication_check(state,sgp_p_dict):
                 # self.logger.debug("path [%s] get in visited",actions)
                 # self.logger.debug("ep_state_str is [%s]",ep_state_str)
                 self.expanded +=1
@@ -432,6 +443,7 @@ class Search:
                     self.logger.debug("action [%s] passed the precondition check", action_name)
                     # passed the precondition
                     succ_state = problem.generate_successor(state, action,path)
+                    # print(succ_state)
                     if not succ_state == None:
                         
                         new_path = path + [(succ_state,action_name)]
