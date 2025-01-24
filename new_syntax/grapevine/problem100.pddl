@@ -56,7 +56,7 @@
 
     
         (:goal (and 
-                (= (@ep ("+ b [a]") (= (secret_truth_value sa) 5)) ep.true)
+                (= (@ep ("+ b [a]") (= (secret_truth_value sa) 4)) ep.true)
                 (= (@ep ("+ b [b]") (= (shared_value sa) 2)) ep.true)
             )
         )

@@ -56,8 +56,8 @@
 
     
         (:goal (and 
-                (= (@ep ("+ b [a]") (= (secret_truth_value sa) 6)) ep.true)
-                (= (@ep ("+ b [b]") (= (shared_value sa) 7)) ep.true)
+                (= (@ep ("+ b [a]") (= (secret_truth_value sa) 7)) ep.true)
+                (= (@ep ("+ b [b]") (= (shared_value sa) 8)) ep.true)
                 ;(= (@ep ("+ b [c]") (= (shared_value as) 7)) ep.true)
                 ;(= (@jp ("b [b] b [a]") (secret_truth_value as)) 1)
                 ;(= (@ep ("+ s [b] $ s [c]") (= (secret_truth_value as) 1)) ep.true)
@@ -69,9 +69,9 @@
             (shared_loc integer [0,2])
             (own integer [0,1])
             (sharing integer [0,1])
-            (secret_truth_value integer [0,9])
-            (secret_lyging_value integer [0,9])
-            (shared_value integer [0,9])
+            (secret_truth_value integer [0,10])
+            (secret_lyging_value integer [0,10])
+            (shared_value integer [0,10])
         )
 
         (:rules
