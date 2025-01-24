@@ -38,9 +38,9 @@
      
             (assign (sharing) 0)
 
-            (assign (secret_truth_value sa) 2)
-            (assign (secret_truth_value sb) 2)
-            (assign (secret_truth_value sc) 2)
+            (assign (secret_truth_value sa) 3)
+            (assign (secret_truth_value sb) 3)
+            (assign (secret_truth_value sc) 3)
            
 
             (assign (secret_lyging_value sa) 1)
@@ -59,8 +59,8 @@
                 ;(= (@ep ("+ b [a]") (= (secret_truth_value as) 8)) ep.true)
                 ; (= (@ep ("+ b [b]") (= (shared_value as) 3)) ep.true)
                 ; (= (shared_loc as) 0)
-                (= (@ep ("+ b [c]") (= (shared_value sa) 9)) ep.true)
-                (= (@ep ("+ b [a] + b [c]") (= (shared_value sa) 9)) ep.unknown)
+                (= (@ep ("+ b [c]") (= (shared_value sa) 10)) ep.true)
+                (= (@ep ("+ b [a] + b [c]") (= (shared_value sa) 10)) ep.unknown)
                 ;(= (@ep ("+ b [c]") (= (secret_truth_value as) 8)) ep.true)
                 ;(= (@jp ("b [a] b [c]") (shared_value as)) jp.none)
                 ;(= (@ep ("+ s [b] $ s [c]") (= (secret_truth_value as) 1)) ep.true)
@@ -72,9 +72,9 @@
             (shared_loc integer [0,2])
             (own integer [0,1])
             (sharing integer [0,1])
-            (secret_truth_value integer [0,9])
-            (secret_lyging_value integer [0,9])
-            (shared_value integer [0,9]);??????
+            (secret_truth_value integer [0,10])
+            (secret_lyging_value integer [0,10])
+            (shared_value integer [0,10]);??????
         )
 
         (:rules
@@ -100,17 +100,17 @@
            
            
             (static (sharing) [] [])
-            (1st_poly (secret_truth_value sa) [1,2] [,])
-            (1st_poly (secret_truth_value sb) [1,2] [,])
-            (1st_poly (secret_truth_value sc) [1,2] [,])
+            (1st_poly (secret_truth_value sa) [1,3] [,])
+            (1st_poly (secret_truth_value sb) [1,3] [,])
+            (1st_poly (secret_truth_value sc) [1,3] [,])
             
             (1st_poly (secret_lyging_value sa) [1,1] [,])
             (1st_poly (secret_lyging_value sb) [1,1] [,])
             (1st_poly (secret_lyging_value sc) [1,1] [,])
           
-            (1st_poly (shared_value sa) [1,2] [,])
-            (1st_poly (shared_value sb) [1,2] [,])
-            (1st_poly (shared_value sc) [1,2] [,])
+            (1st_poly (shared_value sa) [1,3] [,])
+            (1st_poly (shared_value sb) [1,3] [,])
+            (1st_poly (shared_value sc) [1,3] [,])
          
             
         )

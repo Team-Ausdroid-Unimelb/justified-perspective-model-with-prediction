@@ -2,7 +2,7 @@ import os
 import json
 import pandas as pd
 
-input_dir = "D:/AIproject/bpwp/PJP_results"
+input_dir = "/home/ghu2004/codes/research/PJP_results_linux"
 output_file = "output_table.csv"
 
 

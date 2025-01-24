@@ -39,9 +39,9 @@
 
             (assign (sharing) 0)
 
-            (assign (secret_truth_value sa) 2)
-            (assign (secret_truth_value sb) 2)
-            (assign (secret_truth_value sc) 2)
+            (assign (secret_truth_value sa) 3)
+            (assign (secret_truth_value sb) 3)
+            (assign (secret_truth_value sc) 3)
       
 
             (assign (agent_lyging_value a) 1)
@@ -57,8 +57,8 @@
 
     
         (:goal (and 
-                (= (@ep ("+ b [c]") (= (shared_value sa) 14)) ep.true)
-                (= (@ep ("+ b [b]") (= (shared_value sa) 14)) ep.true)
+                (= (@ep ("+ b [c]") (= (shared_value sa) 15)) ep.true)
+                (= (@ep ("+ b [b]") (= (shared_value sa) 15)) ep.true)
                 ;(= (@ep ("+ b [c] + b [b]") (= (shared_value sa) 13)) ep.false)
             )
         )
@@ -99,17 +99,17 @@
             (static (own d sc) [] [])
            
             (static (sharing) [] [])
-            (1st_poly (secret_truth_value sa) [1,2] [,])
-            (1st_poly (secret_truth_value sb) [1,2] [,])
-            (1st_poly (secret_truth_value sc) [1,2] [,])
+            (1st_poly (secret_truth_value sa) [1,3] [,])
+            (1st_poly (secret_truth_value sb) [1,3] [,])
+            (1st_poly (secret_truth_value sc) [1,3] [,])
            
             (1st_poly (agent_lyging_value a) [1,1] [,])
             (1st_poly (agent_lyging_value b) [1,1] [,])
             (1st_poly (agent_lyging_value c) [1,1] [,])
           
-            (1st_poly (shared_value sa) [1,2] [,])
-            (1st_poly (shared_value sb) [1,2] [,])
-            (1st_poly (shared_value sc) [1,2] [,])
+            (1st_poly (shared_value sa) [1,3] [,])
+            (1st_poly (shared_value sb) [1,3] [,])
+            (1st_poly (shared_value sc) [1,3] [,])
         
             
         )

@@ -1,5 +1,9 @@
 # bpwp
 
+# package required
+```
+pip install scipy scikit-learn
+```
 
 The experiment is run by the command:
 ```bash

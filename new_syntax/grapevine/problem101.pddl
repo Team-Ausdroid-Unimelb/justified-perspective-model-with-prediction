@@ -38,9 +38,9 @@
      
             (assign (sharing) 0)
 
-            (assign (secret_truth_value sa) 2)
-            (assign (secret_truth_value sb) 2)
-            (assign (secret_truth_value sc) 2)
+            (assign (secret_truth_value sa) 3)
+            (assign (secret_truth_value sb) 3)
+            (assign (secret_truth_value sc) 3)
            
 
             (assign (secret_lyging_value sa) 1)
@@ -97,17 +97,17 @@
            
            
             (static (sharing) [] [])
-            (1st_poly (secret_truth_value sa) [1,2] [,])
-            (1st_poly (secret_truth_value sb) [1,2] [,])
-            (1st_poly (secret_truth_value sc) [1,2] [,])
+            (1st_poly (secret_truth_value sa) [1,3] [,])
+            (1st_poly (secret_truth_value sb) [1,3] [,])
+            (1st_poly (secret_truth_value sc) [1,3] [,])
             
             (1st_poly (secret_lyging_value sa) [1,1] [,])
             (1st_poly (secret_lyging_value sb) [1,1] [,])
             (1st_poly (secret_lyging_value sc) [1,1] [,])
           
-            (1st_poly (shared_value sa) [1,2] [,])
-            (1st_poly (shared_value sb) [1,2] [,])
-            (1st_poly (shared_value sc) [1,2] [,])
+            (1st_poly (shared_value sa) [1,3] [,])
+            (1st_poly (shared_value sb) [1,3] [,])
+            (1st_poly (shared_value sc) [1,3] [,])
          
             
         )
