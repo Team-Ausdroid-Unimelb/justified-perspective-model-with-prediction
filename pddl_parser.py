@@ -67,16 +67,35 @@ OBJECT_REG_PREFIX = r"\(:objects"
 OBJECT_REG = r"[\w \&\-]*"
 OBJECT_REG_SURFIX = r"\)"
 
+# INIT_REG_PREFIX = r"\(:init"
+# INIT_REG = r"(\(assign [\w \'\"\(\)]*\))*"
+# INIT_REG_SURFIX = r"\)"
+
+# RANGE_REG_PREFIX = r"\(:ranges"
+# RANGE_REG = r"(\([\w \- \[\]\'\,]*\))*"
+# RANGE_REG_SURFIX = r"\)"
+
+# RULE_REG_PREFIX = r"\(:rules"
+# RULE_REG = r"(\(\w* \([\w ]*\) \[[\w \-,]*\] \[[\w \-,]*\]\))*"
+# RULE_REG_SURFIX = r"\)"
+
+# GOAL_REG_PREFIX = r"\(:goal\(and"
+# GOAL_REG = r".*"
+# GOAL_REG_SURFIX = r"\)\)"
+
 INIT_REG_PREFIX = r"\(:init"
-INIT_REG = r"(\(assign [\w \'\"\(\)]*\))*"
+# INIT_REG = r"(\(assign [\w \'\"\(\)]*\))*"
+INIT_REG = r"(\(assign \([^\)]*\) [\w\'\"\-\.0-9]*\))*"
 INIT_REG_SURFIX = r"\)"
 
 RANGE_REG_PREFIX = r"\(:ranges"
-RANGE_REG = r"(\([\w \- \[\]\'\,]*\))*"
+# RANGE_REG = r"(\([\w \- \[\]\'\,]*\))*"
+RANGE_REG = r"(\([\w \- \[\]\'\,\d\.]*\))*"
 RANGE_REG_SURFIX = r"\)"
 
 RULE_REG_PREFIX = r"\(:rules"
-RULE_REG = r"(\(\w* \([\w ]*\) \[[\w \-,]*\] \[[\w \-,]*\]\))*"
+# RULE_REG = r"(\(\w* \([\w ]*\) \[[\w \-,]*\] \[[\w \-,]*\]\))*"
+RULE_REG = r"(\(\w* \([\w ]*\) \[[\w \-,\d\.]*\] \[[\w \-,\d\.]*\]\))*"
 RULE_REG_SURFIX = r"\)"
 
 GOAL_REG_PREFIX = r"\(:goal\(and"
@@ -211,7 +230,10 @@ class PDDLParser:
         problem_str = problem_str[:len(len_holder)]
         self.logger.debug(rules_str)
         self.logger.debug(problem_str)
-        pattern = r"\(\w* \([\w ]*\) \[[\w \-,]*\] \[[\w \-,]*\]\)"
+        # pattern = r"\(\w* \([\w ]*\) \[[\w \-,]*\] \[[\w \-,]*\]\)"
+        pattern = r"\(\w* \([\w ]*\) \[[\w \-,\d\.]*\] \[[\w \-,\d\.]*\]\)*"
+
+        
         single_rule_str_list = re.findall(pattern, rules_str)
         self.logger.debug(single_rule_str_list)
         for single_rule_str in single_rule_str_list:
@@ -236,7 +258,8 @@ class PDDLParser:
         problem_str = problem_str[:len(len_holder)]
         self.logger.debug(ranges_str)
         self.logger.debug(problem_str)
-        pattern = r"\([\w \- \[\]\'\,]*\)"
+        # pattern = r"\([\w \- \[\]\'\,]*\)"
+        pattern = r"\([\w \- \[\]\'\,\d\.]*\)*"
         single_range_str_list = re.findall(pattern, ranges_str)
         self.logger.debug(single_range_str_list)
         for single_range_str in single_range_str_list:
@@ -252,7 +275,7 @@ class PDDLParser:
             value_type_str =  range_content_list[1]
             value_type = value_type_dict[value_type_str]
             value_range_str = range_content_list[2]
-            
+            # print("value_type_str",value_type_str,"value_type",value_type,"value_range_str",value_range_str)
             if value_type == VALUE_TYPE.ENUMERATE:
                 self.logger.debug(value_range_str[1:-1:].replace("'",str()).split(","))
                 function_schemas[function_schema_name].value_range = value_range_str[1:-1:].replace("'",str()).split(",")
@@ -264,6 +287,12 @@ class PDDLParser:
                     raise ValueError("integer range should have 2 components: %s",bounds)
             
             # elif value_type_str == VALUE_TYPE.STRING:
+            elif value_type == VALUE_TYPE.FLOAT:
+                bounds = value_range_str[1:-1:].split(",")
+                if len(bounds) == 2:
+                    function_schemas[function_schema_name].value_range = (float(bounds[0]), float(bounds[1]))
+                else:
+                    raise ValueError("float range should have 2 components: %s", bounds)
             #     pass
             else:
                 raise ValueError("value type %s does not exist",value_type)
@@ -342,7 +371,10 @@ class PDDLParser:
         # extract initial state
         init_str,problem_str = self.keyWordParser("init",INIT_REG_PREFIX,INIT_REG,INIT_REG_SURFIX,problem_str)
         self.logger.debug(init_str)
-        pattern = r"\(assign \([\w ]*\) [ \w\'\"]*\)"
+        # pattern = r"\(assign \([\w ]*\) [ \w\'\"]*\)"
+        pattern = r"\(assign \([^\)]*\) [\w\'\"\-\.0-9]*\)*"
+
+        
         single_init_str_list = re.findall(pattern, init_str)
         self.logger.debug(single_init_str_list)
         for single_init_str in single_init_str_list:
@@ -904,20 +936,31 @@ class PDDLParser:
         input_str = re.sub('^ *| *$|^\n',str(),input_str,flags =re.MULTILINE)
         input_str = re.sub(' *, *',",",input_str,flags =re.MULTILINE)
         input_str = re.sub(' *- *',"-",input_str,flags =re.MULTILINE)
-        input_str = re.sub('\[ *',"[",input_str,flags =re.MULTILINE)
-        input_str = re.sub(' *\]',"]",input_str,flags =re.MULTILINE)
-        input_str = re.sub(':goal *',":goal",input_str,flags =re.MULTILINE)
-        input_str = re.sub(':action *',":action ",input_str,flags =re.MULTILINE)
-        input_str = re.sub(':parameters *',":parameters",input_str,flags =re.MULTILINE)
-        input_str = re.sub(':precondition *',":precondition",input_str,flags =re.MULTILINE)
-        input_str = re.sub(':effect *',":effect",input_str,flags =re.MULTILINE)
-        input_str = re.sub(' \?',"?",input_str,flags =re.MULTILINE)
+        # input_str = re.sub('\[ *',"[",input_str,flags =re.MULTILINE)
+        # input_str = re.sub(' *\]',"]",input_str,flags =re.MULTILINE)
+        input_str = re.sub(r'\[ *', "[", input_str, flags=re.MULTILINE) 
+        input_str = re.sub(r' *\]', "]", input_str, flags=re.MULTILINE)
+        # input_str = re.sub(':goal *',":goal",input_str,flags =re.MULTILINE)
+        # input_str = re.sub(':action *',":action ",input_str,flags =re.MULTILINE)
+        # input_str = re.sub(':parameters *',":parameters",input_str,flags =re.MULTILINE)
+        # input_str = re.sub(':precondition *',":precondition",input_str,flags =re.MULTILINE)
+        # input_str = re.sub(':effect *',":effect",input_str,flags =re.MULTILINE)
+        input_str = re.sub(r':goal *', ":goal", input_str, flags=re.MULTILINE)
+        input_str = re.sub(r':action *', ":action ", input_str, flags=re.MULTILINE)
+        input_str = re.sub(r':parameters *', ":parameters", input_str, flags=re.MULTILINE)
+        input_str = re.sub(r':precondition *', ":precondition", input_str, flags=re.MULTILINE)
+        input_str = re.sub(r':effect *', ":effect", input_str, flags=re.MULTILINE)
+        # input_str = re.sub(' \?',"?",input_str,flags =re.MULTILINE)
+        input_str = re.sub(r' \?', "?", input_str, flags=re.MULTILINE) 
         self.logger.debug(repr(input_str))
         
         # removing useless \n
-        input_str = re.sub('\( *|(\n)*\((\n)*',"(",input_str,flags =re.MULTILINE)
-        input_str = re.sub(' *\)|(\n)*\)(\n)*',")",input_str,flags =re.MULTILINE)
-        input_str = re.sub('\)\n',")",input_str,flags =re.MULTILINE)
+        # input_str = re.sub('\( *|(\n)*\((\n)*',"(",input_str,flags =re.MULTILINE)
+        # input_str = re.sub(' *\)|(\n)*\)(\n)*',")",input_str,flags =re.MULTILINE)
+        # input_str = re.sub('\)\n',")",input_str,flags =re.MULTILINE)
+        input_str = re.sub(r'\( *|(\n)*\((\n)*', "(", input_str, flags=re.MULTILINE)  
+        input_str = re.sub(r' *\)|(\n)*\)(\n)*', ")", input_str, flags=re.MULTILINE)  
+        input_str = re.sub(r'\)\n', ")", input_str, flags=re.MULTILINE)
         self.logger.debug(repr(input_str))
         
         input_str = re.sub('\n',LINE_BREAK,input_str,flags =re.MULTILINE)
@@ -932,6 +975,11 @@ class PDDLParser:
                 value = special_value.HAVENT_SEEN################
             else:
                 value = int(value_str)
+        elif value_type == VALUE_TYPE.FLOAT:  
+            if value_str == 'jp.none':
+                value = special_value.HAVENT_SEEN  
+            else:
+                value = float(value_str)
         else:
             raise ValueError("value type %s does not exist %s",value_type,value_str)
         

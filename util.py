@@ -528,6 +528,8 @@ class FunctionSchema:
             output_str += f" {self.value_range}, {self.value_type}."
         elif self.value_type == VALUE_TYPE.ENUMERATE:
             output_str += f" [{','.join(self.value_range)}], {self.value_type}."
+        elif self.value_type == VALUE_TYPE.FLOAT:  
+            output_str += f" {self.value_range}, {self.value_type}."
         else:
             output_str += f"{self.value_range}, {self.value_type}."
             # raise ValueError("Value type not found. Probably did not define %s in the problem :ranges",self.name)
@@ -563,11 +565,12 @@ class Rule:
         self.rule_known_coef = rule_known_coef
         pass
 
-VALUE_TYPE = Enum("VALUE_TYPE", "ENUMERATE INTEGER")
+VALUE_TYPE = Enum("VALUE_TYPE", "ENUMERATE INTEGER FLOAT")
 
 value_type_dict = {
     "enumerate": VALUE_TYPE.ENUMERATE,
     "integer": VALUE_TYPE.INTEGER,
+    "float": VALUE_TYPE.FLOAT,
 }
 
 
@@ -631,11 +634,21 @@ def updateEffect(logger,effect_type:EffectType,value1,value2,function_schema: Fu
                     return None
                 else:
                     return value2
+        elif function_schema.value_type == VALUE_TYPE.FLOAT:  
+            if not isinstance(value2, (int, float)):  
+                raise ValueError("Effect Error: the second value in Assign should be a float")
+            else:
+                if value2 < function_schema.value_range[0] or value2 > function_schema.value_range[1]:
+                    return None
+                else:
+                    return float(value2)
+                
         elif function_schema.value_type == VALUE_TYPE.ENUMERATE:
             if not value2 in function_schema.value_range:
                 raise ValueError("Effect Error: the second value in Assign should be in the value range")
             else:
                 return value2
+            
     elif effect_type == EffectType.INCREASE:
         if function_schema.value_type == VALUE_TYPE.INTEGER:
             if not type(value2) == int:
@@ -646,6 +659,16 @@ def updateEffect(logger,effect_type:EffectType,value1,value2,function_schema: Fu
                     return None
                 else:
                     return value1 + value2
+                
+        elif function_schema.value_type == VALUE_TYPE.FLOAT:  
+            if not isinstance(value2, (int, float)):
+                raise ValueError("Effect Error: the second value in Increase should be a float")
+            else:
+                if value1 + value2 < function_schema.value_range[0] or value1 + value2 > function_schema.value_range[1]:
+                    return None
+                else:
+                    return float(value1 + value2)
+                
         elif function_schema.value_type == VALUE_TYPE.ENUMERATE:
             if not type(value2) == int:
                 raise ValueError("Effect Error: the second value in Increase should be an integer")
@@ -661,6 +684,15 @@ def updateEffect(logger,effect_type:EffectType,value1,value2,function_schema: Fu
                     return None
                 else:
                     return value1 - value2
+        elif function_schema.value_type == VALUE_TYPE.FLOAT: 
+            if not isinstance(value2, (int, float)):
+                raise ValueError("Effect Error: the second value in Decrease should be a float")
+            else:
+                if value1 - value2 < function_schema.value_range[0] or value1 - value2 > function_schema.value_range[1]:
+                    return None
+                else:
+                    return float(value1 - value2)
+                
         elif function_schema.value_type == VALUE_TYPE.ENUMERATE:
             if not type(value2) == int:
                 raise ValueError("Effect Error: the second value in Decrease should be an integer")

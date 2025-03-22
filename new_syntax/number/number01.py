@@ -145,8 +145,8 @@ class ExternalFunction:
 
     
     def update1Poly(self,x,paramiters):
-        a = int(paramiters[0])
-        b = int(paramiters[1])
+        a = float(paramiters[0])
+        b = float(paramiters[1])
         return a*x + b
     
     def update2Poly(self,x,paramiters):
@@ -207,8 +207,8 @@ class ExternalFunction:
                 return False
         elif domain.startswith(' ('):
             domain = domain[2:].split(",")
-            value = int(value)
-            if value < int(domain[0]) or value > int(domain[1]):
+            value = float(value)
+            if value < float(domain[0]) or value > float(domain[1]):
                 return False
         return True
 
