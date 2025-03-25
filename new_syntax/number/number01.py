@@ -248,8 +248,8 @@ class ExternalFunction:
             a = model.coef_[0]  # Slope
             b = model.intercept_  # Intercept
             coefficients_dict = {
-                'a': round(a),
-                'b': round(b)
+                'a': a,
+                'b': b
             }
         else:
             return {'name': v_name, 'rule_name': '1st_poly', 'coefficients': {'a': None,'b': None}}
@@ -262,7 +262,9 @@ class ExternalFunction:
         if a is None or b is None:
             result = self.get_predict_static(i,rule,value)
         else:
-            result = round(a * i + b)
+            
+            result = a * i + b
+            # print(result)
         return result
     
     def get_predict_static(self, i,rule,value):

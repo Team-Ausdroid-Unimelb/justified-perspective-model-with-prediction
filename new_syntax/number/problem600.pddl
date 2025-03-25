@@ -20,7 +20,7 @@
         (:goal 
             (and 
                 ; unsolvable case for both
-                (= (@ep ("+ b [a]") (= (num c) 1.5)) ep.true) ;7 have 9 no we both
+                (= (@ep ("+ b [a]") (= (num c) 4.5)) ep.true) ;7 have 9 no we both
             )
         )
 

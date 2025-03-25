@@ -120,7 +120,7 @@ class Predictor:
         if a is None or b is None:
             result = self.get_predict_static(i, rule, value)
         else:
-            result = round(a * i + b)
+            result = a * i + b
         
         return result
 

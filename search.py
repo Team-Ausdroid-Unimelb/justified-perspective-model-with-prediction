@@ -210,11 +210,11 @@ class Search:
                 self._finalise_result(problem)
                 return self.result
 
-            all_legal_actions,sgp_p_dict = problem.get_all_legal_actions(state,path,sg_p_dict)#########保留
+            all_legal_actions,sgp_p_dict = problem.get_all_legal_actions(state,path,sg_p_dict)#########
 
             all_legal_action_name = list(all_legal_actions.keys())
             all_legal_action_name.sort()
-            filtered_action_name = self.action_filter(problem,all_legal_action_name)#根据path长度选action，名字一样保留
+            filtered_action_name = self.action_filter(problem,all_legal_action_name)###
             
             self.logger.debug(sgp_p_dict.keys())
             self.logger.debug(sgp_p_dict)
@@ -334,7 +334,7 @@ class Search:
             # if len(path) > 8:
             #     raise ValueError("exceed length")
             self.logger.debug("path: %s",actions)
-
+            self.logger.debug(current_node.remaining_goal)
             goal_checking = (0 == current_node.remaining_goal)
             if goal_checking:
                 #print("goal found")
@@ -400,17 +400,15 @@ class Search:
                     print("The input plan not valid")
                 return self.result
 
-            all_legal_actions,sgp_p_dict = problem.get_all_legal_actions(state,path,sg_p_dict)#########保留
+            all_legal_actions,sgp_p_dict = problem.get_all_legal_actions(state,path,sg_p_dict)#########keep
 
             all_legal_action_name = list(all_legal_actions.keys())
             all_legal_action_name.sort()
-            filtered_action_name = self.action_filter(problem,all_legal_action_name)#根据path长度选action，名字一样保留
+            filtered_action_name = self.action_filter(problem,all_legal_action_name)############
             if len(path) - 1 >= len(plan):
                 if_valid = False
                 break
             
-            # print(len(path))
-            # print(plan)
             # print(plan[len(path)-1])
             # print(filtered_action_name)
             pass_action_filter = True

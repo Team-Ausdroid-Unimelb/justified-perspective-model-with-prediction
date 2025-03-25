@@ -206,7 +206,8 @@ class Problem:
                 goal_dict.update({condition_key:result})
             else:
                 raise ValueError("condition type not found",condition_key)
-            
+        
+        self.logger.debug(ep_conditions_dict)
         # checking ep condition
         if not ep_conditions_dict == {}:
             self.epistemic_calls +=1

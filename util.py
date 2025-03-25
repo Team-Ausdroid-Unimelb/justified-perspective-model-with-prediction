@@ -10,7 +10,8 @@ import sys
 import re
 import traceback
 import typing
-
+import numpy as np
+import numbers
 
 GLOBAL_PERSPECTIVE_INDEX = ""
 ROOT_NODE_ACTION = ""
@@ -840,9 +841,15 @@ bool2Ternary_dict = {
     False: Ternary.FALSE
 }
 
+def is_number(value):
+    return isinstance(value,numbers.Number) and not isinstance(value,bool)
+
 def global_state_evaluation(logger,operator,value1,value2):
     # logger.debug("operator: %s, value1: %s, value2: %s",operator,value1,value2)
     if operator == ConditionOperatorType.EQUAL:
+        # if type(value1)== int or type(value1) == float:
+        if is_number(value1):
+            return np.isclose(value1,value2,atol=1e-6)
         return value1 == value2
     elif operator == ConditionOperatorType.GREATER:
         return value1 > value2
@@ -868,6 +875,9 @@ def evaluation(logger,operator,value1,value2):
     if value1 == special_value.HAVENT_SEEN and value2 != special_value.HAVENT_SEEN:
         return Ternary.UNKNOWN
     if operator == ConditionOperatorType.EQUAL:
+        # if type(value1)== int or type(value1) == float:
+        if is_number(value1):
+            return bool2Ternary_dict[np.isclose(value1,value2,atol=1e-6)]
         return bool2Ternary_dict[value1 == value2]
     elif operator == ConditionOperatorType.GREATER:
         return bool2Ternary_dict[value1 > value2]
