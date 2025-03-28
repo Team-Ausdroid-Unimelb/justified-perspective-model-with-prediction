@@ -620,11 +620,12 @@ class Effect:
 
 def updateEffect(logger,effect_type:EffectType,value1,value2,function_schema: FunctionSchema):
     # print(value1,type(value1),value2,type(value2),function_schema.value_type,function_schema.value_range)
+    # print(function_schema.value_type)
     if effect_type == EffectType.ASSIGN:
         if function_schema.value_type == VALUE_TYPE.INTEGER:
-            #print(value1,value2)
+            # print(value1,value2)
             if not type(value2) == int:
-           
+                print(value1,type(value1),value2,type(value2),function_schema.value_type,function_schema.value_range)
                 raise ValueError("Effect Error: the second value in Assign should be an integer")
                 #special_value.HAVENT_SEEN
                 

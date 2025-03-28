@@ -24,6 +24,16 @@ python server_runner.py -t 1200 -m 8 -o output -s search_algorithms/bfsdc.py -d 
 
 
 # pjp
+The experiment running command,
+For number(problem101,103,201,202,204,301,401,501):
+```
+python .\instance_runner.py -s .\search_algorithms\bfs.py -e .\new_syntax\number_float\number01.py -d .\new_syntax\number_float\domain01.pddl -p .\new_syntax\number_float\proble101.pddl 
+```
+For grapevine(problem100,101,200,202,301,302):
+```
+python .\instance_runner.py -s .\search_algorithms\bfs.py -e .\new_syntax\grapevine_float\grapevine01.py -d .\new_syntax\grapevine_float\domain01.pddl -p .\new_syntax\grapevine_float\problem100.pddl
+```
+
 The test plan_action is validated by the command:
 ```bash
 python .\instance_runner.py -s .\search_algorithms\bfs.py -e .\new_syntax\grapevine\grapevine01.py -d .\new_syntax\grapevine\domain02.pddl -p .\new_syntax\grapevine\problem303.pddl --plan_actions "sharing_own_secret a sa, quiet sa,sharing_own_secret a sa, quiet sa, move_right a, sharing_own_secret a sa, quiet sa,sharing_own_secret a sa, quiet sa, move_right c, lying_others_secret c sa, quiet sa"
